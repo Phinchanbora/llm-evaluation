@@ -340,7 +340,7 @@ def quick_comparison(
         output_dir: Directory to save all charts
     """
     output_dir = Path(output_dir)
-    output_dir.mkdir(exist_ok=True)
+    output_dir.mkdir(parents=True, exist_ok=True)
 
     viz = EvaluationVisualizer()
     
