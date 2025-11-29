@@ -38,10 +38,14 @@ class BenchmarkRunner:
         """
         Run a sample MMLU (Massive Multitask Language Understanding) test
 
-        MMLU covers 57 subjects across STEM, humanities, social sciences
-        This is a simplified demo version with 3 questions
+        ⚠️ **DEMO ONLY - NOT PRODUCTION BENCHMARK** ⚠️
         
-        TODO: Replace with real MMLU dataset (14,000+ questions)
+        Real MMLU: 14,042 multiple-choice questions across 57 subjects
+        This demo: 3 hardcoded questions
+        
+        For production use, integrate:
+        - HuggingFace datasets: `load_dataset('cais/mmlu', 'all')`
+        - EleutherAI lm-evaluation-harness
         
         Returns:
             Dictionary with benchmark results
@@ -96,9 +100,13 @@ class BenchmarkRunner:
         """
         Run a sample TruthfulQA test
 
-        TruthfulQA measures truthfulness and informativeness
+        ⚠️ **DEMO ONLY - NOT PRODUCTION BENCHMARK** ⚠️
         
-        TODO: Replace with real TruthfulQA dataset
+        Real TruthfulQA: 817 questions testing truthfulness
+        This demo: 3 hardcoded questions
+        
+        For production use, integrate:
+        - HuggingFace datasets: `load_dataset('truthful_qa', 'generation')`
         
         Returns:
             Dictionary with truthfulness metrics
@@ -161,9 +169,13 @@ class BenchmarkRunner:
         """
         Run a sample HellaSwag test
 
-        HellaSwag tests commonsense reasoning
+        ⚠️ **DEMO ONLY - NOT PRODUCTION BENCHMARK** ⚠️
         
-        TODO: Replace with real HellaSwag dataset
+        Real HellaSwag: 10,042 commonsense reasoning scenarios
+        This demo: 2 hardcoded scenarios
+        
+        For production use, integrate:
+        - HuggingFace datasets: `load_dataset('Rowan/hellaswag')`
         
         Returns:
             Dictionary with reasoning metrics

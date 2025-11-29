@@ -16,12 +16,13 @@ A production-ready toolkit for evaluating LLM performance across multiple dimens
 
 - **Performance Metrics**: Response time, throughput, token efficiency, latency percentiles
 - **Quality Metrics**: Accuracy, coherence, hallucination detection, BLEU scores
-- **Standard Benchmarks**: MMLU, TruthfulQA, HellaSwag integration
+- **Standard Benchmarks**: MMLU, TruthfulQA, HellaSwag (⚠️ Demo samples - see docs for production datasets)
 - **Interactive Visualizations**: Comparison dashboards, radar charts, heatmaps, trend analysis
 - **Statistical Analysis**: Significance testing, confidence intervals, distribution analysis
 - **Export Capabilities**: HTML reports, PNG charts, JSON data exports
 - **Multi-Model Support**: Compare multiple models side-by-side
 - **100% Local**: No API costs, complete data privacy with Ollama
+- **Clean Architecture**: Provider abstraction, dependency injection, SOLID principles
 
 ## 📦 Installation
 
@@ -105,6 +106,36 @@ Creates:
 - 📈 Line charts for trend analysis
 - 📦 Box plots for distribution analysis
 - 🎨 Interactive HTML dashboards
+
+## 🧪 Benchmarks: Demo vs Production
+
+**⚠️ Current Implementation (Demo/POC):**
+- MMLU: 3 sample questions
+- TruthfulQA: 3 sample questions  
+- HellaSwag: 2 sample scenarios
+
+**🏭 Production Datasets (Enterprise Use):**
+```python
+# Install: pip install datasets
+from datasets import load_dataset
+
+# MMLU - 14,042 questions across 57 subjects
+mmlu = load_dataset('cais/mmlu', 'all')
+
+# TruthfulQA - 817 factual accuracy questions
+truthfulqa = load_dataset('truthful_qa', 'generation')
+
+# HellaSwag - 10,042 commonsense scenarios
+hellaswag = load_dataset('Rowan/hellaswag')
+```
+
+**Why Demo Benchmarks?**
+- ✅ Fast development iteration
+- ✅ Zero external dependencies
+- ✅ Demonstrates evaluation patterns
+- ⚠️ **NOT for research or production comparison**
+
+For rigorous evaluation: integrate real datasets or use [lm-evaluation-harness](https://github.com/EleutherAI/lm-evaluation-harness).
 
 ## 🛠️ Tech Stack
 
