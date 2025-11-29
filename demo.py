@@ -1,17 +1,41 @@
 """
-Quick demo of LLM Evaluator
+Quick demo of LLM Evaluator - Clean Architecture Edition
+
+Demonstrates the new provider-based architecture with dependency injection
 """
 
 from llm_evaluator import ModelEvaluator
+from llm_evaluator.providers.ollama_provider import OllamaProvider
+from llm_evaluator.providers import GenerationConfig
+
 
 def main():
     print("="*60)
-    print("LLM EVALUATOR - Quick Demo")
+    print("LLM EVALUATOR - Clean Architecture Demo")
     print("="*60)
     
-    # Initialize evaluator
+    # Configure generation settings
+    config = GenerationConfig(
+        temperature=0.7,
+        max_tokens=500,
+        timeout_seconds=30,
+        retry_attempts=3
+    )
+    
+    # Initialize provider with dependency injection
     model = "llama3.2:1b"
-    evaluator = ModelEvaluator(model=model)
+    provider = OllamaProvider(model=model, config=config)
+    
+    # Check provider availability
+    print(f"\n🔍 Checking {model} availability...")
+    if not provider.is_available():
+        print(f"❌ {model} not available. Make sure Ollama is running.")
+        return
+    
+    print(f"✅ {model} is ready!")
+    
+    # Initialize evaluator with provider injection
+    evaluator = ModelEvaluator(provider=provider, config=config)
     
     # Run comprehensive evaluation
     results = evaluator.evaluate_all()
