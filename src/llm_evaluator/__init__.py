@@ -6,6 +6,7 @@ Comprehensive evaluation framework for Large Language Models
 from .evaluator import ModelEvaluator
 from .metrics import PerformanceMetrics, QualityMetrics
 from .benchmarks import BenchmarkRunner
+from .visualizations import EvaluationVisualizer, quick_comparison
 
 __version__ = "0.1.0"
 
@@ -14,4 +15,6 @@ __all__ = [
     "PerformanceMetrics",
     "QualityMetrics",
     "BenchmarkRunner",
+    "EvaluationVisualizer",
+    "quick_comparison",
 ]
