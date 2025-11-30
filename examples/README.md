@@ -15,19 +15,7 @@ python examples/demo.py
 
 ---
 
-### 2. `demo_visualizations.py` - See the Charts (1 minute)
-Generates all visualization types with simulated data. No model evaluation.
-
-```bash
-python examples/demo_visualizations.py
-```
-
-**Output:** 7 interactive charts in `outputs/visualizations/`
-- Open `evaluation_dashboard.html` in your browser
-
----
-
-### 3. `compare_models.py` - Compare 2+ Models (Interactive)
+### 2. `compare_models.py` - Compare 2+ Models (Interactive)
 Interactive script to compare multiple models side-by-side.
 
 ```bash
@@ -42,7 +30,7 @@ python examples/compare_models.py
 
 ---
 
-### 4. `run_sample_comparison.py` - Fast Comparison (45 minutes)
+### 3. `run_sample_comparison.py` - Fast Comparison (45 minutes)
 **Recommended for quick, statistically valid comparisons.**
 
 Compares `qwen2.5:0.5b` vs `phi3.5:3.8b` with 500 questions per benchmark.
@@ -58,7 +46,7 @@ python examples/run_sample_comparison.py
 
 ---
 
-### 5. `run_full_comparison.py` - Complete Benchmark (5 hours)
+### 4. `run_full_comparison.py` - Complete Benchmark (5 hours)
 Full scientific comparison with all 24,901 questions.
 
 ```bash
@@ -69,6 +57,17 @@ python examples/run_full_comparison.py
 - Research-grade data for papers
 - Full MMLU (14,042), TruthfulQA (817), HellaSwag (10,042)
 - ~2-3 hours per model
+
+---
+
+### 5. `regenerate_dashboard.py` - Update Existing Dashboard
+Regenerate dashboard from existing comparison results with enhanced tooltips.
+
+```bash
+python examples/regenerate_dashboard.py
+```
+
+**Output:** Updated dashboard in `outputs/comparisons/`
 
 ---
 
@@ -85,9 +84,9 @@ Side-by-side comparison of demo data vs real benchmark results.
 ## Typical Workflow
 
 1. **Test your setup:** `python examples/demo.py`
-2. **See visualizations:** `python examples/demo_visualizations.py`
-3. **Quick comparison:** `python examples/run_sample_comparison.py`
-4. **Full benchmark:** `python examples/run_full_comparison.py` (overnight)
+2. **Quick comparison:** `python examples/run_sample_comparison.py`
+3. **Full benchmark:** `python examples/run_full_comparison.py` (overnight)
+4. **Update dashboard:** `python examples/regenerate_dashboard.py`
 
 ---
 
@@ -124,19 +123,17 @@ output_dir = Path("custom/output/path")
 
 ## Output Files
 
-All examples generate output in `outputs/`:
+All examples generate output in `outputs/comparisons/`:
 
 ```
 outputs/
-├── visualizations/          # From demo_visualizations.py
-│   ├── evaluation_dashboard.html  ← Open this!
-│   ├── benchmark_comparison.png
-│   └── ...
-│
-└── comparisons/            # From compare_models.py
-    ├── comparison_dashboard.html  ← Open this!
-    ├── benchmark_comparison.png
-    └── ...
+└── comparisons/            # From comparison scripts
+    ├── dashboard.html         ← Open this! (Enhanced with tooltips)
+    ├── comparison_report.md   # Markdown summary
+    ├── benchmarks.png         # Static bar chart
+    ├── radar.html             # Interactive radar chart
+    ├── heatmap.png           # All metrics heatmap
+    └── comparison_YYYYMMDD_HHMMSS.json  # Raw results
 ```
 
 ---
