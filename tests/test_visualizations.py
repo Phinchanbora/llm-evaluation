@@ -3,7 +3,6 @@
 import pytest
 from pathlib import Path
 import tempfile
-import os
 from llm_evaluator.visualizations import EvaluationVisualizer, quick_comparison
 
 

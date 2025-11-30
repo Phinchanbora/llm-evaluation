@@ -22,8 +22,10 @@ ENV/
 # Testing
 .pytest_cache/
 .coverage
+coverage.xml
 htmlcov/
 *.cover
+.ruff_cache/
 
 # Distribution / packaging
 dist/
@@ -44,6 +46,7 @@ data/cache/
 .DS_Store
 Thumbs.db
 
-# Reports
+# Generated outputs
+outputs/
 evaluation_report.md
 benchmark_*.md

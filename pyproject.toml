@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "llm-evaluator"
-version = "0.1.0"
+version = "0.2.0"
 description = "Comprehensive evaluation framework for Large Language Models"
 readme = "README.md"
 authors = [
@@ -12,7 +12,7 @@ authors = [
 ]
 license = {text = "MIT"}
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
     "Programming Language :: Python :: 3",
@@ -33,20 +33,42 @@ dependencies = [
     "plotly>=5.17.0",
     "seaborn>=0.12.0",
     "scipy>=1.11.0",
+    "click>=8.1.0",
+    "pydantic>=2.0.0",
+    "pydantic-settings>=2.0.0",
 ]
 
 [project.optional-dependencies]
 dev = [
     "pytest>=7.4.0",
     "pytest-cov>=4.1.0",
+    "pytest-mock>=3.12.0",
     "black>=23.0.0",
     "flake8>=6.0.0",
+    "ruff>=0.1.0",
 ]
 notebooks = [
     "jupyter>=1.0.0",
     "ipykernel>=6.25.0",
     "ipywidgets>=8.1.0",
 ]
+openai = [
+    "openai>=1.0.0",
+]
+anthropic = [
+    "anthropic>=0.18.0",
+]
+huggingface = [
+    "huggingface-hub>=0.20.0",
+]
+all-providers = [
+    "openai>=1.0.0",
+    "anthropic>=0.18.0",
+    "huggingface-hub>=0.20.0",
+]
+
+[project.scripts]
+llm-eval = "llm_evaluator.cli:cli"
 
 [project.urls]
 Homepage = "https://github.com/NahuelGiudizi/llm-evaluation"
