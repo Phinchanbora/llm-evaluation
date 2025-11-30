@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "llm-evaluator"
-version = "0.2.0"
+version = "0.3.0"
 description = "Comprehensive evaluation framework for Large Language Models"
 readme = "README.md"
 authors = [
@@ -48,6 +48,8 @@ dev = [
     "black>=23.0.0",
     "flake8>=6.0.0",
     "ruff>=0.1.0",
+    "mypy>=1.8.0",
+    "types-requests>=2.31.0",
 ]
 notebooks = [
     "jupyter>=1.0.0",
@@ -94,3 +96,36 @@ addopts = "-v --cov=src --cov-report=html --cov-report=term"
 line-length = 100
 target-version = ['py311']
 include = '\.pyi?$'
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_any_generics = true
+disallow_subclassing_any = true
+disallow_untyped_calls = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+show_error_codes = true
+show_column_numbers = true
+pretty = true
+
+# Ignore missing imports for third-party libraries without stubs
+[[tool.mypy.overrides]]
+module = [
+    "datasets.*",
+    "plotly.*",
+    "seaborn.*",
+    "scipy.*",
+    "ollama.*",
+]
+ignore_missing_imports = true
