@@ -4,14 +4,13 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "llm-benchmark-toolkit"
-version = "0.3.0"
+version = "0.3.1"
 description = "Comprehensive evaluation framework for Large Language Models"
 readme = "README.md"
 authors = [
     {name = "Nahuel Giudizi", email = "nahuel@example.com"}
 ]
 license = {text = "MIT"}
-urls = {"Homepage" = "https://github.com/NahuelGiudizi/llm-evaluation", "Blog" = "https://dev.to/nahuelgiudizi/building-an-honest-llm-evaluation-framework-from-fake-metrics-to-real-benchmarks-2b90", "PyPI" = "https://pypi.org/project/llm-benchmark-toolkit/"}
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
@@ -79,6 +78,8 @@ llm-eval = "llm_evaluator.cli:cli"
 Homepage = "https://github.com/NahuelGiudizi/llm-evaluation"
 Repository = "https://github.com/NahuelGiudizi/llm-evaluation"
 Issues = "https://github.com/NahuelGiudizi/llm-evaluation/issues"
+Blog = "https://dev.to/nahuelgiudizi/building-an-honest-llm-evaluation-framework-from-fake-metrics-to-real-benchmarks-2b90"
+PyPI = "https://pypi.org/project/llm-benchmark-toolkit/"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
