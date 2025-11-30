@@ -19,7 +19,7 @@ class EvaluationVisualizer:
 
     def __init__(self, style: str = "seaborn-v0_8-darkgrid"):
         """Initialize visualizer with matplotlib style
-        
+
         Args:
             style: Matplotlib style to use for static plots
         """
@@ -31,16 +31,16 @@ class EvaluationVisualizer:
         self,
         results: Dict[str, Dict[str, float]],
         output_path: Optional[Union[str, Path]] = None,
-        interactive: bool = False
+        interactive: bool = False,
     ) -> Optional[go.Figure]:
         """Create bar chart comparing benchmark scores across models
-        
+
         Args:
             results: Dict mapping model names to benchmark scores
                     e.g. {"llama3.2": {"mmlu": 0.65, "truthful": 0.58}}
             output_path: Path to save the chart (optional)
             interactive: If True, create interactive plotly chart
-            
+
         Returns:
             Plotly figure if interactive=True, else None
         """
@@ -60,7 +60,7 @@ class EvaluationVisualizer:
                 barmode="group",
                 title="Benchmark Comparison Across Models",
                 labels={"Score": "Score (0-1)"},
-                range_y=[0, 1]
+                range_y=[0, 1],
             )
             if output_path:
                 fig.write_html(str(output_path))
@@ -77,7 +77,7 @@ class EvaluationVisualizer:
             ax.grid(axis="y", alpha=0.3)
             plt.xticks(rotation=45, ha="right")
             plt.tight_layout()
-            
+
             if output_path:
                 plt.savefig(str(output_path), dpi=300, bbox_inches="tight")
                 plt.close()
@@ -86,17 +86,15 @@ class EvaluationVisualizer:
             return None
 
     def plot_radar_chart(
-        self,
-        results: Dict[str, Dict[str, float]],
-        output_path: Optional[Union[str, Path]] = None
+        self, results: Dict[str, Dict[str, float]], output_path: Optional[Union[str, Path]] = None
     ) -> go.Figure:
         """Create radar chart for multi-metric comparison
-        
+
         Args:
             results: Dict mapping model names to metric scores
                     e.g. {"llama3.2": {"accuracy": 0.7, "coherence": 0.8}}
             output_path: Path to save the chart (optional)
-            
+
         Returns:
             Plotly figure
         """
@@ -109,38 +107,32 @@ class EvaluationVisualizer:
             values_closed = values + [values[0]]
             categories_closed = categories + [categories[0]]
 
-            fig.add_trace(go.Scatterpolar(
-                r=values_closed,
-                theta=categories_closed,
-                fill='toself',
-                name=model_name
-            ))
+            fig.add_trace(
+                go.Scatterpolar(
+                    r=values_closed, theta=categories_closed, fill="toself", name=model_name
+                )
+            )
 
         fig.update_layout(
-            polar=dict(
-                radialaxis=dict(
-                    visible=True,
-                    range=[0, 1]
-                )
-            ),
+            polar=dict(radialaxis=dict(visible=True, range=[0, 1])),
             showlegend=True,
             title="Multi-Metric Model Comparison",
-            font=dict(size=12)
+            font=dict(size=12),
         )
 
         if output_path:
             fig.write_html(str(output_path))
-        
+
         return fig
 
     def plot_performance_trends(
         self,
         time_series: Dict[str, List[tuple]],
         metric_name: str = "Response Time",
-        output_path: Optional[Union[str, Path]] = None
+        output_path: Optional[Union[str, Path]] = None,
     ) -> None:
         """Create line chart showing performance over time
-        
+
         Args:
             time_series: Dict mapping model names to (timestamp, value) tuples
             metric_name: Name of the metric being plotted
@@ -151,7 +143,7 @@ class EvaluationVisualizer:
         for model_name, data_points in time_series.items():
             timestamps = [point[0] for point in data_points]
             values = [point[1] for point in data_points]
-            ax.plot(timestamps, values, marker='o', label=model_name, linewidth=2)
+            ax.plot(timestamps, values, marker="o", label=model_name, linewidth=2)
 
         ax.set_title(f"{metric_name} Trends Over Time", fontsize=14, fontweight="bold")
         ax.set_ylabel(metric_name, fontsize=12)
@@ -167,19 +159,17 @@ class EvaluationVisualizer:
             plt.show()
 
     def plot_model_heatmap(
-        self,
-        results: Dict[str, Dict[str, float]],
-        output_path: Optional[Union[str, Path]] = None
+        self, results: Dict[str, Dict[str, float]], output_path: Optional[Union[str, Path]] = None
     ) -> None:
         """Create heatmap showing all metrics for all models
-        
+
         Args:
             results: Dict mapping model names to metric scores
             output_path: Path to save the chart (optional)
         """
         # Convert to DataFrame
         df = pd.DataFrame(results).T
-        
+
         fig, ax = plt.subplots(figsize=(10, 8))
         sns.heatmap(
             df,
@@ -190,7 +180,7 @@ class EvaluationVisualizer:
             vmax=1,
             cbar_kws={"label": "Score (0-1)"},
             ax=ax,
-            linewidths=0.5
+            linewidths=0.5,
         )
         ax.set_title("Model Performance Heatmap", fontsize=14, fontweight="bold")
         ax.set_xlabel("Metrics", fontsize=12)
@@ -204,18 +194,16 @@ class EvaluationVisualizer:
             plt.show()
 
     def plot_score_distribution(
-        self,
-        scores: Dict[str, List[float]],
-        output_path: Optional[Union[str, Path]] = None
+        self, scores: Dict[str, List[float]], output_path: Optional[Union[str, Path]] = None
     ) -> None:
         """Create box plot showing score distribution per model
-        
+
         Args:
             scores: Dict mapping model names to lists of scores
             output_path: Path to save the chart (optional)
         """
         fig, ax = plt.subplots(figsize=(10, 6))
-        
+
         # Prepare data for box plot
         data = []
         labels = []
@@ -224,10 +212,10 @@ class EvaluationVisualizer:
             labels.append(model_name)
 
         bp = ax.boxplot(data, labels=labels, patch_artist=True)
-        
+
         # Color the boxes
         colors = sns.color_palette("husl", len(data))
-        for patch, color in zip(bp['boxes'], colors):
+        for patch, color in zip(bp["boxes"], colors):
             patch.set_facecolor(color)
 
         ax.set_title("Score Distribution Across Models", fontsize=14, fontweight="bold")
@@ -244,12 +232,10 @@ class EvaluationVisualizer:
             plt.show()
 
     def create_dashboard(
-        self,
-        results: Dict[str, Dict[str, float]],
-        output_path: Union[str, Path]
+        self, results: Dict[str, Dict[str, float]], output_path: Union[str, Path]
     ) -> None:
         """Create comprehensive HTML dashboard with multiple visualizations
-        
+
         Args:
             results: Dict mapping model names to all metrics
             output_path: Path to save the HTML dashboard
@@ -259,40 +245,38 @@ class EvaluationVisualizer:
         # Extract benchmark and quality metrics
         benchmark_metrics = {}
         quality_metrics = {}
-        
+
         for model, metrics in results.items():
             benchmark_metrics[model] = {
-                k: v for k, v in metrics.items() 
-                if k in ["mmlu", "truthful_qa", "hellaswag"]
+                k: v for k, v in metrics.items() if k in ["mmlu", "truthful_qa", "hellaswag"]
             }
             quality_metrics[model] = {
-                k: v for k, v in metrics.items()
-                if k in ["accuracy", "coherence", "consistency"]
+                k: v for k, v in metrics.items() if k in ["accuracy", "coherence", "consistency"]
             }
 
         # Create subplots
         fig = make_subplots(
-            rows=2, cols=2,
-            subplot_titles=("Benchmark Scores", "Quality Metrics", 
-                          "Overall Comparison", "Model Rankings"),
-            specs=[
-                [{"type": "bar"}, {"type": "bar"}],
-                [{"type": "scatterpolar"}, {"type": "bar"}]
-            ]
+            rows=2,
+            cols=2,
+            subplot_titles=(
+                "Benchmark Scores",
+                "Quality Metrics",
+                "Overall Comparison",
+                "Model Rankings",
+            ),
+            specs=[[{"type": "bar"}, {"type": "bar"}], [{"type": "scatterpolar"}, {"type": "bar"}]],
         )
 
         # Add benchmark comparison
         for model, scores in benchmark_metrics.items():
             fig.add_trace(
-                go.Bar(name=model, x=list(scores.keys()), y=list(scores.values())),
-                row=1, col=1
+                go.Bar(name=model, x=list(scores.keys()), y=list(scores.values())), row=1, col=1
             )
 
         # Add quality metrics
         for model, scores in quality_metrics.items():
             fig.add_trace(
-                go.Bar(name=model, x=list(scores.keys()), y=list(scores.values())),
-                row=1, col=2
+                go.Bar(name=model, x=list(scores.keys()), y=list(scores.values())), row=1, col=2
             )
 
         # Add radar chart
@@ -300,29 +284,27 @@ class EvaluationVisualizer:
             categories = list(metrics.keys())
             values = list(metrics.values())
             fig.add_trace(
-                go.Scatterpolar(r=values, theta=categories, name=model, fill='toself'),
-                row=2, col=1
+                go.Scatterpolar(r=values, theta=categories, name=model, fill="toself"), row=2, col=1
             )
 
         # Add overall rankings
-        overall_scores = {model: np.mean(list(metrics.values())) 
-                         for model, metrics in results.items()}
+        overall_scores = {
+            model: np.mean(list(metrics.values())) for model, metrics in results.items()
+        }
         sorted_models = sorted(overall_scores.items(), key=lambda x: x[1], reverse=True)
-        
+
         fig.add_trace(
             go.Bar(
                 x=[m[0] for m in sorted_models],
                 y=[m[1] for m in sorted_models],
-                marker_color='lightblue'
+                marker_color="lightblue",
             ),
-            row=2, col=2
+            row=2,
+            col=2,
         )
 
         fig.update_layout(
-            height=1000,
-            title_text="LLM Evaluation Dashboard",
-            showlegend=True,
-            font=dict(size=10)
+            height=1000, title_text="LLM Evaluation Dashboard", showlegend=True, font=dict(size=10)
         )
 
         fig.write_html(str(output_path))
@@ -330,11 +312,10 @@ class EvaluationVisualizer:
 
 
 def quick_comparison(
-    results: Dict[str, Dict[str, float]],
-    output_dir: Union[str, Path] = "outputs"
+    results: Dict[str, Dict[str, float]], output_dir: Union[str, Path] = "outputs"
 ) -> None:
     """Generate all standard visualizations for model comparison
-    
+
     Args:
         results: Dict mapping model names to metric scores
         output_dir: Directory to save all charts
@@ -343,30 +324,25 @@ def quick_comparison(
     output_dir.mkdir(parents=True, exist_ok=True)
 
     viz = EvaluationVisualizer()
-    
+
     print("Generating benchmark comparison...")
     viz.plot_benchmark_comparison(
-        {model: {k: v for k, v in metrics.items() if "mmlu" in k or "truthful" in k or "hella" in k}
-         for model, metrics in results.items()},
-        output_path=output_dir / "benchmarks.png"
+        {
+            model: {
+                k: v for k, v in metrics.items() if "mmlu" in k or "truthful" in k or "hella" in k
+            }
+            for model, metrics in results.items()
+        },
+        output_path=output_dir / "benchmarks.png",
     )
 
     print("Generating radar chart...")
-    viz.plot_radar_chart(
-        results,
-        output_path=output_dir / "radar.html"
-    )
+    viz.plot_radar_chart(results, output_path=output_dir / "radar.html")
 
     print("Generating heatmap...")
-    viz.plot_model_heatmap(
-        results,
-        output_path=output_dir / "heatmap.png"
-    )
+    viz.plot_model_heatmap(results, output_path=output_dir / "heatmap.png")
 
     print("Generating dashboard...")
-    viz.create_dashboard(
-        results,
-        output_path=output_dir / "dashboard.html"
-    )
+    viz.create_dashboard(results, output_path=output_dir / "dashboard.html")
 
     print(f"\n✅ All visualizations saved to: {output_dir}")

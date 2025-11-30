@@ -35,17 +35,17 @@ logger = logging.getLogger(__name__)
 class HuggingFaceProvider(LLMProvider):
     """
     HuggingFace Inference API provider
-    
+
     Supports any text-generation model on HuggingFace Hub.
-    
+
     Popular models:
     - meta-llama/Meta-Llama-3-8B-Instruct
     - mistralai/Mistral-7B-Instruct-v0.2
     - google/gemma-7b-it
     - microsoft/phi-2
-    
+
     Requires HF_TOKEN environment variable or token parameter.
-    
+
     Example:
         >>> import os
         >>> os.environ["HF_TOKEN"] = "hf_..."
@@ -63,7 +63,7 @@ class HuggingFaceProvider(LLMProvider):
     ):
         """
         Initialize HuggingFace provider
-        
+
         Args:
             model: Model ID on HuggingFace Hub
             token: HuggingFace API token (or set HF_TOKEN env var)
@@ -71,19 +71,19 @@ class HuggingFaceProvider(LLMProvider):
             base_url: Custom inference endpoint URL
         """
         super().__init__(model, config)
-        
+
         self.token = token
         self.base_url = base_url
-        
+
         # Initialize HuggingFace client
         client_kwargs = {"model": model}
         if token:
             client_kwargs["token"] = token
         if base_url:
             client_kwargs["base_url"] = base_url
-            
+
         self.client = InferenceClient(**client_kwargs)
-        
+
         logger.info(f"Initialized HuggingFace provider with model: {model}")
 
     def generate(
@@ -94,58 +94,58 @@ class HuggingFaceProvider(LLMProvider):
     ) -> GenerationResult:
         """
         Generate text using HuggingFace Inference API
-        
+
         Args:
             prompt: User prompt
             system_prompt: Optional system message (prepended to prompt)
             config: Override generation config
-            
+
         Returns:
             GenerationResult with response
-            
+
         Raises:
             ProviderError: On API errors
             RateLimitError: On rate limit
             TimeoutError: On timeout
         """
         cfg = config or self.config
-        
+
         # Combine system and user prompt
         full_prompt = prompt
         if system_prompt:
             full_prompt = f"{system_prompt}\n\n{prompt}"
-        
+
         # Retry logic with exponential backoff
         last_error = None
         for attempt in range(cfg.retry_attempts):
             try:
                 start_time = time.time()
-                
+
                 # Use text_generation endpoint
                 response = self.client.text_generation(
                     prompt=full_prompt,
                     max_new_tokens=cfg.max_tokens,
                     temperature=cfg.temperature,
                     top_p=cfg.top_p,
-                    top_k=cfg.top_k if hasattr(cfg, 'top_k') else None,
+                    top_k=cfg.top_k if hasattr(cfg, "top_k") else None,
                     do_sample=cfg.temperature > 0,
                     return_full_text=False,
                     timeout=cfg.timeout_seconds,
                 )
-                
+
                 elapsed = time.time() - start_time
-                
+
                 # Extract response text
                 text = response if isinstance(response, str) else response.generated_text
-                
+
                 # Estimate token count (HF doesn't always provide this)
                 # Rough estimate: ~4 chars per token
                 estimated_tokens = len(text) // 4
-                
+
                 logger.debug(
                     f"HuggingFace generation successful: ~{estimated_tokens} tokens in {elapsed:.2f}s"
                 )
-                
+
                 return GenerationResult(
                     text=text,
                     response_time=elapsed,
@@ -157,15 +157,15 @@ class HuggingFaceProvider(LLMProvider):
                         "prompt_length": len(full_prompt),
                     },
                 )
-                
+
             except HfHubHTTPError as e:
                 last_error = e
-                
+
                 # Check error type
                 if e.response.status_code == 429:
                     # Rate limit
                     if attempt < cfg.retry_attempts - 1:
-                        wait_time = 2 ** attempt
+                        wait_time = 2**attempt
                         logger.warning(f"Rate limited, retrying in {wait_time}s...")
                         time.sleep(wait_time)
                     else:
@@ -174,13 +174,13 @@ class HuggingFaceProvider(LLMProvider):
                             original_error=e,
                             retry_after=60,
                         )
-                        
+
                 elif e.response.status_code == 404:
                     raise ModelNotFoundError(
                         message=f"Model '{self.model}' not found on HuggingFace Hub",
                         original_error=e,
                     )
-                    
+
                 elif e.response.status_code == 503:
                     # Model loading or temporarily unavailable
                     if attempt < cfg.retry_attempts - 1:
@@ -197,11 +197,11 @@ class HuggingFaceProvider(LLMProvider):
                         message=f"HuggingFace API error: {str(e)}",
                         original_error=e,
                     )
-                    
+
             except TimeoutError as e:
                 last_error = e
                 if attempt < cfg.retry_attempts - 1:
-                    wait_time = 2 ** attempt
+                    wait_time = 2**attempt
                     logger.warning(f"Timeout, retrying in {wait_time}s...")
                     time.sleep(wait_time)
                 else:
@@ -209,13 +209,13 @@ class HuggingFaceProvider(LLMProvider):
                         message=f"Request timed out after {cfg.retry_attempts} attempts",
                         original_error=e,
                     )
-                    
+
             except Exception as e:
                 raise ProviderError(
                     message=f"Unexpected error: {str(e)}",
                     original_error=e,
                 )
-        
+
         # Should not reach here
         raise ProviderError(
             message=f"Failed after {cfg.retry_attempts} attempts",
@@ -230,26 +230,26 @@ class HuggingFaceProvider(LLMProvider):
     ) -> List[GenerationResult]:
         """
         Generate responses for multiple prompts
-        
+
         Args:
             prompts: List of prompts
             system_prompt: Optional system message
             config: Override generation config
-            
+
         Returns:
             List of GenerationResults
         """
         results = []
-        
+
         for i, prompt in enumerate(prompts):
             try:
                 result = self.generate(prompt, system_prompt, config)
                 results.append(result)
-                
+
                 # Rate limiting: small delay between requests
                 if i < len(prompts) - 1:
                     time.sleep(1.0)  # HF free tier needs more delay
-                    
+
             except ProviderError as e:
                 logger.error(f"Failed to generate for prompt {i}: {e.message}")
                 # Add error result
@@ -262,13 +262,13 @@ class HuggingFaceProvider(LLMProvider):
                         metadata={"error": str(e), "provider": "huggingface"},
                     )
                 )
-        
+
         return results
 
     def is_available(self) -> bool:
         """
         Check if HuggingFace Inference API is accessible
-        
+
         Returns:
             True if model is accessible
         """
@@ -287,22 +287,22 @@ class HuggingFaceProvider(LLMProvider):
     def get_model_info(self) -> Dict[str, Union[str, int, float]]:
         """
         Get information about the current model
-        
+
         Returns:
             Dictionary with model metadata
         """
         try:
             # Try to get model info from HF Hub
             from huggingface_hub import model_info
-            
+
             info = model_info(self.model, token=self.token)
-            
+
             return {
                 "model_id": self.model,
                 "model_type": info.pipeline_tag or "text-generation",
                 "provider": "huggingface",
-                "downloads": info.downloads if hasattr(info, 'downloads') else 0,
-                "likes": info.likes if hasattr(info, 'likes') else 0,
+                "downloads": info.downloads if hasattr(info, "downloads") else 0,
+                "likes": info.likes if hasattr(info, "likes") else 0,
             }
         except Exception as e:
             logger.warning(f"Could not retrieve model info: {e}")

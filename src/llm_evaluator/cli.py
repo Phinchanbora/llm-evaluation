@@ -18,18 +18,21 @@ from llm_evaluator.providers.ollama_provider import OllamaProvider
 # Import optional providers
 try:
     from llm_evaluator.providers.openai_provider import OpenAIProvider
+
     HAS_OPENAI = True
 except ImportError:
     HAS_OPENAI = False
 
 try:
     from llm_evaluator.providers.anthropic_provider import AnthropicProvider
+
     HAS_ANTHROPIC = True
 except ImportError:
     HAS_ANTHROPIC = False
 
 try:
     from llm_evaluator.providers.huggingface_provider import HuggingFaceProvider
+
     HAS_HUGGINGFACE = True
 except ImportError:
     HAS_HUGGINGFACE = False
@@ -42,9 +45,9 @@ from llm_evaluator.providers.cached_provider import CachedProvider
 def cli():
     """
     🚀 LLM Evaluation Suite - Command Line Interface
-    
+
     Evaluate, compare, and visualize LLM performance across multiple models and benchmarks.
-    
+
     Examples:
         llm-eval run --model llama3.2:1b
         llm-eval compare --models llama3.2,mistral:7b
@@ -55,7 +58,7 @@ def cli():
 
 def create_provider(model: str, provider_type: str, cache: bool = False):
     """Create provider instance based on type"""
-    
+
     if provider_type == "ollama":
         base_provider = OllamaProvider(model=model)
     elif provider_type == "openai":
@@ -70,13 +73,15 @@ def create_provider(model: str, provider_type: str, cache: bool = False):
         base_provider = AnthropicProvider(model=model)
     elif provider_type == "huggingface":
         if not HAS_HUGGINGFACE:
-            click.echo("❌ HuggingFace provider not installed. Run: pip install huggingface-hub", err=True)
+            click.echo(
+                "❌ HuggingFace provider not installed. Run: pip install huggingface-hub", err=True
+            )
             sys.exit(1)
         base_provider = HuggingFaceProvider(model=model)
     else:
         click.echo(f"❌ Unknown provider: {provider_type}", err=True)
         sys.exit(1)
-    
+
     # Wrap with cache if requested
     if cache:
         return CachedProvider(base_provider)
@@ -85,44 +90,48 @@ def create_provider(model: str, provider_type: str, cache: bool = False):
 
 @cli.command()
 @click.option("--model", "-m", default="llama3.2:1b", help="Model name")
-@click.option("--provider", "-p", default="ollama", 
-              type=click.Choice(["ollama", "openai", "anthropic", "huggingface"]),
-              help="Provider type")
+@click.option(
+    "--provider",
+    "-p",
+    default="ollama",
+    type=click.Choice(["ollama", "openai", "anthropic", "huggingface"]),
+    help="Provider type",
+)
 @click.option("--cache/--no-cache", default=True, help="Enable caching")
 @click.option("--output", "-o", default="evaluation_report.md", help="Output file")
 def run(model: str, provider: str, cache: bool, output: str):
     """
     Run full evaluation on a single model
-    
+
     Example:
         llm-eval run --model llama3.2:1b --provider ollama
     """
     click.echo(f"🚀 Running evaluation on {model} ({provider})")
-    
+
     # Create provider
     llm_provider = create_provider(model, provider, cache)
-    
+
     # Check availability
     if not llm_provider.is_available():
         click.echo(f"❌ Provider not available. Is {provider} running?", err=True)
         sys.exit(1)
-    
+
     # Run evaluation
     evaluator = ModelEvaluator(provider=llm_provider)
-    
+
     with click.progressbar(length=3, label="Evaluating") as bar:
         bar.update(1)
         results = evaluator.evaluate_all()
         bar.update(2)
-    
+
     # Generate report
     evaluator.generate_report(results, output)
-    
+
     # Print summary
     click.echo("\n✅ Evaluation complete!")
     click.echo(f"📊 Overall Score: {results.overall_score:.1%}")
     click.echo(f"📄 Report saved to: {output}")
-    
+
     # Show cache stats if caching enabled
     if cache and isinstance(llm_provider, CachedProvider):
         stats = llm_provider.get_cache_stats()
@@ -133,114 +142,133 @@ def run(model: str, provider: str, cache: bool, output: str):
 
 @cli.command()
 @click.option("--models", "-m", required=True, help="Comma-separated model names")
-@click.option("--provider", "-p", default="ollama",
-              type=click.Choice(["ollama", "openai", "anthropic", "huggingface"]),
-              help="Provider type (same for all models)")
+@click.option(
+    "--provider",
+    "-p",
+    default="ollama",
+    type=click.Choice(["ollama", "openai", "anthropic", "huggingface"]),
+    help="Provider type (same for all models)",
+)
 @click.option("--cache/--no-cache", default=True, help="Enable caching")
 @click.option("--output", "-o", default="comparison.json", help="Output JSON file")
 def compare(models: str, provider: str, cache: bool, output: str):
     """
     Compare multiple models side-by-side
-    
+
     Example:
         llm-eval compare --models llama3.2:1b,mistral:7b --provider ollama
     """
     model_list = [m.strip() for m in models.split(",")]
-    
+
     click.echo(f"🔄 Comparing {len(model_list)} models: {', '.join(model_list)}")
-    
+
     results = {}
-    
+
     for model in model_list:
         click.echo(f"\n📊 Evaluating {model}...")
-        
+
         llm_provider = create_provider(model, provider, cache)
-        
+
         if not llm_provider.is_available():
             click.echo(f"⚠️  {model} not available, skipping", err=True)
             continue
-        
+
         evaluator = ModelEvaluator(provider=llm_provider)
         eval_results = evaluator.evaluate_all()
-        
+
         results[model] = {
             "overall_score": eval_results.overall_score,
             "accuracy": eval_results.accuracy,
             "avg_response_time": eval_results.avg_response_time,
             "coherence_score": eval_results.coherence_score,
         }
-        
+
         click.echo(f"   Overall: {eval_results.overall_score:.1%}")
-    
+
     # Save results
     Path(output).write_text(json.dumps(results, indent=2))
-    
+
     # Print comparison table
     click.echo("\n📊 Comparison Results:")
     click.echo(f"{'Model':<30} {'Score':<10} {'Accuracy':<10} {'Speed (s)':<12}")
     click.echo("=" * 70)
-    
-    for model_name, data in sorted(results.items(), key=lambda x: x[1]["overall_score"], reverse=True):
+
+    for model_name, data in sorted(
+        results.items(), key=lambda x: x[1]["overall_score"], reverse=True
+    ):
         click.echo(
             f"{model_name:<30} "
             f"{data['overall_score']:<10.1%} "
             f"{data['accuracy']:<10.1%} "
             f"{data['avg_response_time']:<12.2f}"
         )
-    
+
     click.echo(f"\n✅ Results saved to: {output}")
 
 
 @cli.command()
 @click.option("--model", "-m", default="llama3.2:1b", help="Model name")
-@click.option("--provider", "-p", default="ollama",
-              type=click.Choice(["ollama", "openai", "anthropic", "huggingface"]),
-              help="Provider type")
-@click.option("--benchmarks", "-b", default="mmlu,truthfulqa,hellaswag",
-              help="Comma-separated benchmark names")
+@click.option(
+    "--provider",
+    "-p",
+    default="ollama",
+    type=click.Choice(["ollama", "openai", "anthropic", "huggingface"]),
+    help="Provider type",
+)
+@click.option(
+    "--benchmarks",
+    "-b",
+    default="mmlu,truthfulqa,hellaswag",
+    help="Comma-separated benchmark names",
+)
 @click.option("--sample-size", "-s", type=int, help="Sample size (None = demo mode)")
 @click.option("--full", is_flag=True, help="Run full benchmarks (24,901 questions)")
 @click.option("--cache/--no-cache", default=True, help="Enable caching")
 @click.option("--output", "-o", default="benchmark_results.json", help="Output file")
-def benchmark(model: str, provider: str, benchmarks: str, sample_size: Optional[int], 
-              full: bool, cache: bool, output: str):
+def benchmark(
+    model: str,
+    provider: str,
+    benchmarks: str,
+    sample_size: Optional[int],
+    full: bool,
+    cache: bool,
+    output: str,
+):
     """
     Run specific benchmarks on a model
-    
+
     Examples:
         llm-eval benchmark --model llama3.2:1b --benchmarks mmlu
         llm-eval benchmark --model gpt-3.5-turbo --provider openai --sample-size 100
         llm-eval benchmark --model llama3.2:1b --full  # Warning: takes hours!
     """
     click.echo(f"📊 Running benchmarks on {model} ({provider})")
-    
+
     if full and not click.confirm("⚠️  Full benchmarks take 2-8 hours. Continue?"):
         click.echo("Aborted.")
         sys.exit(0)
-    
+
     # Create provider
     llm_provider = create_provider(model, provider, cache)
-    
+
     if not llm_provider.is_available():
         click.echo(f"❌ Provider not available. Is {provider} running?", err=True)
         sys.exit(1)
-    
+
     # Setup benchmark runner
     use_full = full or (sample_size is not None)
     runner = BenchmarkRunner(
-        provider=llm_provider,
-        use_full_datasets=use_full,
-        sample_size=None if full else sample_size
+        provider=llm_provider, use_full_datasets=use_full, sample_size=None if full else sample_size
     )
-    
+
     # Parse benchmarks
     benchmark_list = [b.strip() for b in benchmarks.split(",")]
-    
+
     results = {}
-    
+
     for bench in benchmark_list:
         click.echo(f"\n🎯 Running {bench.upper()}...")
-        
+
         if bench == "mmlu":
             results["mmlu"] = runner.run_mmlu_sample()
         elif bench == "truthfulqa":
@@ -250,16 +278,16 @@ def benchmark(model: str, provider: str, benchmarks: str, sample_size: Optional[
         else:
             click.echo(f"⚠️  Unknown benchmark: {bench}", err=True)
             continue
-        
+
         # Print result
         accuracy_key = f"{bench}_accuracy" if bench != "truthfulqa" else "truthfulness_score"
         if accuracy_key in results[bench]:
             click.echo(f"   Accuracy: {results[bench][accuracy_key]:.1%}")
-    
+
     # Save results
     Path(output).write_text(json.dumps(results, indent=2))
     click.echo(f"\n✅ Results saved to: {output}")
-    
+
     # Show cache stats
     if cache and isinstance(llm_provider, CachedProvider):
         stats = llm_provider.get_cache_stats()
@@ -272,16 +300,16 @@ def benchmark(model: str, provider: str, benchmarks: str, sample_size: Optional[
 def visualize(results_file: str, output: str):
     """
     Generate interactive visualizations from results
-    
+
     Example:
         llm-eval visualize comparison.json --output dashboard.html
     """
     click.echo(f"📈 Generating visualizations from {results_file}")
-    
+
     # TODO: Implement visualization generation
     # This would use the visualizations.py module to create charts
     # data = json.loads(Path(results_file).read_text())
-    
+
     click.echo("⚠️  Visualization feature coming soon!")
     click.echo("For now, use: from llm_evaluator.visualizations import EvaluationVisualizer")
 
@@ -290,14 +318,14 @@ def visualize(results_file: str, output: str):
 def providers():
     """List available providers and their status"""
     click.echo("🔌 Available Providers:\n")
-    
+
     providers_status = [
         ("ollama", True, "Local LLMs (llama3.2, mistral, etc.)"),
         ("openai", HAS_OPENAI, "GPT-3.5, GPT-4 (pip install openai)"),
         ("anthropic", HAS_ANTHROPIC, "Claude 3/3.5 (pip install anthropic)"),
         ("huggingface", HAS_HUGGINGFACE, "Inference API (pip install huggingface-hub)"),
     ]
-    
+
     for name, available, description in providers_status:
         status = "✅" if available else "❌"
         click.echo(f"{status} {name:<15} - {description}")

@@ -14,7 +14,7 @@ import json
 @dataclass
 class SystemInfo:
     """System information for benchmark reproducibility"""
-    
+
     # Hardware
     cpu_model: str
     cpu_cores: int
@@ -22,35 +22,35 @@ class SystemInfo:
     ram_total_gb: float
     gpu_info: Optional[str]
     gpu_vram_gb: Optional[float]
-    
+
     # Software
     os_name: str
     os_version: str
     python_version: str
     ollama_version: Optional[str]
-    
+
     # Runtime
     timestamp: str
-    
+
     def to_dict(self) -> Dict:
         """Convert to dictionary"""
         return asdict(self)
-    
+
     def to_json(self) -> str:
         """Convert to JSON string"""
         return json.dumps(self.to_dict(), indent=2)
-    
+
     def to_markdown(self) -> str:
         """Convert to markdown format"""
         gpu_line = f"{self.gpu_info}" if self.gpu_info else "None detected"
         if self.gpu_vram_gb:
             gpu_line += f" ({self.gpu_vram_gb:.1f} GB VRAM)"
-        
+
         # Add note if CPU name suggests more cores than detected
         cpu_line = f"{self.cpu_model}"
         if "16-Core" in self.cpu_model and self.cpu_cores < 16:
             cpu_line += f" (⚠️ Only {self.cpu_cores} cores detected by OS)"
-        
+
         return f"""
 ## System Information
 
@@ -75,8 +75,10 @@ def get_cpu_model() -> str:
     try:
         if platform.system() == "Windows":
             import winreg
-            key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, 
-                                r"HARDWARE\DESCRIPTION\System\CentralProcessor\0")
+
+            key = winreg.OpenKey(
+                winreg.HKEY_LOCAL_MACHINE, r"HARDWARE\DESCRIPTION\System\CentralProcessor\0"
+            )
             cpu_name = winreg.QueryValueEx(key, "ProcessorNameString")[0]
             winreg.CloseKey(key)
             return cpu_name.strip()
@@ -87,19 +89,18 @@ def get_cpu_model() -> str:
                         return line.split(":")[1].strip()
         elif platform.system() == "Darwin":  # macOS
             result = subprocess.run(
-                ["sysctl", "-n", "machdep.cpu.brand_string"],
-                capture_output=True, text=True
+                ["sysctl", "-n", "machdep.cpu.brand_string"], capture_output=True, text=True
             )
             return result.stdout.strip()
     except Exception:
         pass
-    
+
     return platform.processor() or "Unknown"
 
 
 def get_gpu_info() -> tuple[Optional[str], Optional[float]]:
     """Get GPU information if available
-    
+
     Returns:
         (gpu_name, vram_gb) tuple
     """
@@ -107,7 +108,9 @@ def get_gpu_info() -> tuple[Optional[str], Optional[float]]:
     try:
         result = subprocess.run(
             ["nvidia-smi", "--query-gpu=name,memory.total", "--format=csv,noheader"],
-            capture_output=True, text=True, timeout=5
+            capture_output=True,
+            text=True,
+            timeout=5,
         )
         if result.returncode == 0:
             lines = result.stdout.strip().split("\n")
@@ -120,12 +123,11 @@ def get_gpu_info() -> tuple[Optional[str], Optional[float]]:
                 return gpu_name, vram_gb
     except (FileNotFoundError, subprocess.TimeoutExpired, ValueError):
         pass
-    
+
     # Try AMD rocm-smi
     try:
         result = subprocess.run(
-            ["rocm-smi", "--showproductname"],
-            capture_output=True, text=True, timeout=5
+            ["rocm-smi", "--showproductname"], capture_output=True, text=True, timeout=5
         )
         if result.returncode == 0:
             lines = result.stdout.strip().split("\n")
@@ -134,65 +136,61 @@ def get_gpu_info() -> tuple[Optional[str], Optional[float]]:
                     return line.strip(), None
     except (FileNotFoundError, subprocess.TimeoutExpired):
         pass
-    
+
     # macOS Metal (Apple Silicon)
     if platform.system() == "Darwin":
         try:
             result = subprocess.run(
-                ["system_profiler", "SPDisplaysDataType"],
-                capture_output=True, text=True, timeout=5
+                ["system_profiler", "SPDisplaysDataType"], capture_output=True, text=True, timeout=5
             )
             if "Apple" in result.stdout:
                 return "Apple Silicon (Metal)", None
         except (FileNotFoundError, subprocess.TimeoutExpired):
             pass
-    
+
     return None, None
 
 
 def get_ollama_version() -> Optional[str]:
     """Get Ollama version if installed"""
     try:
-        result = subprocess.run(
-            ["ollama", "--version"],
-            capture_output=True, text=True, timeout=5
-        )
+        result = subprocess.run(["ollama", "--version"], capture_output=True, text=True, timeout=5)
         if result.returncode == 0:
             return result.stdout.strip().replace("ollama version ", "")
     except (FileNotFoundError, subprocess.TimeoutExpired):
         pass
-    
+
     return None
 
 
 def collect_system_info() -> SystemInfo:
     """Collect all system information"""
-    
+
     # CPU info
     cpu_model = get_cpu_model()
     cpu_cores = psutil.cpu_count(logical=False) or 0  # Physical cores
     cpu_threads = psutil.cpu_count(logical=True) or 0  # Logical processors (threads)
-    
+
     # RAM info
     ram_bytes = psutil.virtual_memory().total
-    ram_gb = ram_bytes / (1024 ** 3)
-    
+    ram_gb = ram_bytes / (1024**3)
+
     # GPU info
     gpu_info, gpu_vram_gb = get_gpu_info()
-    
+
     # OS info
     os_name = platform.system()
     os_version = platform.release()
-    
+
     # Python version
     python_version = platform.python_version()
-    
+
     # Ollama version
     ollama_version = get_ollama_version()
-    
+
     # Timestamp
     timestamp = datetime.now().isoformat()
-    
+
     return SystemInfo(
         cpu_model=cpu_model,
         cpu_cores=cpu_cores,
@@ -204,7 +202,7 @@ def collect_system_info() -> SystemInfo:
         os_version=os_version,
         python_version=python_version,
         ollama_version=ollama_version,
-        timestamp=timestamp
+        timestamp=timestamp,
     )
 
 

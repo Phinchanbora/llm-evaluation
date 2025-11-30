@@ -12,84 +12,63 @@ from pathlib import Path
 class EvaluatorConfig(BaseSettings):
     """
     Main evaluator configuration settings
-    
+
     Loads from environment variables or .env file
     """
-    
+
     # Model Configuration
-    default_model: str = Field(
-        default="llama3.2:1b",
-        description="Default LLM model to evaluate"
-    )
-    
+    default_model: str = Field(default="llama3.2:1b", description="Default LLM model to evaluate")
+
     default_provider: Literal["ollama", "openai", "anthropic"] = Field(
-        default="ollama",
-        description="Default LLM provider"
+        default="ollama", description="Default LLM provider"
     )
-    
+
     # Generation Settings
     default_temperature: float = Field(
-        default=0.7,
-        ge=0.0,
-        le=2.0,
-        description="Default temperature for generation"
+        default=0.7, ge=0.0, le=2.0, description="Default temperature for generation"
     )
-    
+
     default_max_tokens: int = Field(
-        default=500,
-        gt=0,
-        description="Default max tokens per response"
+        default=500, gt=0, description="Default max tokens per response"
     )
-    
-    default_timeout: int = Field(
-        default=30,
-        gt=0,
-        description="Default timeout in seconds"
-    )
-    
+
+    default_timeout: int = Field(default=30, gt=0, description="Default timeout in seconds")
+
     default_retry_attempts: int = Field(
-        default=3,
-        ge=1,
-        le=10,
-        description="Default number of retry attempts"
+        default=3, ge=1, le=10, description="Default number of retry attempts"
     )
-    
+
     # Evaluation Settings
     performance_samples: int = Field(
-        default=10,
-        gt=0,
-        description="Number of samples for performance evaluation"
+        default=10, gt=0, description="Number of samples for performance evaluation"
     )
-    
+
     # Logging
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = Field(
-        default="INFO",
-        description="Logging level"
+        default="INFO", description="Logging level"
     )
-    
+
     log_file: Optional[Path] = Field(
-        default=None,
-        description="Log file path (None for console only)"
+        default=None, description="Log file path (None for console only)"
     )
-    
+
     # Output Settings
     output_dir: Path = Field(
         default=Path("outputs"),
-        description="Default output directory for reports and visualizations"
+        description="Default output directory for reports and visualizations",
     )
-    
+
     # Environment
     environment: Literal["dev", "test", "prod"] = Field(
-        default="dev",
-        description="Runtime environment"
+        default="dev", description="Runtime environment"
     )
-    
+
     @validator("output_dir")
     def create_output_dir(cls, v: Path) -> Path:
         """Ensure output directory exists"""
         v.mkdir(parents=True, exist_ok=True)
         return v
-    
+
     class Config:
         env_prefix = "LLM_EVAL_"
         env_file = ".env"
@@ -100,22 +79,17 @@ class OllamaConfig(BaseSettings):
     """
     Ollama-specific configuration
     """
-    
-    base_url: str = Field(
-        default="http://localhost:11434",
-        description="Ollama server URL"
-    )
-    
+
+    base_url: str = Field(default="http://localhost:11434", description="Ollama server URL")
+
     pull_missing_models: bool = Field(
-        default=False,
-        description="Automatically pull missing models"
+        default=False, description="Automatically pull missing models"
     )
-    
+
     keep_alive: Optional[str] = Field(
-        default=None,
-        description="Keep model in memory duration (e.g., '5m', '1h')"
+        default=None, description="Keep model in memory duration (e.g., '5m', '1h')"
     )
-    
+
     class Config:
         env_prefix = "OLLAMA_"
         env_file = ".env"
@@ -126,29 +100,27 @@ class BenchmarkConfig(BaseSettings):
     """
     Benchmark configuration
     """
-    
+
     use_demo_benchmarks: bool = Field(
-        default=True,
-        description="Use demo benchmarks (fast) or real datasets (slow)"
+        default=True, description="Use demo benchmarks (fast) or real datasets (slow)"
     )
-    
+
     mmlu_subset: Optional[str] = Field(
-        default=None,
-        description="MMLU subset to use (e.g., 'abstract_algebra')"
+        default=None, description="MMLU subset to use (e.g., 'abstract_algebra')"
     )
-    
+
     cache_dir: Optional[Path] = Field(
         default=Path("~/.cache/llm_evaluator").expanduser(),
-        description="Cache directory for downloaded datasets"
+        description="Cache directory for downloaded datasets",
     )
-    
+
     @validator("cache_dir")
     def create_cache_dir(cls, v: Path) -> Path:
         """Ensure cache directory exists"""
         if v:
             v.mkdir(parents=True, exist_ok=True)
         return v
-    
+
     class Config:
         env_prefix = "BENCHMARK_"
         env_file = ".env"

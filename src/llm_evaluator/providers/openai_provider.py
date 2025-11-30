@@ -12,9 +12,7 @@ from typing import Dict, List, Optional, Union
 try:
     from openai import OpenAI, APIError, RateLimitError as OpenAIRateLimitError, APITimeoutError
 except ImportError:
-    raise ImportError(
-        "OpenAI provider requires 'openai' package. Install with: pip install openai"
-    )
+    raise ImportError("OpenAI provider requires 'openai' package. Install with: pip install openai")
 
 from . import (
     LLMProvider,
@@ -33,13 +31,13 @@ logger = logging.getLogger(__name__)
 class OpenAIProvider(LLMProvider):
     """
     OpenAI provider for GPT models
-    
+
     Supports:
     - GPT-4 (gpt-4, gpt-4-turbo, gpt-4o)
     - GPT-3.5 (gpt-3.5-turbo)
-    
+
     Requires OPENAI_API_KEY environment variable or api_key parameter.
-    
+
     Example:
         >>> import os
         >>> os.environ["OPENAI_API_KEY"] = "sk-..."
@@ -68,7 +66,7 @@ class OpenAIProvider(LLMProvider):
     ):
         """
         Initialize OpenAI provider
-        
+
         Args:
             model: Model name (e.g., "gpt-3.5-turbo", "gpt-4")
             api_key: OpenAI API key (or set OPENAI_API_KEY env var)
@@ -77,18 +75,18 @@ class OpenAIProvider(LLMProvider):
             organization: OpenAI organization ID
         """
         super().__init__(model, config)
-        
+
         self.api_key = api_key
         self.base_url = base_url
         self.organization = organization
-        
+
         # Initialize OpenAI client
         self.client = OpenAI(
             api_key=api_key,
             base_url=base_url,
             organization=organization,
         )
-        
+
         logger.info(f"Initialized OpenAI provider with model: {model}")
 
     def generate(
@@ -99,34 +97,34 @@ class OpenAIProvider(LLMProvider):
     ) -> GenerationResult:
         """
         Generate text using OpenAI API
-        
+
         Args:
             prompt: User prompt
             system_prompt: Optional system message
             config: Override generation config
-            
+
         Returns:
             GenerationResult with response
-            
+
         Raises:
             ProviderError: On API errors
             RateLimitError: On rate limit
             TimeoutError: On timeout
         """
         cfg = config or self.config
-        
+
         # Build messages
         messages = []
         if system_prompt:
             messages.append({"role": "system", "content": system_prompt})
         messages.append({"role": "user", "content": prompt})
-        
+
         # Retry logic with exponential backoff
         last_error = None
         for attempt in range(cfg.retry_attempts):
             try:
                 start_time = time.time()
-                
+
                 response = self.client.chat.completions.create(
                     model=self.model,
                     messages=messages,
@@ -135,23 +133,23 @@ class OpenAIProvider(LLMProvider):
                     top_p=cfg.top_p,
                     timeout=cfg.timeout_seconds,
                 )
-                
+
                 elapsed = time.time() - start_time
-                
+
                 # Extract response
                 choice = response.choices[0]
                 text = choice.message.content or ""
-                
+
                 # Token counts
                 usage = response.usage
                 prompt_tokens = usage.prompt_tokens if usage else 0
                 completion_tokens = usage.completion_tokens if usage else 0
                 total_tokens = usage.total_tokens if usage else 0
-                
+
                 logger.debug(
                     f"OpenAI generation successful: {total_tokens} tokens in {elapsed:.2f}s"
                 )
-                
+
                 return GenerationResult(
                     text=text,
                     response_time=elapsed,
@@ -165,11 +163,11 @@ class OpenAIProvider(LLMProvider):
                         "provider": "openai",
                     },
                 )
-                
+
             except OpenAIRateLimitError as e:
                 last_error = e
                 if attempt < cfg.retry_attempts - 1:
-                    wait_time = 2 ** attempt
+                    wait_time = 2**attempt
                     logger.warning(f"Rate limited, retrying in {wait_time}s...")
                     time.sleep(wait_time)
                 else:
@@ -178,11 +176,11 @@ class OpenAIProvider(LLMProvider):
                         original_error=e,
                         retry_after=60,
                     )
-                    
+
             except APITimeoutError as e:
                 last_error = e
                 if attempt < cfg.retry_attempts - 1:
-                    wait_time = 2 ** attempt
+                    wait_time = 2**attempt
                     logger.warning(f"Timeout, retrying in {wait_time}s...")
                     time.sleep(wait_time)
                 else:
@@ -190,7 +188,7 @@ class OpenAIProvider(LLMProvider):
                         message=f"Request timed out after {cfg.retry_attempts} attempts",
                         original_error=e,
                     )
-                    
+
             except APIError as e:
                 # Check if it's a model not found error
                 if "model" in str(e).lower() and "not found" in str(e).lower():
@@ -203,13 +201,13 @@ class OpenAIProvider(LLMProvider):
                         message=f"OpenAI API error: {str(e)}",
                         original_error=e,
                     )
-                    
+
             except Exception as e:
                 raise ProviderError(
                     message=f"Unexpected error: {str(e)}",
                     original_error=e,
                 )
-        
+
         # Should not reach here
         raise ProviderError(
             message=f"Failed after {cfg.retry_attempts} attempts",
@@ -224,29 +222,29 @@ class OpenAIProvider(LLMProvider):
     ) -> List[GenerationResult]:
         """
         Generate responses for multiple prompts
-        
+
         Note: OpenAI doesn't have native batch API for chat completions,
         so we process sequentially with rate limiting.
-        
+
         Args:
             prompts: List of prompts
             system_prompt: Optional system message
             config: Override generation config
-            
+
         Returns:
             List of GenerationResults
         """
         results = []
-        
+
         for i, prompt in enumerate(prompts):
             try:
                 result = self.generate(prompt, system_prompt, config)
                 results.append(result)
-                
+
                 # Rate limiting: small delay between requests
                 if i < len(prompts) - 1:
                     time.sleep(0.5)
-                    
+
             except ProviderError as e:
                 logger.error(f"Failed to generate for prompt {i}: {e.message}")
                 # Add error result
@@ -259,13 +257,13 @@ class OpenAIProvider(LLMProvider):
                         metadata={"error": str(e), "provider": "openai"},
                     )
                 )
-        
+
         return results
 
     def is_available(self) -> bool:
         """
         Check if OpenAI API is accessible
-        
+
         Returns:
             True if API key is valid and service is reachable
         """
@@ -280,13 +278,13 @@ class OpenAIProvider(LLMProvider):
     def get_model_info(self) -> Dict[str, Union[str, int, float]]:
         """
         Get information about the current model
-        
+
         Returns:
             Dictionary with model metadata
         """
         try:
             model_info = self.client.models.retrieve(self.model)
-            
+
             return {
                 "model_id": model_info.id,
                 "owned_by": model_info.owned_by,

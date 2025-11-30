@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class DetailedMetrics:
     """Strongly typed detailed metrics (no Any types)"""
-    
+
     performance: Dict[str, float] = field(default_factory=lambda: {})
     quality: Dict[str, float] = field(default_factory=lambda: {})
     benchmarks: Dict[str, float] = field(default_factory=lambda: {})
@@ -47,7 +47,7 @@ class EvaluationResults:
 class ModelEvaluator:
     """
     Comprehensive LLM evaluation framework with Dependency Injection
-    
+
     Refactored to use LLMProvider interface, enabling:
     - Easy provider swapping (Ollama, OpenAI, etc.)
     - Proper testing with mocks
@@ -67,13 +67,11 @@ class ModelEvaluator:
     """
 
     def __init__(
-        self, 
-        provider: Optional[LLMProvider] = None,
-        config: Optional[GenerationConfig] = None
+        self, provider: Optional[LLMProvider] = None, config: Optional[GenerationConfig] = None
     ):
         """
         Initialize evaluator with dependency injection
-        
+
         Args:
             provider: LLM provider instance (defaults to Ollama)
             config: Generation configuration
@@ -88,7 +86,7 @@ class ModelEvaluator:
     def chat(self, prompt: str) -> tuple[str, float]:
         """
         Send prompt to LLM and return response with timing
-        
+
         Now uses provider abstraction with error handling
 
         Args:
@@ -96,7 +94,7 @@ class ModelEvaluator:
 
         Returns:
             (response_text, response_time_in_seconds)
-            
+
         Raises:
             ProviderError: If generation fails after retries
         """
@@ -110,7 +108,7 @@ class ModelEvaluator:
     def evaluate_performance(self, num_samples: int = 10) -> Dict[str, float]:
         """
         Evaluate performance metrics: response time, token efficiency
-        
+
         Now uses batch generation for better performance
 
         Args:
@@ -118,7 +116,7 @@ class ModelEvaluator:
 
         Returns:
             Dictionary with performance metrics
-            
+
         Raises:
             ProviderError: If generation fails
         """
@@ -138,7 +136,7 @@ class ModelEvaluator:
         try:
             # Use batch generation for better efficiency
             results = self.provider.generate_batch(test_prompts, self.config)
-            
+
             response_times = [r.response_time for r in results]
             token_counts = [r.token_count or len(r.text) / 4 for r in results]  # Fallback estimate
 
@@ -156,7 +154,7 @@ class ModelEvaluator:
     def evaluate_quality(self, test_set: Optional[List[Dict[str, str]]] = None) -> Dict[str, float]:
         """
         Evaluate quality metrics: accuracy, coherence, hallucination
-        
+
         Uses provider interface with error handling
 
         Args:
@@ -164,7 +162,7 @@ class ModelEvaluator:
 
         Returns:
             Dictionary with quality metrics
-            
+
         Raises:
             ProviderError: If generation fails
         """
@@ -235,31 +233,32 @@ class ModelEvaluator:
     def evaluate_all(self) -> EvaluationResults:
         """
         Run comprehensive evaluation across all metrics with system info
-        
+
         With proper error handling and logging
 
         Returns:
             EvaluationResults object with all metrics and system information
-            
+
         Raises:
             ProviderError: If evaluation fails
         """
         # Collect system information
         from .system_info import collect_system_info
+
         system_info = collect_system_info()
-        
+
         model_name = self.provider.model
         logger.info(f"Starting comprehensive evaluation for {model_name}")
-        
+
         print(f"\n🔍 Evaluating {model_name}...")
         print("=" * 60)
-        
+
         # Print system info
         print(system_info.to_markdown())
         print("=" * 60)
 
         errors: List[str] = []
-        
+
         # Performance metrics
         print("\n📊 Performance Metrics...")
         try:
@@ -276,7 +275,11 @@ class ModelEvaluator:
         except ProviderError as e:
             logger.error(f"Quality evaluation failed: {e}")
             errors.append(f"Quality: {str(e)}")
-            quality_metrics: Dict[str, float] = {"accuracy": 0.0, "coherence_score": 0.0, "hallucination_rate": 1.0}
+            quality_metrics: Dict[str, float] = {
+                "accuracy": 0.0,
+                "coherence_score": 0.0,
+                "hallucination_rate": 1.0,
+            }
 
         # Calculate overall score
         # Normalize and combine metrics
@@ -303,12 +306,9 @@ class ModelEvaluator:
             coherence_score=quality_metrics["coherence_score"],
             overall_score=overall_score,
             detailed_metrics=DetailedMetrics(
-                performance=perf_metrics,
-                quality=quality_metrics,
-                benchmarks={},
-                errors=errors
+                performance=perf_metrics, quality=quality_metrics, benchmarks={}, errors=errors
             ),
-            system_info=system_info.to_dict()
+            system_info=system_info.to_dict(),
         )
 
         # Print summary
@@ -321,14 +321,14 @@ class ModelEvaluator:
         print(f"  Hallucination Rate: {results.hallucination_rate:.1%}")
         print(f"  Coherence Score:   {results.coherence_score:.1%}")
         print(f"  Overall Score:     {results.overall_score:.2f}/1.00")
-        
+
         if errors:
             print(f"\n⚠️  Errors encountered: {len(errors)}")
             for error in errors:
                 print(f"    - {error}")
-        
+
         print("=" * 60 + "\n")
-        
+
         logger.info(f"Evaluation completed: {model_name} scored {overall_score:.2f}")
 
         return results
@@ -336,27 +336,28 @@ class ModelEvaluator:
     def generate_report(self, results: EvaluationResults, output: str = "report.md"):
         """
         Generate markdown report from evaluation results with system info
-        
+
         Args:
             results: Evaluation results to report
             output: Output file path
         """
         logger.info(f"Generating report: {output}")
-        
+
         # Build error section outside f-string to avoid Python 3.11 syntax issues
         error_section = ""
         if results.detailed_metrics.errors:
-            newline = '\n'
-            errors_list = newline.join(f'- {e}' for e in results.detailed_metrics.errors)
-            error_section = f'## Errors\n\n{errors_list}'
-        
+            newline = "\n"
+            errors_list = newline.join(f"- {e}" for e in results.detailed_metrics.errors)
+            error_section = f"## Errors\n\n{errors_list}"
+
         # Build system info section
         system_section = ""
         if results.system_info:
             from .system_info import SystemInfo
+
             sys_info = SystemInfo(**results.system_info)
             system_section = sys_info.to_markdown()
-        
+
         report = f"""# Evaluation Report: {results.model_name}
 
 ## Summary
@@ -400,7 +401,7 @@ Generated by LLM Evaluator v0.2.0
 if __name__ == "__main__":
     # Quick demo with new provider architecture
     from .providers.ollama_provider import OllamaProvider
-    
+
     provider = OllamaProvider(model="llama3.2:1b")
     evaluator = ModelEvaluator(provider=provider)
     results = evaluator.evaluate_all()

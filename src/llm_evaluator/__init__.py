@@ -13,7 +13,7 @@ Key Features:
 Quick Start:
     >>> from llm_evaluator import ModelEvaluator
     >>> from llm_evaluator.providers.ollama_provider import OllamaProvider
-    >>> 
+    >>>
     >>> provider = OllamaProvider(model="llama3.2:1b")
     >>> evaluator = ModelEvaluator(provider=provider)
     >>> results = evaluator.evaluate_all()
@@ -23,16 +23,16 @@ Quick Start:
 Advanced Usage:
     >>> # Compare multiple models
     >>> from llm_evaluator import quick_comparison
-    >>> 
+    >>>
     >>> results = {
     ...     "llama3.2:1b": {"mmlu": 0.65, "accuracy": 0.75},
     ...     "mistral:7b": {"mmlu": 0.78, "accuracy": 0.82}
     ... }
     >>> quick_comparison(results, output_dir="outputs")
-    
+
     >>> # Full benchmark evaluation
     >>> from llm_evaluator.benchmarks import BenchmarkRunner
-    >>> 
+    >>>
     >>> runner = BenchmarkRunner(provider, use_full_datasets=True, sample_size=100)
     >>> benchmark_results = runner.run_all_benchmarks()
     >>> print(f"MMLU: {benchmark_results['mmlu_accuracy']:.1%}")

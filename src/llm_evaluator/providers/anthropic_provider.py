@@ -10,7 +10,12 @@ import time
 from typing import Dict, List, Optional, Union
 
 try:
-    from anthropic import Anthropic, APIError, RateLimitError as AnthropicRateLimitError, APITimeoutError
+    from anthropic import (
+        Anthropic,
+        APIError,
+        RateLimitError as AnthropicRateLimitError,
+        APITimeoutError,
+    )
 except ImportError:
     raise ImportError(
         "Anthropic provider requires 'anthropic' package. Install with: pip install anthropic"
@@ -33,15 +38,15 @@ logger = logging.getLogger(__name__)
 class AnthropicProvider(LLMProvider):
     """
     Anthropic provider for Claude models
-    
+
     Supports:
     - Claude 3 Opus (claude-3-opus-20240229)
     - Claude 3 Sonnet (claude-3-sonnet-20240229)
     - Claude 3 Haiku (claude-3-haiku-20240307)
     - Claude 3.5 Sonnet (claude-3-5-sonnet-20241022)
-    
+
     Requires ANTHROPIC_API_KEY environment variable or api_key parameter.
-    
+
     Example:
         >>> import os
         >>> os.environ["ANTHROPIC_API_KEY"] = "sk-ant-..."
@@ -67,7 +72,7 @@ class AnthropicProvider(LLMProvider):
     ):
         """
         Initialize Anthropic provider
-        
+
         Args:
             model: Model name (e.g., "claude-3-5-sonnet-20241022")
             api_key: Anthropic API key (or set ANTHROPIC_API_KEY env var)
@@ -75,19 +80,19 @@ class AnthropicProvider(LLMProvider):
             base_url: Custom API base URL (for proxies)
         """
         super().__init__(model, config)
-        
+
         self.api_key = api_key
         self.base_url = base_url
-        
+
         # Initialize Anthropic client
         client_kwargs = {}
         if api_key:
             client_kwargs["api_key"] = api_key
         if base_url:
             client_kwargs["base_url"] = base_url
-            
+
         self.client = Anthropic(**client_kwargs)
-        
+
         logger.info(f"Initialized Anthropic provider with model: {model}")
 
     def generate(
@@ -98,22 +103,22 @@ class AnthropicProvider(LLMProvider):
     ) -> GenerationResult:
         """
         Generate text using Anthropic API
-        
+
         Args:
             prompt: User prompt
             system_prompt: Optional system message
             config: Override generation config
-            
+
         Returns:
             GenerationResult with response
-            
+
         Raises:
             ProviderError: On API errors
             RateLimitError: On rate limit
             TimeoutError: On timeout
         """
         cfg = config or self.config
-        
+
         # Build request parameters
         request_params = {
             "model": self.model,
@@ -123,36 +128,36 @@ class AnthropicProvider(LLMProvider):
             "messages": [{"role": "user", "content": prompt}],
             "timeout": cfg.timeout_seconds,
         }
-        
+
         if system_prompt:
             request_params["system"] = system_prompt
-        
+
         # Retry logic with exponential backoff
         last_error = None
         for attempt in range(cfg.retry_attempts):
             try:
                 start_time = time.time()
-                
+
                 response = self.client.messages.create(**request_params)
-                
+
                 elapsed = time.time() - start_time
-                
+
                 # Extract response text
                 text = ""
                 for block in response.content:
                     if hasattr(block, "text"):
                         text += block.text
-                
+
                 # Token counts
                 usage = response.usage
                 input_tokens = usage.input_tokens if usage else 0
                 output_tokens = usage.output_tokens if usage else 0
                 total_tokens = input_tokens + output_tokens
-                
+
                 logger.debug(
                     f"Anthropic generation successful: {total_tokens} tokens in {elapsed:.2f}s"
                 )
-                
+
                 return GenerationResult(
                     text=text,
                     response_time=elapsed,
@@ -166,11 +171,11 @@ class AnthropicProvider(LLMProvider):
                         "provider": "anthropic",
                     },
                 )
-                
+
             except AnthropicRateLimitError as e:
                 last_error = e
                 if attempt < cfg.retry_attempts - 1:
-                    wait_time = 2 ** attempt
+                    wait_time = 2**attempt
                     logger.warning(f"Rate limited, retrying in {wait_time}s...")
                     time.sleep(wait_time)
                 else:
@@ -179,11 +184,11 @@ class AnthropicProvider(LLMProvider):
                         original_error=e,
                         retry_after=60,
                     )
-                    
+
             except APITimeoutError as e:
                 last_error = e
                 if attempt < cfg.retry_attempts - 1:
-                    wait_time = 2 ** attempt
+                    wait_time = 2**attempt
                     logger.warning(f"Timeout, retrying in {wait_time}s...")
                     time.sleep(wait_time)
                 else:
@@ -191,7 +196,7 @@ class AnthropicProvider(LLMProvider):
                         message=f"Request timed out after {cfg.retry_attempts} attempts",
                         original_error=e,
                     )
-                    
+
             except APIError as e:
                 # Check if it's a model not found error
                 error_str = str(e).lower()
@@ -205,13 +210,13 @@ class AnthropicProvider(LLMProvider):
                         message=f"Anthropic API error: {str(e)}",
                         original_error=e,
                     )
-                    
+
             except Exception as e:
                 raise ProviderError(
                     message=f"Unexpected error: {str(e)}",
                     original_error=e,
                 )
-        
+
         # Should not reach here
         raise ProviderError(
             message=f"Failed after {cfg.retry_attempts} attempts",
@@ -226,29 +231,29 @@ class AnthropicProvider(LLMProvider):
     ) -> List[GenerationResult]:
         """
         Generate responses for multiple prompts
-        
+
         Note: Anthropic doesn't have native batch API for messages,
         so we process sequentially with rate limiting.
-        
+
         Args:
             prompts: List of prompts
             system_prompt: Optional system message
             config: Override generation config
-            
+
         Returns:
             List of GenerationResults
         """
         results = []
-        
+
         for i, prompt in enumerate(prompts):
             try:
                 result = self.generate(prompt, system_prompt, config)
                 results.append(result)
-                
+
                 # Rate limiting: small delay between requests
                 if i < len(prompts) - 1:
                     time.sleep(0.5)
-                    
+
             except ProviderError as e:
                 logger.error(f"Failed to generate for prompt {i}: {e.message}")
                 # Add error result
@@ -261,13 +266,13 @@ class AnthropicProvider(LLMProvider):
                         metadata={"error": str(e), "provider": "anthropic"},
                     )
                 )
-        
+
         return results
 
     def is_available(self) -> bool:
         """
         Check if Anthropic API is accessible
-        
+
         Returns:
             True if API key is valid and service is reachable
         """
@@ -286,7 +291,7 @@ class AnthropicProvider(LLMProvider):
     def get_model_info(self) -> Dict[str, Union[str, int, float]]:
         """
         Get information about the current model
-        
+
         Returns:
             Dictionary with model metadata
         """
@@ -302,7 +307,7 @@ class AnthropicProvider(LLMProvider):
                 model_family = "claude-3-sonnet"
         elif "haiku" in self.model:
             model_family = "claude-3-haiku"
-        
+
         return {
             "model_id": self.model,
             "model_family": model_family,
