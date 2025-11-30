@@ -8,8 +8,8 @@ including hardware info, timing data, and detailed tooltips.
 
 import json
 from pathlib import Path
-from llm_evaluator.visualizations import quick_comparison
-from llm_evaluator.evaluator import EvaluationResults, DetailedMetrics
+from llm_evaluator.visualizations import quick_comparison  # type: ignore
+from llm_evaluator.evaluator import EvaluationResults, DetailedMetrics  # type: ignore
 
 
 def load_latest_comparison():

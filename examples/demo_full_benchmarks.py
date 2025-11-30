@@ -10,9 +10,9 @@ This demonstrates the use of real, complete datasets:
 Use sample_size parameter for faster testing with real data.
 """
 
-from llm_evaluator.providers.ollama_provider import OllamaProvider
-from llm_evaluator.providers import GenerationConfig
-from llm_evaluator.benchmarks import BenchmarkRunner
+from llm_evaluator.providers.ollama_provider import OllamaProvider  # type: ignore
+from llm_evaluator.providers import GenerationConfig  # type: ignore
+from llm_evaluator.benchmarks import BenchmarkRunner  # type: ignore
 
 
 def demo_with_sampling():

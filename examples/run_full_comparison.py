@@ -3,10 +3,10 @@ Quick script to run full comparison between qwen2.5:0.5b and phi3.5:3.8b
 """
 
 import sys
-from llm_evaluator import ModelEvaluator
-from llm_evaluator.providers.ollama_provider import OllamaProvider
-from llm_evaluator.benchmarks import BenchmarkRunner
-from llm_evaluator.visualizations import quick_comparison
+from llm_evaluator import ModelEvaluator  # type: ignore
+from llm_evaluator.providers.ollama_provider import OllamaProvider  # type: ignore
+from llm_evaluator.benchmarks import BenchmarkRunner  # type: ignore
+from llm_evaluator.visualizations import quick_comparison  # type: ignore
 from pathlib import Path
 
 def main():

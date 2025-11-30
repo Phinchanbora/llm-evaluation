@@ -20,10 +20,10 @@ from datetime import datetime
 # Add src to path for direct execution
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from llm_evaluator import ModelEvaluator, quick_comparison
-from llm_evaluator.benchmarks import BenchmarkRunner, DATASETS_AVAILABLE
-from llm_evaluator.providers.ollama_provider import OllamaProvider
-from llm_evaluator.providers import GenerationConfig
+from llm_evaluator import ModelEvaluator, quick_comparison  # type: ignore
+from llm_evaluator.benchmarks import BenchmarkRunner, DATASETS_AVAILABLE  # type: ignore
+from llm_evaluator.providers.ollama_provider import OllamaProvider  # type: ignore
+from llm_evaluator.providers import GenerationConfig  # type: ignore
 
 
 def print_header(title: str) -> None:

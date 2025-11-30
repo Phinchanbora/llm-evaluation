@@ -3,10 +3,10 @@ Quick comparison with sample mode (faster, still statistically valid)
 """
 
 import sys
-from llm_evaluator import ModelEvaluator
-from llm_evaluator.providers.ollama_provider import OllamaProvider
-from llm_evaluator.benchmarks import BenchmarkRunner
-from llm_evaluator.visualizations import quick_comparison
+from llm_evaluator import ModelEvaluator  # type: ignore
+from llm_evaluator.providers.ollama_provider import OllamaProvider  # type: ignore
+from llm_evaluator.benchmarks import BenchmarkRunner  # type: ignore
+from llm_evaluator.visualizations import quick_comparison  # type: ignore
 from pathlib import Path
 
 def main():
