@@ -7,13 +7,12 @@ Provides command-line interface for running evaluations, comparisons, and visual
 import json
 import sys
 from pathlib import Path
-from typing import List, Optional
+from typing import Optional
 
 import click
 
 from llm_evaluator import ModelEvaluator
 from llm_evaluator.benchmarks import BenchmarkRunner
-from llm_evaluator.providers import GenerationConfig
 from llm_evaluator.providers.ollama_provider import OllamaProvider
 
 # Import optional providers
@@ -120,14 +119,14 @@ def run(model: str, provider: str, cache: bool, output: str):
     evaluator.generate_report(results, output)
     
     # Print summary
-    click.echo(f"\n✅ Evaluation complete!")
+    click.echo("\n✅ Evaluation complete!")
     click.echo(f"📊 Overall Score: {results.overall_score:.1%}")
     click.echo(f"📄 Report saved to: {output}")
     
     # Show cache stats if caching enabled
     if cache and isinstance(llm_provider, CachedProvider):
         stats = llm_provider.get_cache_stats()
-        click.echo(f"\n💾 Cache Stats:")
+        click.echo("\n💾 Cache Stats:")
         click.echo(f"   Hit rate: {stats['hit_rate_percent']:.1f}%")
         click.echo(f"   Hits: {stats['hits']} | Misses: {stats['misses']}")
 
@@ -177,7 +176,7 @@ def compare(models: str, provider: str, cache: bool, output: str):
     Path(output).write_text(json.dumps(results, indent=2))
     
     # Print comparison table
-    click.echo(f"\n📊 Comparison Results:")
+    click.echo("\n📊 Comparison Results:")
     click.echo(f"{'Model':<30} {'Score':<10} {'Accuracy':<10} {'Speed (s)':<12}")
     click.echo("=" * 70)
     
@@ -279,14 +278,12 @@ def visualize(results_file: str, output: str):
     """
     click.echo(f"📈 Generating visualizations from {results_file}")
     
-    # Load results
-    data = json.loads(Path(results_file).read_text())
-    
     # TODO: Implement visualization generation
     # This would use the visualizations.py module to create charts
+    # data = json.loads(Path(results_file).read_text())
     
-    click.echo(f"⚠️  Visualization feature coming soon!")
-    click.echo(f"For now, use: from llm_evaluator.visualizations import EvaluationVisualizer")
+    click.echo("⚠️  Visualization feature coming soon!")
+    click.echo("For now, use: from llm_evaluator.visualizations import EvaluationVisualizer")
 
 
 @cli.command()

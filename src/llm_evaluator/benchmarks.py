@@ -12,7 +12,7 @@ Refactored with Clean Architecture:
 import logging
 import random
 import time
-from typing import Dict, Optional, List
+from typing import Dict, Optional
 from functools import lru_cache
 
 from tqdm import tqdm

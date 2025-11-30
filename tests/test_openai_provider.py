@@ -5,13 +5,13 @@ Mocks OpenAI API calls to test provider logic without actual API requests.
 """
 
 import pytest
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock, patch
 
 # Skip all tests if openai not installed
 pytest.importorskip("openai", reason="openai not installed")
 
 from llm_evaluator.providers.openai_provider import OpenAIProvider
-from llm_evaluator.providers import GenerationConfig, ProviderError, RateLimitError, TimeoutError
+from llm_evaluator.providers import GenerationConfig, RateLimitError, TimeoutError
 
 
 @pytest.fixture
@@ -62,7 +62,7 @@ def test_generate_with_system_prompt(provider, mock_openai_response):
     """Test generation with system prompt"""
     provider.client.chat.completions.create = Mock(return_value=mock_openai_response)
     
-    result = provider.generate("Test prompt", system_prompt="You are a helpful assistant")
+    _ = provider.generate("Test prompt", system_prompt="You are a helpful assistant")
     
     # Verify messages structure
     call_args = provider.client.chat.completions.create.call_args

@@ -10,7 +10,6 @@ import time
 from typing import Dict, List, Optional, Union
 
 try:
-    import anthropic
     from anthropic import Anthropic, APIError, RateLimitError as AnthropicRateLimitError, APITimeoutError
 except ImportError:
     raise ImportError(

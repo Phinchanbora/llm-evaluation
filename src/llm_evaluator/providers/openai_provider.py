@@ -10,7 +10,6 @@ import time
 from typing import Dict, List, Optional, Union
 
 try:
-    import openai
     from openai import OpenAI, APIError, RateLimitError as OpenAIRateLimitError, APITimeoutError
 except ImportError:
     raise ImportError(
