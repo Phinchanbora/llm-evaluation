@@ -2,11 +2,14 @@
 
 [![Tests](https://github.com/NahuelGiudizi/llm-evaluation/workflows/Tests/badge.svg)](https://github.com/NahuelGiudizi/llm-evaluation/actions)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![PyPI version](https://badge.fury.io/py/llm-benchmark-toolkit.svg)](https://pypi.org/project/llm-benchmark-toolkit/)
 [![Coverage](https://img.shields.io/badge/coverage-87%25-brightgreen)]()
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/badge/version-0.2.0-blue)](https://github.com/NahuelGiudizi/llm-evaluation)
+[![Blog Post](https://img.shields.io/badge/blog-dev.to-black)](https://dev.to/nahuelgiudizi/building-an-honest-llm-evaluation-framework-from-fake-metrics-to-real-benchmarks-2b90)
 
 > **Enterprise-grade evaluation framework for LLMs** • 4 provider integrations • 24,901 real benchmarks • CLI tool • 10x caching
+
+**📦 PyPI:** `pip install llm-benchmark-toolkit` • **📝 Blog:** [Read the story behind this project](https://dev.to/nahuelgiudizi/building-an-honest-llm-evaluation-framework-from-fake-metrics-to-real-benchmarks-2b90)
 
 ---
 
@@ -29,7 +32,10 @@
 ### CLI (Easiest)
 
 ```bash
-# Install
+# Install from PyPI
+pip install llm-benchmark-toolkit
+
+# Or install from source
 pip install -e ".[all-providers]"
 
 # Run evaluation
