@@ -14,7 +14,7 @@ Perfect for:
 import sys
 import json
 from pathlib import Path
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
 from datetime import datetime
 
 # Add src to path for direct execution
@@ -103,7 +103,7 @@ def evaluate_model(
 def compare_models(
     models: List[str],
     use_full_datasets: bool = False,
-    sample_size: int = 100,
+    sample_size: Optional[int] = 100,
     output_dir: str = "outputs/comparisons"
 ) -> Dict[str, Any]:
     """
