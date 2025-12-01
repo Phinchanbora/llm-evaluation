@@ -153,7 +153,7 @@ class ModelEvaluator:
             results = self.provider.generate_batch(test_prompts, self.config)
 
             response_times = [r.response_time for r in results]
-            token_counts = [r.token_count or len(r.text) / 4 for r in results]  # Fallback estimate
+            token_counts = [r.tokens_used or len(r.text) / 4 for r in results]  # Fallback estimate
 
             return {
                 "avg_response_time": sum(response_times) / len(response_times),

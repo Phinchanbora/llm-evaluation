@@ -23,7 +23,7 @@ class TestBenchmarkRunner:
     def test_run_mmlu_sample(self):
         """Test MMLU benchmark execution"""
         provider = MockProvider(model="test-model", responses=create_mock_responses())
-        runner = BenchmarkRunner(provider=provider)
+        runner = BenchmarkRunner(provider=provider, use_full_datasets=False)
 
         results = runner.run_mmlu_sample()
 
@@ -36,7 +36,7 @@ class TestBenchmarkRunner:
     def test_run_truthfulqa_sample(self):
         """Test TruthfulQA benchmark execution"""
         provider = MockProvider(model="test-model", responses=create_mock_responses())
-        runner = BenchmarkRunner(provider=provider)
+        runner = BenchmarkRunner(provider=provider, use_full_datasets=False)
 
         results = runner.run_truthfulqa_sample()
 
@@ -59,7 +59,7 @@ class TestBenchmarkRunner:
                 ]
             },
         )
-        runner = BenchmarkRunner(provider=provider)
+        runner = BenchmarkRunner(provider=provider, use_full_datasets=False)
 
         results = runner.run_hellaswag_sample()
 
@@ -72,7 +72,7 @@ class TestBenchmarkRunner:
     def test_run_all_benchmarks(self):
         """Test running all benchmarks"""
         provider = MockProvider(model="test-model", responses=create_mock_responses())
-        runner = BenchmarkRunner(provider=provider)
+        runner = BenchmarkRunner(provider=provider, use_full_datasets=False)
 
         results = runner.run_all_benchmarks()
 
@@ -87,7 +87,7 @@ class TestBenchmarkRunner:
         from tests.mocks import create_failing_provider
 
         provider = create_failing_provider()
-        runner = BenchmarkRunner(provider=provider)
+        runner = BenchmarkRunner(provider=provider, use_full_datasets=False)
 
         with pytest.raises(ProviderError):
             runner.run_mmlu_sample()
