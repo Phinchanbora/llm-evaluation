@@ -60,8 +60,8 @@ class MockProvider(LLMProvider):
         return GenerationResult(
             text=response_text,
             response_time=self.response_time,
-            token_count=self.token_count,
-            model_name=self.model,
+            tokens_used=self.token_count,
+            model=self.model,
             metadata={"mock": True, "call_count": self.call_count},
         )
 

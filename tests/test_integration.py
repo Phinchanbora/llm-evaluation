@@ -28,7 +28,7 @@ def test_demo_mode() -> None:
     provider = Mock(spec=LLMProvider)
     provider.model = "test-model"
     provider.generate.return_value = GenerationResult(
-        text="Test response", response_time=0.1, token_count=5, model_name="test-model", metadata={}
+        text="Test response", response_time=0.1, tokens_used=5, model="test-model", metadata={}
     )
 
     # Test demo mode

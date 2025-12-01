@@ -4,9 +4,25 @@ External configuration management with Pydantic
 Enterprise-grade configuration with validation, type safety, and environment support
 """
 
-from typing import Optional, Literal
-from pydantic import BaseSettings, Field, validator
 from pathlib import Path
+from typing import Literal, Optional
+
+try:
+    from pydantic_settings import BaseSettings
+    from pydantic import Field, field_validator
+
+    PYDANTIC_V2 = True
+except ImportError:
+    try:
+        from pydantic import BaseSettings, Field  # type: ignore[no-redef,assignment]
+        from pydantic import validator as field_validator  # type: ignore[no-redef,assignment]
+
+        PYDANTIC_V2 = False
+    except ImportError:
+        raise ImportError(
+            "Config requires pydantic-settings package. "
+            "Install with: pip install pydantic-settings"
+        )
 
 
 class EvaluatorConfig(BaseSettings):
@@ -63,16 +79,32 @@ class EvaluatorConfig(BaseSettings):
         default="dev", description="Runtime environment"
     )
 
-    @validator("output_dir")
-    def create_output_dir(cls, v: Path) -> Path:
-        """Ensure output directory exists"""
-        v.mkdir(parents=True, exist_ok=True)
-        return v
+    if PYDANTIC_V2:
 
-    class Config:
-        env_prefix = "LLM_EVAL_"
-        env_file = ".env"
-        env_file_encoding = "utf-8"
+        @field_validator("output_dir")
+        @classmethod
+        def create_output_dir(cls, v: Path) -> Path:
+            """Ensure output directory exists"""
+            v.mkdir(parents=True, exist_ok=True)
+            return v
+
+        model_config = {
+            "env_prefix": "LLM_EVAL_",
+            "env_file": ".env",
+            "env_file_encoding": "utf-8",
+        }
+    else:
+
+        @field_validator("output_dir")  # type: ignore[no-redef]
+        def create_output_dir(cls, v: Path) -> Path:  # type: ignore[misc]
+            """Ensure output directory exists"""
+            v.mkdir(parents=True, exist_ok=True)
+            return v
+
+        class Config:
+            env_prefix = "LLM_EVAL_"
+            env_file = ".env"
+            env_file_encoding = "utf-8"
 
 
 class OllamaConfig(BaseSettings):
@@ -90,10 +122,18 @@ class OllamaConfig(BaseSettings):
         default=None, description="Keep model in memory duration (e.g., '5m', '1h')"
     )
 
-    class Config:
-        env_prefix = "OLLAMA_"
-        env_file = ".env"
-        env_file_encoding = "utf-8"
+    if PYDANTIC_V2:
+        model_config = {
+            "env_prefix": "OLLAMA_",
+            "env_file": ".env",
+            "env_file_encoding": "utf-8",
+        }
+    else:
+
+        class Config:
+            env_prefix = "OLLAMA_"
+            env_file = ".env"
+            env_file_encoding = "utf-8"
 
 
 class BenchmarkConfig(BaseSettings):
@@ -102,7 +142,8 @@ class BenchmarkConfig(BaseSettings):
     """
 
     use_demo_benchmarks: bool = Field(
-        default=True, description="Use demo benchmarks (fast) or real datasets (slow)"
+        default=True,
+        description="Use demo benchmarks (fast) or real datasets (slow)",
     )
 
     mmlu_subset: Optional[str] = Field(
@@ -114,17 +155,34 @@ class BenchmarkConfig(BaseSettings):
         description="Cache directory for downloaded datasets",
     )
 
-    @validator("cache_dir")
-    def create_cache_dir(cls, v: Path) -> Path:
-        """Ensure cache directory exists"""
-        if v:
-            v.mkdir(parents=True, exist_ok=True)
-        return v
+    if PYDANTIC_V2:
 
-    class Config:
-        env_prefix = "BENCHMARK_"
-        env_file = ".env"
-        env_file_encoding = "utf-8"
+        @field_validator("cache_dir")
+        @classmethod
+        def create_cache_dir(cls, v: Optional[Path]) -> Optional[Path]:
+            """Ensure cache directory exists"""
+            if v:
+                v.mkdir(parents=True, exist_ok=True)
+            return v
+
+        model_config = {
+            "env_prefix": "BENCHMARK_",
+            "env_file": ".env",
+            "env_file_encoding": "utf-8",
+        }
+    else:
+
+        @field_validator("cache_dir")  # type: ignore[no-redef]
+        def create_cache_dir(cls, v: Optional[Path]) -> Optional[Path]:  # type: ignore[misc]
+            """Ensure cache directory exists"""
+            if v:
+                v.mkdir(parents=True, exist_ok=True)
+            return v
+
+        class Config:
+            env_prefix = "BENCHMARK_"
+            env_file = ".env"
+            env_file_encoding = "utf-8"
 
 
 # Singleton instances
@@ -157,7 +215,7 @@ def get_benchmark_config() -> BenchmarkConfig:
     return _benchmark_config
 
 
-def reset_config():
+def reset_config() -> None:
     """Reset all configuration singletons (for testing)"""
     global _evaluator_config, _ollama_config, _benchmark_config
     _evaluator_config = None

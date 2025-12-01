@@ -55,8 +55,8 @@ class TestBenchmarkRunnerModes:
         provider.generate.return_value = GenerationResult(
             text="A) Mitochondria",
             response_time=0.5,
-            token_count=10,
-            model_name="test-model",
+            tokens_used=10,
+            model="test-model",
             metadata={"tokens": 10},
         )
         return provider
@@ -127,8 +127,8 @@ class TestFullBenchmarkExecution:
         provider.generate.return_value = GenerationResult(
             text="A",
             response_time=0.5,
-            token_count=5,
-            model_name="test-model",
+            tokens_used=5,
+            model="test-model",
             metadata={"tokens": 5},
         )
         return provider
@@ -187,8 +187,8 @@ class TestBackwardCompatibility:
         provider.generate.return_value = GenerationResult(
             text="Mitochondria",
             response_time=0.5,
-            token_count=10,
-            model_name="test-model",
+            tokens_used=10,
+            model="test-model",
             metadata={"tokens": 10},
         )
         return provider
