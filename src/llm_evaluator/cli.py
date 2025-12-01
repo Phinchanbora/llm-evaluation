@@ -5,9 +5,10 @@ Provides command-line interface for running evaluations, comparisons, and visual
 """
 
 import json
+import os
 import sys
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Tuple
 
 import click
 
@@ -39,11 +40,67 @@ try:
 except ImportError:
     HAS_HUGGINGFACE = False
 
+try:
+    from llm_evaluator.providers.deepseek_provider import DeepSeekProvider
+
+    HAS_DEEPSEEK = True
+except ImportError:
+    HAS_DEEPSEEK = False
+
 from llm_evaluator.providers.cached_provider import CachedProvider
+
+# Version
+__version__ = "2.0.0"
+
+
+def detect_provider_from_env() -> Tuple[Optional[str], Optional[str]]:
+    """
+    Auto-detect provider and model from environment variables.
+    
+    Returns:
+        Tuple of (provider_name, suggested_model) or (None, None)
+    """
+    if os.environ.get("OPENAI_API_KEY"):
+        return ("openai", "gpt-4o-mini")
+    if os.environ.get("ANTHROPIC_API_KEY"):
+        return ("anthropic", "claude-3-5-sonnet-20241022")
+    if os.environ.get("DEEPSEEK_API_KEY"):
+        return ("deepseek", "deepseek-chat")
+    if os.environ.get("HF_TOKEN") or os.environ.get("HUGGINGFACE_API_KEY"):
+        return ("huggingface", "meta-llama/Llama-2-7b-chat-hf")
+    # Check if Ollama is running
+    try:
+        import requests
+        resp = requests.get("http://localhost:11434/api/version", timeout=1)
+        if resp.status_code == 200:
+            return ("ollama", "llama3.2:1b")
+    except Exception:
+        pass
+    return (None, None)
+
+
+def echo_success(msg: str) -> None:
+    """Print success message in green"""
+    click.echo(click.style(f"✅ {msg}", fg="green"))
+
+
+def echo_error(msg: str) -> None:
+    """Print error message in red"""
+    click.echo(click.style(f"❌ {msg}", fg="red"), err=True)
+
+
+def echo_warning(msg: str) -> None:
+    """Print warning message in yellow"""
+    click.echo(click.style(f"⚠️  {msg}", fg="yellow"))
+
+
+def echo_info(msg: str) -> None:
+    """Print info message in blue"""
+    click.echo(click.style(f"ℹ️  {msg}", fg="blue"))
 
 
 @click.group()
-@click.version_option(version="0.2.0", prog_name="llm-eval")
+@click.version_option(version=__version__, prog_name="llm-eval")
 def cli():
     """
     🚀 LLM Evaluation Suite - Command Line Interface
@@ -65,23 +122,36 @@ def create_provider(model: str, provider_type: str, cache: bool = False):
         base_provider = OllamaProvider(model=model)
     elif provider_type == "openai":
         if not HAS_OPENAI:
-            click.echo("❌ OpenAI provider not installed. Run: pip install openai", err=True)
+            echo_error("OpenAI provider not installed. Run: pip install openai")
             sys.exit(1)
         base_provider = OpenAIProvider(model=model)
     elif provider_type == "anthropic":
         if not HAS_ANTHROPIC:
-            click.echo("❌ Anthropic provider not installed. Run: pip install anthropic", err=True)
+            echo_error("Anthropic provider not installed. Run: pip install anthropic")
             sys.exit(1)
         base_provider = AnthropicProvider(model=model)
     elif provider_type == "huggingface":
         if not HAS_HUGGINGFACE:
-            click.echo(
-                "❌ HuggingFace provider not installed. Run: pip install huggingface-hub", err=True
-            )
+            echo_error("HuggingFace provider not installed. Run: pip install huggingface-hub")
             sys.exit(1)
         base_provider = HuggingFaceProvider(model=model)
+    elif provider_type == "deepseek":
+        if not HAS_DEEPSEEK:
+            echo_error("DeepSeek provider not installed. Run: pip install openai")
+            sys.exit(1)
+        base_provider = DeepSeekProvider(model=model)
+    elif provider_type == "auto":
+        # Auto-detect from environment
+        detected_provider, detected_model = detect_provider_from_env()
+        if detected_provider:
+            echo_info(f"Auto-detected provider: {detected_provider} (model: {detected_model})")
+            return create_provider(detected_model if model == "auto" else model, detected_provider, cache)
+        else:
+            echo_error("No provider detected. Set an API key or start Ollama.")
+            echo_info("Supported env vars: OPENAI_API_KEY, ANTHROPIC_API_KEY, DEEPSEEK_API_KEY, HF_TOKEN")
+            sys.exit(1)
     else:
-        click.echo(f"❌ Unknown provider: {provider_type}", err=True)
+        echo_error(f"Unknown provider: {provider_type}")
         sys.exit(1)
 
     # Wrap with cache if requested
@@ -91,12 +161,125 @@ def create_provider(model: str, provider_type: str, cache: bool = False):
 
 
 @cli.command()
+@click.option("--model", "-m", default=None, help="Model name (auto-detected if not set)")
+@click.option("--sample-size", "-s", type=int, default=20, help="Sample size (default: 20)")
+@click.option("--output", "-o", default=None, help="Output file (optional)")
+def quick(model: Optional[str], sample_size: int, output: Optional[str]):
+    """
+    🚀 Quick evaluation with zero configuration!
+
+    Auto-detects your provider from environment variables:
+    - OPENAI_API_KEY → Uses OpenAI (gpt-4o-mini)
+    - ANTHROPIC_API_KEY → Uses Anthropic (claude-3-5-sonnet)
+    - DEEPSEEK_API_KEY → Uses DeepSeek (deepseek-chat)
+    - HF_TOKEN → Uses HuggingFace
+    - Ollama running → Uses Ollama (llama3.2:1b)
+
+    Examples:
+        llm-eval quick                      # Auto-detect everything
+        llm-eval quick --model gpt-4o       # Use specific model
+        llm-eval quick -s 50                # Larger sample size
+    """
+    click.echo("\n" + "=" * 50)
+    click.echo(click.style("🚀 LLM QUICK EVALUATION", fg="cyan", bold=True))
+    click.echo("=" * 50)
+
+    # Auto-detect provider
+    detected_provider, detected_model = detect_provider_from_env()
+    
+    if not detected_provider:
+        echo_error("No provider detected!")
+        click.echo("\n📋 To use quick evaluation, set one of these environment variables:")
+        click.echo("   • OPENAI_API_KEY    → For GPT models")
+        click.echo("   • ANTHROPIC_API_KEY → For Claude models")  
+        click.echo("   • DEEPSEEK_API_KEY  → For DeepSeek models")
+        click.echo("   • HF_TOKEN          → For HuggingFace models")
+        click.echo("   • Or start Ollama   → ollama serve")
+        sys.exit(1)
+
+    # Use provided model or detected one
+    use_model = model if model else detected_model
+    
+    echo_success(f"Provider: {detected_provider}")
+    echo_success(f"Model: {use_model}")
+    echo_success(f"Sample size: {sample_size}")
+    
+    click.echo("\n⏳ Starting evaluation...")
+
+    # Create provider with caching
+    llm_provider = create_provider(use_model, detected_provider, cache=True)
+
+    if not llm_provider.is_available():
+        echo_error(f"Provider {detected_provider} is not responding")
+        sys.exit(1)
+
+    # Run benchmarks
+    runner = BenchmarkRunner(
+        provider=llm_provider,
+        use_full_datasets=True,
+        sample_size=sample_size
+    )
+
+    click.echo("\n📊 Running benchmarks...")
+    
+    results = {}
+    
+    with click.progressbar(["mmlu", "truthfulqa", "hellaswag"], label="Progress") as benchmarks:
+        for bench in benchmarks:
+            if bench == "mmlu":
+                results["mmlu"] = runner.run_mmlu_sample()
+            elif bench == "truthfulqa":
+                results["truthfulqa"] = runner.run_truthfulqa_sample()
+            elif bench == "hellaswag":
+                results["hellaswag"] = runner.run_hellaswag_sample()
+
+    # Display results
+    click.echo("\n" + "=" * 50)
+    click.echo(click.style("📊 RESULTS", fg="green", bold=True))
+    click.echo("=" * 50)
+    
+    click.echo(f"\n  🎯 MMLU:       {results.get('mmlu', {}).get('mmlu_accuracy', 0):.1%}")
+    click.echo(f"  🎯 TruthfulQA: {results.get('truthfulqa', {}).get('truthfulness_score', 0):.1%}")
+    click.echo(f"  🎯 HellaSwag:  {results.get('hellaswag', {}).get('hellaswag_accuracy', 0):.1%}")
+    
+    # Calculate overall
+    scores = [
+        results.get('mmlu', {}).get('mmlu_accuracy', 0),
+        results.get('truthfulqa', {}).get('truthfulness_score', 0),
+        results.get('hellaswag', {}).get('hellaswag_accuracy', 0)
+    ]
+    avg_score = sum(scores) / len(scores) if scores else 0
+    
+    click.echo(f"\n  📈 Overall:    {avg_score:.1%}")
+    
+    # Save if output specified
+    if output:
+        output_data = {
+            "model": use_model,
+            "provider": detected_provider,
+            "sample_size": sample_size,
+            "results": results
+        }
+        Path(output).write_text(json.dumps(output_data, indent=2))
+        echo_success(f"Results saved to: {output}")
+    
+    # Cache stats
+    if isinstance(llm_provider, CachedProvider):
+        stats = llm_provider.get_cache_stats()
+        click.echo(f"\n  💾 Cache: {stats['hit_rate_percent']:.0f}% hit rate")
+    
+    click.echo("\n" + "=" * 50)
+    click.echo("✨ Evaluation complete!")
+    click.echo("=" * 50 + "\n")
+
+
+@cli.command()
 @click.option("--model", "-m", default="llama3.2:1b", help="Model name")
 @click.option(
     "--provider",
     "-p",
     default="ollama",
-    type=click.Choice(["ollama", "openai", "anthropic", "huggingface"]),
+    type=click.Choice(["ollama", "openai", "anthropic", "huggingface", "deepseek", "auto"]),
     help="Provider type",
 )
 @click.option("--cache/--no-cache", default=True, help="Enable caching")
@@ -319,18 +502,39 @@ def visualize(results_file: str, output: str):
 @cli.command()
 def providers():
     """List available providers and their status"""
-    click.echo("🔌 Available Providers:\n")
+    click.echo("\n🔌 Available Providers:\n")
+
+    # Auto-detection status
+    detected_provider, detected_model = detect_provider_from_env()
+    if detected_provider:
+        echo_success(f"Auto-detected: {detected_provider} ({detected_model})")
+        click.echo("")
 
     providers_status = [
         ("ollama", True, "Local LLMs (llama3.2, mistral, etc.)"),
-        ("openai", HAS_OPENAI, "GPT-3.5, GPT-4 (pip install openai)"),
+        ("openai", HAS_OPENAI, "GPT-3.5, GPT-4, GPT-4o (pip install openai)"),
         ("anthropic", HAS_ANTHROPIC, "Claude 3/3.5 (pip install anthropic)"),
+        ("deepseek", HAS_DEEPSEEK, "DeepSeek-V3, DeepSeek-R1 (pip install openai)"),
         ("huggingface", HAS_HUGGINGFACE, "Inference API (pip install huggingface-hub)"),
     ]
 
     for name, available, description in providers_status:
         status = "✅" if available else "❌"
-        click.echo(f"{status} {name:<15} - {description}")
+        click.echo(f"  {status} {name:<15} - {description}")
+    
+    click.echo("\n📋 Environment Variables:")
+    env_vars = [
+        ("OPENAI_API_KEY", os.environ.get("OPENAI_API_KEY", "")[:8] + "..." if os.environ.get("OPENAI_API_KEY") else "Not set"),
+        ("ANTHROPIC_API_KEY", os.environ.get("ANTHROPIC_API_KEY", "")[:8] + "..." if os.environ.get("ANTHROPIC_API_KEY") else "Not set"),
+        ("DEEPSEEK_API_KEY", os.environ.get("DEEPSEEK_API_KEY", "")[:8] + "..." if os.environ.get("DEEPSEEK_API_KEY") else "Not set"),
+        ("HF_TOKEN", os.environ.get("HF_TOKEN", "")[:8] + "..." if os.environ.get("HF_TOKEN") else "Not set"),
+    ]
+    
+    for var, value in env_vars:
+        status = "✅" if "Not set" not in value else "❌"
+        click.echo(f"  {status} {var:<20} {value}")
+    
+    click.echo("")
 
 
 @cli.command()
@@ -339,7 +543,7 @@ def providers():
     "--provider",
     "-p",
     default="ollama",
-    type=click.Choice(["ollama", "openai", "anthropic", "huggingface"]),
+    type=click.Choice(["ollama", "openai", "anthropic", "huggingface", "deepseek", "auto"]),
     help="Provider type",
 )
 @click.option("--sample-size", "-s", type=int, default=100, help="Sample size for benchmarks")

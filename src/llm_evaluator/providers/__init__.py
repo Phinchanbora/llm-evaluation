@@ -49,6 +49,16 @@ try:
 except ImportError:
     pass
 
+_has_deepseek = False
+DeepSeekProvider = None  # type: ignore[assignment]
+try:
+    from .deepseek_provider import DeepSeekProvider as _DeepSeekProvider
+
+    DeepSeekProvider = _DeepSeekProvider  # type: ignore[misc]
+    _has_deepseek = True
+except ImportError:
+    pass
+
 __all__ = [
     # Types
     "ProviderType",
@@ -68,4 +78,5 @@ __all__ = [
     "OpenAIProvider",
     "AnthropicProvider",
     "HuggingFaceProvider",
+    "DeepSeekProvider",
 ]

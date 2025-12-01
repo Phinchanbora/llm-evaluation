@@ -17,6 +17,7 @@ class ProviderType(Enum):
     OPENAI = "openai"
     ANTHROPIC = "anthropic"
     HUGGINGFACE = "huggingface"
+    DEEPSEEK = "deepseek"
 
 
 @dataclass

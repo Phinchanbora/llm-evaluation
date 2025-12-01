@@ -56,6 +56,17 @@ class OpenAIProvider(LLMProvider):
         "gpt-3.5-turbo-16k",
     ]
 
+    # Pricing per 1M tokens (as of 2024)
+    PRICING = {
+        "gpt-4o": {"input": 2.50, "output": 10.00},
+        "gpt-4o-mini": {"input": 0.15, "output": 0.60},
+        "gpt-4-turbo": {"input": 10.00, "output": 30.00},
+        "gpt-4-turbo-preview": {"input": 10.00, "output": 30.00},
+        "gpt-4": {"input": 30.00, "output": 60.00},
+        "gpt-3.5-turbo": {"input": 0.50, "output": 1.50},
+        "gpt-3.5-turbo-16k": {"input": 1.00, "output": 2.00},
+    }
+
     def __init__(
         self,
         model: str = "gpt-3.5-turbo",
@@ -146,6 +157,13 @@ class OpenAIProvider(LLMProvider):
                 completion_tokens = usage.completion_tokens if usage else 0
                 total_tokens = usage.total_tokens if usage else 0
 
+                # Calculate cost
+                pricing = self.PRICING.get(self.model, {"input": 0.0, "output": 0.0})
+                cost = (
+                    (prompt_tokens / 1_000_000) * pricing["input"] +
+                    (completion_tokens / 1_000_000) * pricing["output"]
+                )
+
                 logger.debug(
                     f"OpenAI generation successful: {total_tokens} tokens in {elapsed:.2f}s"
                 )
@@ -153,15 +171,14 @@ class OpenAIProvider(LLMProvider):
                 return GenerationResult(
                     text=text,
                     response_time=elapsed,
-                    token_count=total_tokens,
-                    model_name=self.model,
-                    metadata={
-                        "prompt_tokens": prompt_tokens,
-                        "completion_tokens": completion_tokens,
-                        "total_tokens": total_tokens,
-                        "finish_reason": choice.finish_reason or "unknown",
-                        "provider": "openai",
-                    },
+                    tokens_used=total_tokens,
+                    model=self.model,
+                    provider="openai",
+                    prompt_tokens=prompt_tokens,
+                    completion_tokens=completion_tokens,
+                    total_tokens=total_tokens,
+                    cost_usd=cost,
+                    finish_reason=choice.finish_reason or "unknown",
                 )
 
             except OpenAIRateLimitError as e:

@@ -52,10 +52,10 @@ def test_generate_success(provider, mock_openai_response):
     result = provider.generate("Test prompt")
 
     assert result.text == "Hello, world!"
-    assert result.token_count == 15
-    assert result.model_name == "gpt-3.5-turbo"
-    assert result.metadata["provider"] == "openai"
-    assert result.metadata["finish_reason"] == "stop"
+    assert result.total_tokens == 15
+    assert result.model == "gpt-3.5-turbo"
+    assert result.provider == "openai"
+    assert result.finish_reason == "stop"
 
 
 def test_generate_with_system_prompt(provider, mock_openai_response):
