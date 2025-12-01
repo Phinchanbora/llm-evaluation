@@ -79,18 +79,19 @@ class BenchmarkRunner:
     def __init__(
         self,
         provider: LLMProvider,
-        use_full_datasets: bool = False,
-        sample_size: Optional[int] = None,
+        use_full_datasets: bool = True,
+        sample_size: Optional[int] = 100,
     ):
         """
         Initialize with LLM provider
 
         Args:
             provider: LLM provider implementation
-            use_full_datasets: If True, use complete HuggingFace datasets (slower but accurate)
+            use_full_datasets: If True, use complete HuggingFace datasets (recommended)
                               If False, use demo mode with 3 hardcoded questions (fast)
-            sample_size: If specified, randomly sample this many questions from full dataset
-                        (e.g., sample_size=100 for quick testing with real data)
+            sample_size: Number of questions to sample from full dataset
+                        Default 100 gives results in ~5 minutes
+                        Set to None for full dataset (takes hours)
         """
         self.provider = provider
         self.use_full_datasets = use_full_datasets
