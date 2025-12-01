@@ -161,8 +161,8 @@ class AnthropicProvider(LLMProvider):
                 return GenerationResult(
                     text=text,
                     response_time=elapsed,
-                    token_count=total_tokens,
-                    model_name=self.model,
+                    tokens_used=total_tokens,
+                    model=self.model,
                     metadata={
                         "input_tokens": input_tokens,
                         "output_tokens": output_tokens,
@@ -261,8 +261,8 @@ class AnthropicProvider(LLMProvider):
                     GenerationResult(
                         text="",
                         response_time=0.0,
-                        token_count=0,
-                        model_name=self.model,
+                        tokens_used=0,
+                        model=self.model,
                         metadata={"error": str(e), "provider": "anthropic"},
                     )
                 )

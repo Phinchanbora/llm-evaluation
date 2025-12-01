@@ -12,7 +12,7 @@ Refactored with Clean Architecture:
 import logging
 import random
 import time
-from typing import Dict, Optional
+from typing import Any, Dict, Optional, Union
 from functools import lru_cache
 
 from tqdm import tqdm
@@ -102,7 +102,7 @@ class BenchmarkRunner:
                 "datasets library required for full datasets. Install with: pip install datasets"
             )
 
-    def run_mmlu_sample(self) -> Dict[str, float]:
+    def run_mmlu_sample(self) -> Dict[str, Any]:
         """
         Run MMLU (Massive Multitask Language Understanding) test
 
@@ -122,7 +122,7 @@ class BenchmarkRunner:
         else:
             return self._run_mmlu_demo()
 
-    def _run_mmlu_demo(self) -> Dict[str, float]:
+    def _run_mmlu_demo(self) -> Dict[str, Any]:
         """Demo mode: 3 hardcoded questions for quick testing"""
         logger.info("Running MMLU DEMO mode (3 questions)")
 
@@ -151,7 +151,8 @@ class BenchmarkRunner:
                 prompt = f"{q['question']}\nChoices: {', '.join(q['choices'])}\nAnswer:"
                 result = self.provider.generate(prompt)
 
-                if q["answer"].lower() in result.text.lower():
+                answer = q["answer"]
+                if isinstance(answer, str) and answer.lower() in result.text.lower():
                     correct += 1
 
             accuracy = correct / len(mmlu_questions)
@@ -168,7 +169,7 @@ class BenchmarkRunner:
             logger.error(f"MMLU benchmark failed: {e}")
             raise
 
-    def _run_mmlu_full(self) -> Dict[str, float]:
+    def _run_mmlu_full(self) -> Dict[str, Any]:
         """Full mode: Complete MMLU dataset (14,042 questions) or sampled subset"""
         logger.info("Running MMLU FULL mode (loading HuggingFace dataset...)")
 
@@ -253,7 +254,7 @@ class BenchmarkRunner:
             logger.error(f"MMLU full benchmark failed: {e}")
             raise
 
-    def run_truthfulqa_sample(self) -> Dict[str, float]:
+    def run_truthfulqa_sample(self) -> Dict[str, Any]:
         """
         Run TruthfulQA test
 
@@ -273,7 +274,7 @@ class BenchmarkRunner:
         else:
             return self._run_truthfulqa_demo()
 
-    def _run_truthfulqa_demo(self) -> Dict[str, float]:
+    def _run_truthfulqa_demo(self) -> Dict[str, Any]:
         """Demo mode: 3 hardcoded questions for quick testing"""
         logger.info("Running TruthfulQA DEMO mode (3 questions)")
 
@@ -305,7 +306,8 @@ class BenchmarkRunner:
 
         try:
             for q in truthful_questions:
-                result = self.provider.generate(q["question"])
+                question = str(q["question"])
+                result = self.provider.generate(question)
 
                 response_text = result.text.lower()
                 expresses_uncertainty = any(
@@ -331,7 +333,7 @@ class BenchmarkRunner:
             logger.error(f"TruthfulQA benchmark failed: {e}")
             raise
 
-    def _run_truthfulqa_full(self) -> Dict[str, float]:
+    def _run_truthfulqa_full(self) -> Dict[str, Any]:
         """Full mode: Complete TruthfulQA dataset (817 questions) or sampled subset"""
         logger.info("Running TruthfulQA FULL mode (loading HuggingFace dataset...)")
 
@@ -413,7 +415,7 @@ class BenchmarkRunner:
             logger.error(f"TruthfulQA full benchmark failed: {e}")
             raise
 
-    def run_hellaswag_sample(self) -> Dict[str, float]:
+    def run_hellaswag_sample(self) -> Dict[str, Any]:
         """
         Run HellaSwag test
 
@@ -433,7 +435,7 @@ class BenchmarkRunner:
         else:
             return self._run_hellaswag_demo()
 
-    def _run_hellaswag_demo(self) -> Dict[str, float]:
+    def _run_hellaswag_demo(self) -> Dict[str, Any]:
         """Demo mode: 2 hardcoded scenarios for quick testing"""
         logger.info("Running HellaSwag DEMO mode (2 scenarios)")
 
@@ -478,7 +480,7 @@ class BenchmarkRunner:
             logger.error(f"HellaSwag benchmark failed: {e}")
             raise
 
-    def _run_hellaswag_full(self) -> Dict[str, float]:
+    def _run_hellaswag_full(self) -> Dict[str, Any]:
         """Full mode: Complete HellaSwag dataset (10,042 scenarios) or sampled subset"""
         logger.info("Running HellaSwag FULL mode (loading HuggingFace dataset...)")
 
@@ -562,7 +564,7 @@ class BenchmarkRunner:
             logger.error(f"HellaSwag full benchmark failed: {e}")
             raise
 
-    def run_all_benchmarks(self) -> Dict[str, Dict[str, float]]:
+    def run_all_benchmarks(self) -> Dict[str, Any]:
         """
         Run all available benchmarks
 

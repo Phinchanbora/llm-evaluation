@@ -44,7 +44,12 @@ class MockProvider(LLMProvider):
         self.call_count = 0
         self.call_history: List[str] = []
 
-    def generate(self, prompt: str, config: Optional[GenerationConfig] = None) -> GenerationResult:
+    def generate(
+        self,
+        prompt: str,
+        system_prompt: Optional[str] = None,
+        config: Optional[GenerationConfig] = None,
+    ) -> GenerationResult:
         """Generate mock response"""
         self.call_count += 1
         self.call_history.append(prompt)
@@ -52,7 +57,7 @@ class MockProvider(LLMProvider):
         if self.should_fail:
             from llm_evaluator.providers import ProviderError
 
-            raise ProviderError("Mock provider failure")
+            raise ProviderError(message="Mock provider failure")
 
         # Get response from mapping or generate default
         response_text = self.responses.get(prompt, f"Mock response to: {prompt[:50]}")
@@ -66,10 +71,13 @@ class MockProvider(LLMProvider):
         )
 
     def generate_batch(
-        self, prompts: List[str], config: Optional[GenerationConfig] = None
+        self,
+        prompts: List[str],
+        system_prompt: Optional[str] = None,
+        config: Optional[GenerationConfig] = None,
     ) -> List[GenerationResult]:
         """Generate batch of mock responses"""
-        return [self.generate(prompt, config) for prompt in prompts]
+        return [self.generate(prompt, system_prompt, config) for prompt in prompts]
 
     def is_available(self) -> bool:
         """Mock availability check"""

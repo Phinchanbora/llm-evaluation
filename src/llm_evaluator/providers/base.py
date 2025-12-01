@@ -58,13 +58,29 @@ class GenerationResult:
 class ProviderError(Exception):
     """Base exception for provider errors"""
 
-    pass
+    def __init__(
+        self,
+        message: str = "",
+        original_error: Optional[Exception] = None,
+        **kwargs: object,
+    ) -> None:
+        super().__init__(message)
+        self.message = message
+        self.original_error = original_error
 
 
 class RateLimitError(ProviderError):
     """Rate limit exceeded"""
 
-    pass
+    def __init__(
+        self,
+        message: str = "",
+        original_error: Optional[Exception] = None,
+        retry_after: Optional[int] = None,
+        **kwargs: object,
+    ) -> None:
+        super().__init__(message, original_error)
+        self.retry_after = retry_after
 
 
 class AuthenticationError(ProviderError):
@@ -79,7 +95,7 @@ class ModelNotFoundError(ProviderError):
     pass
 
 
-class TimeoutError(ProviderError):
+class TimeoutError(ProviderError):  # noqa: A001
     """Request timed out"""
 
     pass
@@ -119,6 +135,7 @@ class LLMProvider(ABC):
     def generate(
         self,
         prompt: str,
+        system_prompt: Optional[str] = None,
         config: Optional[GenerationConfig] = None,
     ) -> GenerationResult:
         """
@@ -126,6 +143,7 @@ class LLMProvider(ABC):
 
         Args:
             prompt: The input prompt
+            system_prompt: Optional system message for the model
             config: Optional override for generation config
 
         Returns:
@@ -140,6 +158,7 @@ class LLMProvider(ABC):
     def generate_batch(
         self,
         prompts: List[str],
+        system_prompt: Optional[str] = None,
         config: Optional[GenerationConfig] = None,
     ) -> List[GenerationResult]:
         """
@@ -147,6 +166,7 @@ class LLMProvider(ABC):
 
         Args:
             prompts: List of input prompts
+            system_prompt: Optional system message for the model
             config: Optional override for generation config
 
         Returns:

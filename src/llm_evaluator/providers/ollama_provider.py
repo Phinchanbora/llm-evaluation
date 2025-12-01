@@ -65,12 +65,18 @@ class OllamaProvider(LLMProvider):
                 raise ProviderError(message="Failed to initialize Ollama client", original_error=e)
         return self._client
 
-    def generate(self, prompt: str, config: Optional[GenerationConfig] = None) -> GenerationResult:
+    def generate(
+        self,
+        prompt: str,
+        system_prompt: Optional[str] = None,
+        config: Optional[GenerationConfig] = None,
+    ) -> GenerationResult:
         """
         Generate text using Ollama
 
         Args:
             prompt: Input prompt
+            system_prompt: Optional system message
             config: Optional config override
 
         Returns:
@@ -88,9 +94,15 @@ class OllamaProvider(LLMProvider):
             try:
                 start_time = time.time()
 
+                # Build messages list
+                messages = []
+                if system_prompt:
+                    messages.append({"role": "system", "content": system_prompt})
+                messages.append({"role": "user", "content": prompt})
+
                 response = client.chat(
                     model=self.model,
-                    messages=[{"role": "user", "content": prompt}],
+                    messages=messages,
                     options={
                         "temperature": cfg.temperature,
                         "num_predict": cfg.max_tokens,
@@ -108,8 +120,8 @@ class OllamaProvider(LLMProvider):
                 return GenerationResult(
                     text=text,
                     response_time=response_time,
-                    token_count=eval_count,
-                    model_name=self.model,
+                    tokens_used=eval_count,
+                    model=self.model,
                     metadata={
                         "total_duration": response.get("total_duration", 0),
                         "load_duration": response.get("load_duration", 0),
@@ -141,7 +153,10 @@ class OllamaProvider(LLMProvider):
         raise ProviderError(message=f"All {cfg.retry_attempts} attempts failed")
 
     def generate_batch(
-        self, prompts: List[str], config: Optional[GenerationConfig] = None
+        self,
+        prompts: List[str],
+        system_prompt: Optional[str] = None,
+        config: Optional[GenerationConfig] = None,
     ) -> List[GenerationResult]:
         """
         Generate responses for multiple prompts
@@ -151,6 +166,7 @@ class OllamaProvider(LLMProvider):
 
         Args:
             prompts: List of prompts
+            system_prompt: Optional system message
             config: Optional config override
 
         Returns:
@@ -159,7 +175,7 @@ class OllamaProvider(LLMProvider):
         results = []
         for prompt in prompts:
             try:
-                result = self.generate(prompt, config)
+                result = self.generate(prompt, system_prompt, config)
                 results.append(result)
             except ProviderError as e:
                 logger.error(f"Failed to generate for prompt: {e}")
@@ -168,8 +184,8 @@ class OllamaProvider(LLMProvider):
                     GenerationResult(
                         text=f"ERROR: {e.message}",
                         response_time=0.0,
-                        token_count=0,
-                        model_name=self.model,
+                        tokens_used=0,
+                        model=self.model,
                         metadata={"error": str(e)},
                     )
                 )

@@ -74,12 +74,12 @@ def get_cpu_model() -> str:
     """Get CPU model name"""
     try:
         if platform.system() == "Windows":
-            import winreg
+            import winreg  # type: ignore[import-not-found]
 
             key = winreg.OpenKey(
                 winreg.HKEY_LOCAL_MACHINE, r"HARDWARE\DESCRIPTION\System\CentralProcessor\0"
             )
-            cpu_name = winreg.QueryValueEx(key, "ProcessorNameString")[0]
+            cpu_name: str = winreg.QueryValueEx(key, "ProcessorNameString")[0]
             winreg.CloseKey(key)
             return cpu_name.strip()
         elif platform.system() == "Linux":

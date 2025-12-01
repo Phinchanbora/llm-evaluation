@@ -171,8 +171,8 @@ class CachedProvider(LLMProvider):
                 result = GenerationResult(
                     text=data["text"],
                     response_time=data["response_time"],
-                    token_count=data["token_count"],
-                    model_name=data["model_name"],
+                    tokens_used=data.get("tokens_used", data.get("token_count", 0)),
+                    model=data.get("model", data.get("model_name", "")),
                     metadata=data["metadata"],
                 )
 
@@ -209,8 +209,8 @@ class CachedProvider(LLMProvider):
                 data = {
                     "text": result.text,
                     "response_time": result.response_time,
-                    "token_count": result.token_count,
-                    "model_name": result.model_name,
+                    "tokens_used": result.tokens_used,
+                    "model": result.model,
                     "metadata": result.metadata,
                     "timestamp": timestamp,
                 }

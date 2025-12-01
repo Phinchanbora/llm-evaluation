@@ -158,8 +158,8 @@ class OpenAIProvider(LLMProvider):
                 return GenerationResult(
                     text=text,
                     response_time=elapsed,
-                    token_count=total_tokens,
-                    model_name=self.model,
+                    tokens_used=total_tokens,
+                    model=self.model,
                     metadata={
                         "prompt_tokens": prompt_tokens,
                         "completion_tokens": completion_tokens,
@@ -257,8 +257,8 @@ class OpenAIProvider(LLMProvider):
                     GenerationResult(
                         text="",
                         response_time=0.0,
-                        token_count=0,
-                        model_name=self.model,
+                        tokens_used=0,
+                        model=self.model,
                         metadata={"error": str(e), "provider": "openai"},
                     )
                 )

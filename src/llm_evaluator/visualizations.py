@@ -211,7 +211,7 @@ class EvaluationVisualizer:
             data.append(score_list)
             labels.append(model_name)
 
-        bp = ax.boxplot(data, labels=labels, patch_artist=True)
+        bp = ax.boxplot(data, tick_labels=labels, patch_artist=True)
 
         # Color the boxes
         colors = sns.color_palette("husl", len(data))
@@ -349,12 +349,12 @@ class EvaluationVisualizer:
             filtered_values = [metrics[k] for k in filtered_categories]
 
             # Better labels for display
-            display_labels = {
+            display_labels_map: Dict[str, str] = {
                 "mmlu": "MMLU (Knowledge)",
                 "truthful_qa": "TruthfulQA (Factuality)",
                 "hellaswag": "HellaSwag (Reasoning)",
             }
-            pretty_labels = [display_labels.get(k, k) for k in filtered_categories]
+            pretty_labels = [display_labels_map.get(k, k) for k in filtered_categories]
 
             fig.add_trace(
                 go.Scatterpolar(r=filtered_values, theta=pretty_labels, name=model, fill="toself"),

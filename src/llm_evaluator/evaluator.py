@@ -114,7 +114,7 @@ class ModelEvaluator:
             ProviderError: If generation fails after retries
         """
         try:
-            result = self.provider.generate(prompt, self.config)
+            result = self.provider.generate(prompt, None, self.config)
             return result.text, result.response_time
         except ProviderError as e:
             logger.error(f"Provider error in chat: {e}")
@@ -150,7 +150,7 @@ class ModelEvaluator:
 
         try:
             # Use batch generation for better efficiency
-            results = self.provider.generate_batch(test_prompts, self.config)
+            results = self.provider.generate_batch(test_prompts, None, self.config)
 
             response_times = [r.response_time for r in results]
             token_counts = [r.tokens_used or len(r.text) / 4 for r in results]  # Fallback estimate
@@ -281,7 +281,7 @@ class ModelEvaluator:
         except ProviderError as e:
             logger.error(f"Performance evaluation failed: {e}")
             errors.append(f"Performance: {str(e)}")
-            perf_metrics: Dict[str, float] = {"avg_response_time": 0.0, "tokens_per_second": 0.0}
+            perf_metrics = {"avg_response_time": 0.0, "tokens_per_second": 0.0}
 
         # Quality metrics
         print("✅ Quality Metrics...")
@@ -290,7 +290,7 @@ class ModelEvaluator:
         except ProviderError as e:
             logger.error(f"Quality evaluation failed: {e}")
             errors.append(f"Quality: {str(e)}")
-            quality_metrics: Dict[str, float] = {
+            quality_metrics = {
                 "accuracy": 0.0,
                 "coherence_score": 0.0,
                 "hallucination_rate": 1.0,

@@ -13,6 +13,7 @@ import click
 
 from llm_evaluator import ModelEvaluator
 from llm_evaluator.benchmarks import BenchmarkRunner
+from llm_evaluator.providers import LLMProvider
 from llm_evaluator.providers.ollama_provider import OllamaProvider
 
 # Import optional providers
@@ -56,8 +57,9 @@ def cli():
     pass
 
 
-def create_provider(model: str, provider_type: str, cache: bool = False):
+def create_provider(model: str, provider_type: str, cache: bool = False) -> LLMProvider:
     """Create provider instance based on type"""
+    base_provider: LLMProvider
 
     if provider_type == "ollama":
         base_provider = OllamaProvider(model=model)

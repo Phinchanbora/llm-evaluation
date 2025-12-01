@@ -76,13 +76,10 @@ class HuggingFaceProvider(LLMProvider):
         self.base_url = base_url
 
         # Initialize HuggingFace client
-        client_kwargs = {"model": model}
-        if token:
-            client_kwargs["token"] = token
-        if base_url:
-            client_kwargs["base_url"] = base_url
-
-        self.client = InferenceClient(**client_kwargs)
+        self.client = InferenceClient(
+            model=model,
+            token=token,
+        )
 
         logger.info(f"Initialized HuggingFace provider with model: {model}")
 
@@ -121,7 +118,7 @@ class HuggingFaceProvider(LLMProvider):
             try:
                 start_time = time.time()
 
-                # Use text_generation endpoint
+                # Use text_generation endpoint with keyword arguments
                 response = self.client.text_generation(
                     prompt=full_prompt,
                     max_new_tokens=cfg.max_tokens,
@@ -130,7 +127,6 @@ class HuggingFaceProvider(LLMProvider):
                     top_k=cfg.top_k if hasattr(cfg, "top_k") else None,
                     do_sample=cfg.temperature > 0,
                     return_full_text=False,
-                    timeout=cfg.timeout_seconds,
                 )
 
                 elapsed = time.time() - start_time
@@ -149,8 +145,8 @@ class HuggingFaceProvider(LLMProvider):
                 return GenerationResult(
                     text=text,
                     response_time=elapsed,
-                    token_count=estimated_tokens,
-                    model_name=self.model,
+                    tokens_used=estimated_tokens,
+                    model=self.model,
                     metadata={
                         "estimated_tokens": estimated_tokens,
                         "provider": "huggingface",
@@ -199,7 +195,7 @@ class HuggingFaceProvider(LLMProvider):
                     )
 
             except TimeoutError as e:
-                last_error = e
+                last_error = e  # type: ignore[assignment]
                 if attempt < cfg.retry_attempts - 1:
                     wait_time = 2**attempt
                     logger.warning(f"Timeout, retrying in {wait_time}s...")
@@ -257,8 +253,8 @@ class HuggingFaceProvider(LLMProvider):
                     GenerationResult(
                         text="",
                         response_time=0.0,
-                        token_count=0,
-                        model_name=self.model,
+                        tokens_used=0,
+                        model=self.model,
                         metadata={"error": str(e), "provider": "huggingface"},
                     )
                 )
@@ -277,7 +273,6 @@ class HuggingFaceProvider(LLMProvider):
             self.client.text_generation(
                 prompt="test",
                 max_new_tokens=1,
-                timeout=10,
             )
             return True
         except Exception as e:
@@ -297,12 +292,15 @@ class HuggingFaceProvider(LLMProvider):
 
             info = model_info(self.model, token=self.token)
 
+            downloads = info.downloads if hasattr(info, "downloads") and info.downloads else 0
+            likes = info.likes if hasattr(info, "likes") and info.likes else 0
+
             return {
                 "model_id": self.model,
                 "model_type": info.pipeline_tag or "text-generation",
                 "provider": "huggingface",
-                "downloads": info.downloads if hasattr(info, "downloads") else 0,
-                "likes": info.likes if hasattr(info, "likes") else 0,
+                "downloads": downloads,
+                "likes": likes,
             }
         except Exception as e:
             logger.warning(f"Could not retrieve model info: {e}")
