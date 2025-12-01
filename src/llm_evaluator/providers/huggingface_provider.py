@@ -18,15 +18,15 @@ except ImportError:
         "Install with: pip install huggingface-hub"
     )
 
-from . import (
-    LLMProvider,
+from .base import (
     GenerationConfig,
     GenerationResult,
+    LLMProvider,
+    ModelNotFoundError,
     ProviderError,
+    ProviderType,
     RateLimitError,
     TimeoutError,
-    ModelNotFoundError,
-    ProviderType,
 )
 
 logger = logging.getLogger(__name__)

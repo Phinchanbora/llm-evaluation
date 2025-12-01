@@ -10,19 +10,24 @@ import time
 from typing import Dict, List, Optional, Union
 
 try:
-    from openai import OpenAI, APIError, RateLimitError as OpenAIRateLimitError, APITimeoutError
+    from openai import (
+        APIError,
+        APITimeoutError,
+        OpenAI,
+        RateLimitError as OpenAIRateLimitError,
+    )
 except ImportError:
     raise ImportError("OpenAI provider requires 'openai' package. Install with: pip install openai")
 
-from . import (
-    LLMProvider,
+from .base import (
     GenerationConfig,
     GenerationResult,
+    LLMProvider,
+    ModelNotFoundError,
     ProviderError,
+    ProviderType,
     RateLimitError,
     TimeoutError,
-    ModelNotFoundError,
-    ProviderType,
 )
 
 logger = logging.getLogger(__name__)

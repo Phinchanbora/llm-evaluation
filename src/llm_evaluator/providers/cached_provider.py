@@ -18,10 +18,10 @@ import time
 from pathlib import Path
 from typing import Dict, List, Optional, Union
 
-from . import (
-    LLMProvider,
+from .base import (
     GenerationConfig,
     GenerationResult,
+    LLMProvider,
     ProviderType,
 )
 

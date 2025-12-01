@@ -78,11 +78,14 @@ class ModelEvaluator:
         """
         # Load configuration from environment/config file
         from llm_evaluator.config import get_evaluator_config
+
         self.app_config = get_evaluator_config()
-        
+
         # Default to Ollama if no provider specified (backwards compatibility)
-        self.provider = provider or OllamaProvider(model=self.app_config.default_model, config=config)
-        
+        self.provider = provider or OllamaProvider(
+            model=self.app_config.default_model, config=config
+        )
+
         # Use provided config or create from app_config defaults
         self.config = config or GenerationConfig(
             temperature=self.app_config.default_temperature,
@@ -90,7 +93,7 @@ class ModelEvaluator:
             timeout_seconds=self.app_config.default_timeout,
             retry_attempts=self.app_config.default_retry_attempts,
         )
-        
+
         self.performance_metrics = PerformanceMetrics()
         self.quality_metrics = QualityMetrics()
         self.benchmark_runner = BenchmarkRunner(self.provider)

@@ -4,19 +4,19 @@ Ollama provider implementation
 Concrete implementation of LLMProvider for Ollama local models.
 """
 
-import time
 import logging
+import time
 from typing import Dict, List, Optional, Union
 
 import ollama
 
-from . import (
-    LLMProvider,
+from .base import (
     GenerationConfig,
     GenerationResult,
-    ProviderType,
-    ProviderError,
+    LLMProvider,
     ModelNotFoundError,
+    ProviderError,
+    ProviderType,
 )
 
 logger = logging.getLogger(__name__)

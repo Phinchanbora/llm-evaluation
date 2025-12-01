@@ -351,49 +351,45 @@ def quick_benchmark(model: str, provider: str):
     """
     click.echo(f"\n🚀 Quick Benchmark: {model} ({provider})")
     click.echo("=" * 50)
-    
+
     # Create provider
     llm_provider = create_provider(model, provider, cache=True)
-    
+
     if not llm_provider.is_available():
         click.echo(f"❌ Provider not available. Is {provider} running?", err=True)
         sys.exit(1)
-    
+
     click.echo(f"✅ {model} is ready!\n")
-    
+
     # Run with sensible defaults: real data, 100 samples
-    runner = BenchmarkRunner(
-        provider=llm_provider,
-        use_full_datasets=True,
-        sample_size=100
-    )
-    
+    runner = BenchmarkRunner(provider=llm_provider, use_full_datasets=True, sample_size=100)
+
     results = {}
-    
+
     # Run each benchmark
     click.echo("📚 Running MMLU (100 questions)...")
     results["mmlu"] = runner.run_mmlu_sample()
-    
+
     click.echo("📖 Running TruthfulQA (100 questions)...")
     results["truthfulqa"] = runner.run_truthfulqa_sample()
-    
+
     click.echo("🧠 Running HellaSwag (100 questions)...")
     results["hellaswag"] = runner.run_hellaswag_sample()
-    
+
     # Print results
     click.echo("\n" + "=" * 50)
     click.echo(f"📊 Results for {model}:")
     click.echo("=" * 50)
-    
+
     mmlu_acc = results["mmlu"].get("mmlu_accuracy", 0)
     tqa_score = results["truthfulqa"].get("truthfulness_score", 0)
     hs_acc = results["hellaswag"].get("hellaswag_accuracy", 0)
-    
+
     click.echo(f"MMLU:       {mmlu_acc:.1%}")
     click.echo(f"TruthfulQA: {tqa_score:.1%}")
     click.echo(f"HellaSwag:  {hs_acc:.1%}")
     click.echo("=" * 50)
-    
+
     # Save results
     output_file = f"benchmark_{model.replace(':', '_')}.json"
     Path(output_file).write_text(json.dumps(results, indent=2))
