@@ -13,8 +13,9 @@ import click
 
 from llm_evaluator import ModelEvaluator
 from llm_evaluator.benchmarks import BenchmarkRunner
-from llm_evaluator.providers import LLMProvider
 from llm_evaluator.providers.ollama_provider import OllamaProvider
+from llm_evaluator.evaluator import AcademicEvaluationResults
+from llm_evaluator.export import export_to_latex, generate_bibtex
 
 # Import optional providers
 try:
@@ -57,9 +58,8 @@ def cli():
     pass
 
 
-def create_provider(model: str, provider_type: str, cache: bool = False) -> LLMProvider:
+def create_provider(model: str, provider_type: str, cache: bool = False):
     """Create provider instance based on type"""
-    base_provider: LLMProvider
 
     if provider_type == "ollama":
         base_provider = OllamaProvider(model=model)
@@ -333,8 +333,8 @@ def providers():
         click.echo(f"{status} {name:<15} - {description}")
 
 
-@cli.command("quick")
-@click.argument("model", default="llama3.2:1b")
+@cli.command()
+@click.option("--model", "-m", default="llama3.2:1b", help="Model name")
 @click.option(
     "--provider",
     "-p",
@@ -342,67 +342,141 @@ def providers():
     type=click.Choice(["ollama", "openai", "anthropic", "huggingface"]),
     help="Provider type",
 )
+@click.option("--sample-size", "-s", type=int, default=100, help="Sample size for benchmarks")
+@click.option("--cache/--no-cache", default=True, help="Enable caching")
+@click.option("--output-latex", type=click.Path(), help="Output LaTeX table file")
+@click.option("--output-bibtex", type=click.Path(), help="Output BibTeX citations file")
+@click.option("--output-json", "-o", default="academic_results.json", help="Output JSON file")
 @click.option(
-    "--samples",
-    "-n",
-    default=10,
-    help="Number of samples per benchmark (default: 10 for fast CI, use 100+ for production)",
+    "--compare-baselines/--no-compare-baselines",
+    default=True,
+    help="Compare against published baselines",
 )
-def quick_benchmark(model: str, provider: str, samples: int):
+def academic(
+    model: str,
+    provider: str,
+    sample_size: int,
+    cache: bool,
+    output_latex: Optional[str],
+    output_bibtex: Optional[str],
+    output_json: str,
+    compare_baselines: bool,
+):
     """
-    Quick benchmark with configurable sample size
+    Run academic-quality evaluation with statistical rigor
+
+    Produces results suitable for academic papers with:
+    - 95% confidence intervals (Wilson method)
+    - Comparison against published baselines
+    - Error analysis and calibration metrics
+    - LaTeX tables and BibTeX citations
 
     Examples:
-        llm-eval quick llama3.2:1b                    # 10 samples (fast, ~1 min)
-        llm-eval quick llama3.2:1b -n 50              # 50 samples (~5 min)
-        llm-eval quick gpt-3.5-turbo -p openai -n 100 # 100 samples (~10 min)
+        llm-eval academic --model llama3.2:1b --output-latex results.tex
+        llm-eval academic --model gpt-4 --provider openai --output-bibtex citations.bib
     """
-    click.echo(f"\n🚀 Quick Benchmark: {model} ({provider})")
-    click.echo(f"📊 Samples per benchmark: {samples}")
-    click.echo("=" * 50)
+    click.echo(f"🎓 Running academic evaluation on {model} ({provider})")
+    click.echo(f"   Sample size: {sample_size}")
+    click.echo(f"   Compare baselines: {compare_baselines}")
 
     # Create provider
-    llm_provider = create_provider(model, provider, cache=True)
+    llm_provider = create_provider(model, provider, cache)
 
     if not llm_provider.is_available():
         click.echo(f"❌ Provider not available. Is {provider} running?", err=True)
         sys.exit(1)
 
-    click.echo(f"✅ {model} is ready!\n")
+    # Run academic evaluation
+    evaluator = ModelEvaluator(provider=llm_provider)
 
-    # Run with configurable sample size
-    runner = BenchmarkRunner(provider=llm_provider, use_full_datasets=True, sample_size=samples)
+    click.echo("\n📊 Running benchmarks with statistical analysis...")
 
-    results = {}
+    try:
+        results: AcademicEvaluationResults = evaluator.evaluate_all_academic(
+            sample_size=sample_size,
+        )
+    except Exception as e:
+        click.echo(f"❌ Error during evaluation: {e}", err=True)
+        sys.exit(1)
 
-    # Run each benchmark
-    click.echo(f"📚 Running MMLU ({samples} questions)...")
-    results["mmlu"] = runner.run_mmlu_sample()
+    # Print results summary
+    click.echo("\n" + "=" * 60)
+    click.echo("📊 ACADEMIC EVALUATION RESULTS")
+    click.echo("=" * 60)
 
-    click.echo(f"📖 Running TruthfulQA ({samples} questions)...")
-    results["truthfulqa"] = runner.run_truthfulqa_sample()
+    click.echo(f"\n📈 MMLU Accuracy: {results.mmlu_accuracy:.1%}")
+    if results.mmlu_ci:
+        click.echo(f"   95% CI: [{results.mmlu_ci[0]:.1%}, {results.mmlu_ci[1]:.1%}]")
 
-    click.echo(f"🧠 Running HellaSwag ({samples} questions)...")
-    results["hellaswag"] = runner.run_hellaswag_sample()
+    click.echo(f"\n📈 TruthfulQA Score: {results.truthfulqa_accuracy:.1%}")
+    if results.truthfulqa_ci:
+        click.echo(f"   95% CI: [{results.truthfulqa_ci[0]:.1%}, {results.truthfulqa_ci[1]:.1%}]")
 
-    # Print results
-    click.echo("\n" + "=" * 50)
-    click.echo(f"📊 Results for {model}:")
-    click.echo("=" * 50)
+    click.echo(f"\n📈 HellaSwag Accuracy: {results.hellaswag_accuracy:.1%}")
+    if results.hellaswag_ci:
+        click.echo(f"   95% CI: [{results.hellaswag_ci[0]:.1%}, {results.hellaswag_ci[1]:.1%}]")
 
-    mmlu_acc = results["mmlu"].get("mmlu_accuracy", 0)
-    tqa_score = results["truthfulqa"].get("truthfulness_score", 0)
-    hs_acc = results["hellaswag"].get("hellaswag_accuracy", 0)
+    # Baseline comparison
+    if compare_baselines and results.baseline_comparison:
+        click.echo("\n" + "-" * 40)
+        click.echo("📊 BASELINE COMPARISON")
+        click.echo("-" * 40)
+        for baseline_name, comparison in results.baseline_comparison.items():
+            diff = comparison.get("difference", 0)
+            sign = "+" if diff > 0 else ""
+            click.echo(f"   vs {baseline_name}: {sign}{diff:.1%}")
 
-    click.echo(f"MMLU:       {mmlu_acc:.1%}")
-    click.echo(f"TruthfulQA: {tqa_score:.1%}")
-    click.echo(f"HellaSwag:  {hs_acc:.1%}")
-    click.echo("=" * 50)
+    # Save JSON results
+    results_dict = {
+        "model": model,
+        "provider": provider,
+        "sample_size": sample_size,
+        "mmlu_accuracy": results.mmlu_accuracy,
+        "mmlu_ci": results.mmlu_ci,
+        "truthfulqa_accuracy": results.truthfulqa_accuracy,
+        "truthfulqa_ci": results.truthfulqa_ci,
+        "hellaswag_accuracy": results.hellaswag_accuracy,
+        "hellaswag_ci": results.hellaswag_ci,
+        "baseline_comparison": results.baseline_comparison,
+        "reproducibility_manifest": results.reproducibility_manifest,
+    }
+    Path(output_json).write_text(json.dumps(results_dict, indent=2, default=str))
+    click.echo(f"\n✅ Results saved to: {output_json}")
 
-    # Save results
-    output_file = f"benchmark_{model.replace(':', '_')}.json"
-    Path(output_file).write_text(json.dumps(results, indent=2))
-    click.echo(f"\n✅ Results saved to: {output_file}")
+    # Export LaTeX if requested
+    if output_latex:
+        # Prepare results in format expected by export_to_latex
+        latex_results = {
+            model: {
+                "mmlu": results.mmlu_accuracy,
+                "mmlu_ci": results.mmlu_ci,
+                "truthfulqa": results.truthfulqa_accuracy,
+                "truthfulqa_ci": results.truthfulqa_ci,
+                "hellaswag": results.hellaswag_accuracy,
+                "hellaswag_ci": results.hellaswag_ci,
+            }
+        }
+        latex_content = export_to_latex(latex_results)
+        Path(output_latex).write_text(latex_content)
+        click.echo(f"📄 LaTeX table saved to: {output_latex}")
+
+    # Export BibTeX if requested
+    if output_bibtex:
+        eval_metadata = {
+            "version": "2.0.0",
+            "date": results.timestamp,
+            "author": "LLM Evaluation Suite",
+            "models_evaluated": [model],
+            "n_samples": sample_size,
+        }
+        bibtex_content = generate_bibtex(eval_metadata)
+        Path(output_bibtex).write_text(bibtex_content)
+        click.echo(f"📚 BibTeX citations saved to: {output_bibtex}")
+
+    # Show cache stats
+    if cache and isinstance(llm_provider, CachedProvider):
+        stats = llm_provider.get_cache_stats()
+        click.echo(f"\n💾 Cache Stats: {stats['hit_rate_percent']:.1f}% hit rate")
 
 
 if __name__ == "__main__":

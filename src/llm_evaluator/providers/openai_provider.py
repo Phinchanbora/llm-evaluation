@@ -10,24 +10,19 @@ import time
 from typing import Dict, List, Optional, Union
 
 try:
-    from openai import (
-        APIError,
-        APITimeoutError,
-        OpenAI,
-        RateLimitError as OpenAIRateLimitError,
-    )
+    from openai import OpenAI, APIError, RateLimitError as OpenAIRateLimitError, APITimeoutError
 except ImportError:
     raise ImportError("OpenAI provider requires 'openai' package. Install with: pip install openai")
 
-from .base import (
+from . import (
+    LLMProvider,
     GenerationConfig,
     GenerationResult,
-    LLMProvider,
-    ModelNotFoundError,
     ProviderError,
-    ProviderType,
     RateLimitError,
     TimeoutError,
+    ModelNotFoundError,
+    ProviderType,
 )
 
 logger = logging.getLogger(__name__)
@@ -158,8 +153,8 @@ class OpenAIProvider(LLMProvider):
                 return GenerationResult(
                     text=text,
                     response_time=elapsed,
-                    tokens_used=total_tokens,
-                    model=self.model,
+                    token_count=total_tokens,
+                    model_name=self.model,
                     metadata={
                         "prompt_tokens": prompt_tokens,
                         "completion_tokens": completion_tokens,
@@ -257,8 +252,8 @@ class OpenAIProvider(LLMProvider):
                     GenerationResult(
                         text="",
                         response_time=0.0,
-                        tokens_used=0,
-                        model=self.model,
+                        token_count=0,
+                        model_name=self.model,
                         metadata={"error": str(e), "provider": "openai"},
                     )
                 )

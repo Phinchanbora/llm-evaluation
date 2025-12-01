@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "llm-benchmark-toolkit"
-version = "0.4.1"
-description = "Comprehensive evaluation framework for Large Language Models"
+version = "2.0.0"
+description = "Comprehensive evaluation framework for Large Language Models with academic statistical rigor"
 readme = "README.md"
 authors = [
     {name = "Nahuel Giudizi", email = "nahuel@example.com"}

@@ -65,8 +65,8 @@ class TestBenchmarkRunnerModes:
         """Test runner initializes in demo mode"""
         runner = BenchmarkRunner(mock_provider, use_full_datasets=False)
         assert runner.use_full_datasets is False
-        # In demo mode, sample_size is still passed but not used
-        assert runner.sample_size == 100  # Default value
+        # In demo mode, sample_size defaults to None (uses demo questions)
+        assert runner.sample_size is None
 
     def test_runner_initialization_full_mode(self, mock_provider: Any) -> None:  # type: ignore[misc]
         """Test runner initializes in full mode"""

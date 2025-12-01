@@ -43,7 +43,7 @@ Documentation: docs/
 Repository: https://github.com/NahuelGiudizi/llm-evaluation
 """
 
-__version__ = "1.0.0"
+__version__ = "2.0.0"
 __author__ = "Nahuel Giudizi"
 __license__ = "MIT"
 
@@ -53,7 +53,29 @@ from .benchmarks import BenchmarkRunner
 from .visualizations import EvaluationVisualizer, quick_comparison
 from .providers import LLMProvider, GenerationConfig, ProviderError
 
+# Academic features (v2.0)
+from .statistical_metrics import (
+    calculate_wilson_ci,
+    calculate_standard_error,
+    bootstrap_confidence_interval,
+    mcnemar_test,
+    cohens_h,
+    calculate_all_statistics,
+)
+from .academic_baselines import (
+    ACADEMIC_BASELINES,
+    compare_to_baselines,
+    get_baselines,
+)
+from .error_analysis import ErrorAnalyzer, expected_calibration_error
+from .export import (
+    export_to_latex,
+    generate_bibtex,
+    generate_reproducibility_manifest,
+)
+
 __all__ = [
+    # Core
     "ModelEvaluator",
     "EvaluationResults",
     "PerformanceMetrics",
@@ -64,4 +86,22 @@ __all__ = [
     "LLMProvider",
     "GenerationConfig",
     "ProviderError",
+    # Academic statistics
+    "calculate_wilson_ci",
+    "calculate_standard_error",
+    "bootstrap_confidence_interval",
+    "mcnemar_test",
+    "cohens_h",
+    "calculate_all_statistics",
+    # Academic baselines
+    "ACADEMIC_BASELINES",
+    "compare_to_baselines",
+    "get_baselines",
+    # Error analysis
+    "ErrorAnalyzer",
+    "expected_calibration_error",
+    # Export
+    "export_to_latex",
+    "generate_bibtex",
+    "generate_reproducibility_manifest",
 ]

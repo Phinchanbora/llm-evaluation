@@ -28,9 +28,11 @@ HellaSwag:  51.2%
 
 - ✅ **Real benchmarks**: 14,042 MMLU + 817 TruthfulQA + 10,042 HellaSwag
 - ✅ **Multi-provider**: Ollama, OpenAI, Anthropic, HuggingFace
-- ✅ **CLI tool**: `llm-eval quick`, `run`, `compare`, `benchmark`
+- ✅ **CLI tool**: `llm-eval quick`, `run`, `compare`, `benchmark`, `academic`
 - ✅ **10x caching**: Intelligent caching for repeated evaluations
 - ✅ **Progress bars**: Real-time progress with ETA
+- ✅ **Academic rigor**: 95% confidence intervals, McNemar tests, baseline comparisons
+- ✅ **Paper exports**: LaTeX tables, BibTeX citations, reproducibility manifests
 
 ## 📊 CLI Commands
 
@@ -47,9 +49,45 @@ llm-eval compare --models llama3.2:1b,mistral:7b
 # Specific benchmarks
 llm-eval benchmark --model llama3.2:1b --benchmarks mmlu,truthfulqa
 
+# Academic evaluation with LaTeX export
+llm-eval academic --model llama3.2:1b --output-latex results.tex
+
 # List providers
 llm-eval providers
 ```
+
+## 🎓 Academic Evaluation (v2.0)
+
+Run publication-quality evaluations with statistical rigor:
+
+```python
+from llm_evaluator import ModelEvaluator
+from llm_evaluator.providers.ollama_provider import OllamaProvider
+from llm_evaluator.export import export_to_latex, generate_bibtex
+
+# Run academic evaluation
+provider = OllamaProvider(model="llama3.2:1b")
+evaluator = ModelEvaluator(provider=provider)
+
+results = evaluator.evaluate_all_academic(
+    sample_size=500,
+    compare_baselines=True
+)
+
+# Results with 95% confidence intervals
+print(f"MMLU: {results.mmlu_accuracy:.1%}")
+print(f"95% CI: [{results.mmlu_ci[0]:.1%}, {results.mmlu_ci[1]:.1%}]")
+
+# Compare to published baselines (GPT-4, Claude, Llama)
+for baseline, comparison in results.baseline_comparison.items():
+    print(f"vs {baseline}: {comparison['difference']:+.1%}")
+
+# Export for papers
+latex = export_to_latex(results_dict, "My Model")
+bibtex = generate_bibtex()
+```
+
+See [Academic Usage Guide](docs/ACADEMIC_USAGE.md) for full documentation.
 
 ## 🐍 Python API
 
@@ -119,6 +157,7 @@ provider = AnthropicProvider(model="claude-3-haiku-20240307")
 ## 📖 Documentation
 
 - [Quick Start Guide](docs/QUICKSTART.md)
+- [Academic Usage Guide](docs/ACADEMIC_USAGE.md) - For papers with statistical rigor
 - [Full Benchmarks](docs/FULL_BENCHMARKS.md)
 - [Testing Guide](docs/TESTING_GUIDE.md)
 - [Blog Post](https://dev.to/nahuelgiudizi/building-an-honest-llm-evaluation-framework-from-fake-metrics-to-real-benchmarks-2b90)

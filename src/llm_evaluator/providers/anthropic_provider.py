@@ -13,23 +13,23 @@ try:
     from anthropic import (
         Anthropic,
         APIError,
-        APITimeoutError,
         RateLimitError as AnthropicRateLimitError,
+        APITimeoutError,
     )
 except ImportError:
     raise ImportError(
-        "Anthropic provider requires 'anthropic' package. " "Install with: pip install anthropic"
+        "Anthropic provider requires 'anthropic' package. Install with: pip install anthropic"
     )
 
-from .base import (
+from . import (
+    LLMProvider,
     GenerationConfig,
     GenerationResult,
-    LLMProvider,
-    ModelNotFoundError,
     ProviderError,
-    ProviderType,
     RateLimitError,
     TimeoutError,
+    ModelNotFoundError,
+    ProviderType,
 )
 
 logger = logging.getLogger(__name__)
@@ -161,8 +161,8 @@ class AnthropicProvider(LLMProvider):
                 return GenerationResult(
                     text=text,
                     response_time=elapsed,
-                    tokens_used=total_tokens,
-                    model=self.model,
+                    token_count=total_tokens,
+                    model_name=self.model,
                     metadata={
                         "input_tokens": input_tokens,
                         "output_tokens": output_tokens,
@@ -261,8 +261,8 @@ class AnthropicProvider(LLMProvider):
                     GenerationResult(
                         text="",
                         response_time=0.0,
-                        tokens_used=0,
-                        model=self.model,
+                        token_count=0,
+                        model_name=self.model,
                         metadata={"error": str(e), "provider": "anthropic"},
                     )
                 )
