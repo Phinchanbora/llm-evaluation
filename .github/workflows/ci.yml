@@ -129,7 +129,7 @@ jobs:
 
       - name: Run CLI quick benchmark
         run: |
-          llm-eval quick llama3.2:1b --provider ollama --samples 5
+          llm-eval quick --model llama3.2:1b --sample-size 5
         continue-on-error: true
         timeout-minutes: 5
 
