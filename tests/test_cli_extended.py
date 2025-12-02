@@ -111,8 +111,10 @@ class TestDetectProviderFromEnv:
                 with patch("llm_evaluator.cli.HAS_ANTHROPIC", False):
                     with patch("llm_evaluator.cli.HAS_DEEPSEEK", False):
                         with patch("llm_evaluator.cli.HAS_HUGGINGFACE", False):
-                            with patch("requests.get") as mock_get:
-                                mock_get.side_effect = Exception("No Ollama")
+                            with patch("socket.socket") as mock_socket:
+                                mock_sock = Mock()
+                                mock_sock.connect_ex.return_value = 1  # Port closed
+                                mock_socket.return_value = mock_sock
                                 provider, model = detect_provider_from_env()
                                 assert provider is None
 

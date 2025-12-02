@@ -63,20 +63,31 @@ class TestDetectProviderFromEnv:
     def test_detect_ollama_running(self):
         """Test detection of Ollama when server is running"""
         with patch.dict(os.environ, {}, clear=True):
-            with patch("requests.get") as mock_requests:
-                mock_response = Mock()
-                mock_response.status_code = 200
-                mock_requests.return_value = mock_response
+            # Mock socket connection and urllib request
+            with patch("socket.socket") as mock_socket:
+                mock_sock_instance = Mock()
+                mock_sock_instance.connect_ex.return_value = 0  # Port is open
+                mock_socket.return_value = mock_sock_instance
 
-                provider, model = detect_provider_from_env()
-                assert provider == "ollama"
-                assert model == "llama3.2:1b"
+                with patch("urllib.request.urlopen") as mock_urlopen:
+                    # Mock response for /api/tags
+                    mock_response = Mock()
+                    mock_response.__enter__ = Mock(return_value=mock_response)
+                    mock_response.__exit__ = Mock(return_value=False)
+                    mock_response.read.return_value = b'{"models": [{"name": "llama3.2:1b"}]}'
+                    mock_urlopen.return_value = mock_response
+
+                    provider, model = detect_provider_from_env()
+                    assert provider == "ollama"
+                    assert model == "llama3.2:1b"
 
     def test_detect_none_when_no_provider(self):
         """Test returns None when no provider is available"""
         with patch.dict(os.environ, {}, clear=True):
-            with patch("requests.get") as mock_requests:
-                mock_requests.side_effect = Exception("Connection refused")
+            with patch("socket.socket") as mock_socket:
+                mock_sock_instance = Mock()
+                mock_sock_instance.connect_ex.return_value = 1  # Port closed
+                mock_socket.return_value = mock_sock_instance
 
                 provider, model = detect_provider_from_env()
                 assert provider is None

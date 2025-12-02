@@ -80,7 +80,7 @@ class AnthropicProvider(LLMProvider):
         self.api_key = api_key
         self.base_url = base_url
 
-        # Initialize Anthropic client with explicit parameters
+        # Initialize Anthropic client
         if api_key and base_url:
             self.client = Anthropic(api_key=api_key, base_url=base_url)
         elif api_key:
@@ -122,15 +122,25 @@ class AnthropicProvider(LLMProvider):
             try:
                 start_time = time.time()
 
-                response = self.client.messages.create(
-                    model=self.model,
-                    max_tokens=cfg.max_tokens,
-                    temperature=cfg.temperature,
-                    top_p=cfg.top_p,
-                    messages=[{"role": "user", "content": prompt}],
-                    timeout=cfg.timeout_seconds,
-                    system=system_prompt if system_prompt else "",
-                )
+                if system_prompt:
+                    response = self.client.messages.create(
+                        model=self.model,
+                        max_tokens=cfg.max_tokens,
+                        temperature=cfg.temperature,
+                        top_p=cfg.top_p,
+                        messages=[{"role": "user", "content": prompt}],
+                        timeout=float(cfg.timeout_seconds),
+                        system=system_prompt,
+                    )
+                else:
+                    response = self.client.messages.create(
+                        model=self.model,
+                        max_tokens=cfg.max_tokens,
+                        temperature=cfg.temperature,
+                        top_p=cfg.top_p,
+                        messages=[{"role": "user", "content": prompt}],
+                        timeout=float(cfg.timeout_seconds),
+                    )
 
                 elapsed = time.time() - start_time
 

@@ -7,6 +7,7 @@ Provides command-line interface for running evaluations, comparisons, and visual
 import json
 import os
 import sys
+import time
 from pathlib import Path
 from typing import Optional, Tuple
 
@@ -18,6 +19,7 @@ from llm_evaluator.evaluator import AcademicEvaluationResults
 from llm_evaluator.export import export_to_latex, generate_bibtex
 from llm_evaluator.providers import LLMProvider
 from llm_evaluator.providers.ollama_provider import OllamaProvider
+from llm_evaluator.system_info import collect_system_info
 
 # Import optional providers
 try:
@@ -69,16 +71,98 @@ def detect_provider_from_env() -> Tuple[Optional[str], Optional[str]]:
         return ("deepseek", "deepseek-chat")
     if os.environ.get("HF_TOKEN") or os.environ.get("HUGGINGFACE_API_KEY"):
         return ("huggingface", "meta-llama/Llama-2-7b-chat-hf")
-    # Check if Ollama is running (with longer timeout)
-    try:
-        import requests
 
-        resp = requests.get("http://localhost:11434/api/version", timeout=5)
-        if resp.status_code == 200:
-            return ("ollama", "llama3.2:1b")
+    # Check if Ollama is running - try multiple methods
+    ollama_model = _detect_ollama()
+    if ollama_model:
+        return ("ollama", ollama_model)
+
+    return (None, None)
+
+
+def _detect_ollama() -> Optional[str]:
+    """
+    Detect if Ollama is running and get an available model.
+
+    Returns:
+        Model name if Ollama is available, None otherwise
+    """
+    import socket
+    import urllib.error
+    import urllib.request
+
+    # First, quick socket check
+    try:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(1)
+        result = sock.connect_ex(("localhost", 11434))
+        sock.close()
+        if result != 0:
+            return None
+    except Exception:
+        return None
+
+    # Ollama port is open, try to get models list
+    try:
+        req = urllib.request.Request(
+            "http://localhost:11434/api/tags",
+            headers={"Accept": "application/json"},
+        )
+        with urllib.request.urlopen(req, timeout=3) as response:
+            import json
+
+            data = json.loads(response.read().decode("utf-8"))
+            models = data.get("models", [])
+            if models:
+                # Prefer smaller/faster models for quick evaluation
+                preferred_order = [
+                    "qwen2.5:0.5b",
+                    "tinyllama",
+                    "phi3:mini",
+                    "llama3.2:1b",
+                    "gemma:2b",
+                    "mistral:7b",
+                ]
+                for preferred in preferred_order:
+                    for model in models:
+                        model_name = str(model.get("name", ""))
+                        if preferred in model_name.lower():
+                            return model_name
+                # Return first available model
+                first_model = models[0]
+                return str(first_model.get("name", "llama3.2:1b"))
     except Exception:
         pass
-    return (None, None)
+
+    # Fallback: try version endpoint to confirm Ollama is running
+    try:
+        req = urllib.request.Request("http://localhost:11434/api/version")
+        with urllib.request.urlopen(req, timeout=2) as response:
+            if response.status == 200:
+                return "llama3.2:1b"  # Default model
+    except Exception:
+        pass
+
+    return None
+
+
+def _get_ollama_models() -> list[str]:
+    """Get list of available Ollama models."""
+    import json
+    import urllib.error
+    import urllib.request
+
+    try:
+        req = urllib.request.Request(
+            "http://localhost:11434/api/tags",
+            headers={"Accept": "application/json"},
+        )
+        with urllib.request.urlopen(req, timeout=3) as response:
+            data = json.loads(response.read().decode("utf-8"))
+            models = data.get("models", [])
+            return [str(m.get("name", "")) for m in models if m.get("name")]
+    except Exception:
+        return []
 
 
 def echo_success(msg: str) -> None:
@@ -120,6 +204,7 @@ def cli() -> None:
 def create_provider(model: str, provider_type: str, cache: bool = False) -> LLMProvider:
     """Create provider instance based on type"""
     base_provider: LLMProvider
+
     if provider_type == "ollama":
         base_provider = OllamaProvider(model=model)
     elif provider_type == "openai":
@@ -147,8 +232,9 @@ def create_provider(model: str, provider_type: str, cache: bool = False) -> LLMP
         detected_provider, detected_model = detect_provider_from_env()
         if detected_provider and detected_model:
             echo_info(f"Auto-detected provider: {detected_provider} (model: {detected_model})")
-            use_model = detected_model if model == "auto" else model
-            return create_provider(use_model, detected_provider, cache)
+            return create_provider(
+                detected_model if model == "auto" else model, detected_provider, cache
+            )
         else:
             echo_error("No provider detected. Set an API key or start Ollama.")
             echo_info(
@@ -192,11 +278,6 @@ def quick(model: Optional[str], sample_size: int, output: Optional[str]) -> None
     # Auto-detect provider
     detected_provider, detected_model = detect_provider_from_env()
 
-    # If model is specified and looks like Ollama format (contains :), assume Ollama
-    if model and ":" in model and not detected_provider:
-        detected_provider = "ollama"
-        detected_model = model
-
     if not detected_provider:
         echo_error("No provider detected!")
         click.echo("\n📋 To use quick evaluation, set one of these environment variables:")
@@ -208,18 +289,33 @@ def quick(model: Optional[str], sample_size: int, output: Optional[str]) -> None
         sys.exit(1)
 
     # Use provided model or detected one
-    use_model = model if model else detected_model
+    use_model: str = model if model else (detected_model if detected_model else "")
     if not use_model:
-        echo_error("No model specified and could not auto-detect")
+        echo_error("No model detected")
         sys.exit(1)
 
     echo_success(f"Provider: {detected_provider}")
     echo_success(f"Model: {use_model}")
     echo_success(f"Sample size: {sample_size}")
 
+    # Show available models for Ollama if using default
+    if detected_provider == "ollama" and not model:
+        available = _get_ollama_models()
+        if available and len(available) > 1:
+            other_models = [m for m in available if m != use_model][:5]
+            if other_models:
+                click.echo(click.style("   💡 Other models: ", fg="blue") + ", ".join(other_models))
+                click.echo(click.style("   💡 Use --model <name> to choose", fg="blue"))
+
     click.echo("\n⏳ Starting evaluation...")
 
+    # Collect system info
+    sys_info = collect_system_info()
+
     # Create provider with caching
+    if not detected_provider:
+        echo_error("No provider detected")
+        sys.exit(1)
     llm_provider = create_provider(use_model, detected_provider, cache=True)
 
     if not llm_provider.is_available():
@@ -232,6 +328,7 @@ def quick(model: Optional[str], sample_size: int, output: Optional[str]) -> None
     click.echo("\n📊 Running benchmarks...")
 
     results = {}
+    start_time = time.time()
 
     with click.progressbar(["mmlu", "truthfulqa", "hellaswag"], label="Progress") as benchmarks:
         for bench in benchmarks:
@@ -241,6 +338,8 @@ def quick(model: Optional[str], sample_size: int, output: Optional[str]) -> None
                 results["truthfulqa"] = runner.run_truthfulqa_sample()
             elif bench == "hellaswag":
                 results["hellaswag"] = runner.run_hellaswag_sample()
+
+    total_time = time.time() - start_time
 
     # Display results
     click.echo("\n" + "=" * 50)
@@ -253,13 +352,33 @@ def quick(model: Optional[str], sample_size: int, output: Optional[str]) -> None
 
     # Calculate overall
     scores: list[float] = [
-        float(results.get("mmlu", {}).get("mmlu_accuracy", 0)),
-        float(results.get("truthfulqa", {}).get("truthfulness_score", 0)),
-        float(results.get("hellaswag", {}).get("hellaswag_accuracy", 0)),
+        float(results.get("mmlu", {}).get("mmlu_accuracy", 0) or 0),
+        float(results.get("truthfulqa", {}).get("truthfulness_score", 0) or 0),
+        float(results.get("hellaswag", {}).get("hellaswag_accuracy", 0) or 0),
     ]
     avg_score = sum(scores) / len(scores) if scores else 0.0
 
     click.echo(f"\n  📈 Overall:    {avg_score:.1%}")
+
+    # Show timing and system info
+    click.echo("\n" + "-" * 50)
+    click.echo(click.style("🖥️  TEST ENVIRONMENT", fg="cyan"))
+    click.echo("-" * 50)
+    click.echo(f"  Model:    {use_model}")
+    click.echo(f"  Provider: {detected_provider}")
+    click.echo(f"  Samples:  {sample_size} per benchmark ({sample_size * 3} total)")
+    click.echo(f"  Time:     {total_time:.1f}s ({total_time / (sample_size * 3):.2f}s/question)")
+    click.echo("")
+    click.echo(f"  CPU:      {sys_info.cpu_model}")
+    click.echo(f"  RAM:      {sys_info.ram_total_gb:.0f} GB")
+    if sys_info.gpu_info:
+        gpu_str = sys_info.gpu_info
+        if sys_info.gpu_vram_gb:
+            gpu_str += f" ({sys_info.gpu_vram_gb:.0f} GB)"
+        click.echo(f"  GPU:      {gpu_str}")
+    click.echo(f"  OS:       {sys_info.os_name} {sys_info.os_version}")
+    if sys_info.ollama_version:
+        click.echo(f"  Ollama:   v{sys_info.ollama_version}")
 
     # Save if output specified
     if output:
@@ -267,9 +386,11 @@ def quick(model: Optional[str], sample_size: int, output: Optional[str]) -> None
             "model": use_model,
             "provider": detected_provider,
             "sample_size": sample_size,
+            "total_time_seconds": total_time,
             "results": results,
+            "system_info": sys_info.to_dict(),
         }
-        Path(output).write_text(json.dumps(output_data, indent=2))
+        Path(output).write_text(json.dumps(output_data, indent=2, default=str))
         echo_success(f"Results saved to: {output}")
 
     # Cache stats

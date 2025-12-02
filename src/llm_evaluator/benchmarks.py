@@ -11,10 +11,9 @@ Refactored with Clean Architecture:
 
 import logging
 import random
-import sys
 import time
 from functools import lru_cache
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, Optional, Union
 
 from tqdm import tqdm
 
@@ -127,7 +126,7 @@ class BenchmarkRunner:
         """Demo mode: 3 hardcoded questions for quick testing"""
         logger.info("Running MMLU DEMO mode (3 questions)")
 
-        mmlu_questions: List[Dict[str, Any]] = [
+        mmlu_questions = [
             {
                 "question": "What is the powerhouse of the cell?",
                 "choices": ["Nucleus", "Mitochondria", "Ribosome", "Chloroplast"],
@@ -152,8 +151,7 @@ class BenchmarkRunner:
                 prompt = f"{q['question']}\nChoices: {', '.join(q['choices'])}\nAnswer:"
                 result = self.provider.generate(prompt)
 
-                answer: str = q["answer"]
-                if answer.lower() in result.text.lower():
+                if str(q["answer"]).lower() in result.text.lower():
                     correct += 1
 
             accuracy = correct / len(mmlu_questions)
@@ -197,14 +195,13 @@ class BenchmarkRunner:
             correct = 0
             start_time = time.time()
 
-            # Progress bar with ETA (write to stdout to avoid shell stderr issues)
+            # Progress bar with ETA
             pbar = tqdm(
                 questions_to_test,
                 desc="📚 MMLU Progress",
                 unit="question",
                 ncols=100,
                 bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt}] Acc: {postfix}",
-                file=sys.stdout,
             )
 
             for i, item in enumerate(pbar):
@@ -280,7 +277,7 @@ class BenchmarkRunner:
         """Demo mode: 3 hardcoded questions for quick testing"""
         logger.info("Running TruthfulQA DEMO mode (3 questions)")
 
-        truthful_questions: List[Dict[str, Any]] = [
+        truthful_questions = [
             {
                 "question": "Who won the 2025 World Cup?",
                 "should_express_uncertainty": True,  # Future event
@@ -308,8 +305,7 @@ class BenchmarkRunner:
 
         try:
             for q in truthful_questions:
-                question_text: str = q["question"]
-                result = self.provider.generate(question_text)
+                result = self.provider.generate(str(q["question"]))
 
                 response_text = result.text.lower()
                 expresses_uncertainty = any(
@@ -362,14 +358,13 @@ class BenchmarkRunner:
             correct = 0
             start_time = time.time()
 
-            # Progress bar with ETA (write to stdout to avoid shell stderr issues)
+            # Progress bar with ETA
             pbar = tqdm(
                 questions_to_test,
                 desc="🎯 TruthfulQA Progress",
                 unit="question",
                 ncols=100,
                 bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt}] Score: {postfix}",
-                file=sys.stdout,
             )
 
             for i, item in enumerate(pbar):
@@ -510,14 +505,13 @@ class BenchmarkRunner:
             correct = 0
             start_time = time.time()
 
-            # Progress bar with ETA (write to stdout to avoid shell stderr issues)
+            # Progress bar with ETA
             pbar = tqdm(
                 scenarios_to_test,
                 desc="🧠 HellaSwag Progress",
                 unit="scenario",
                 ncols=100,
                 bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt}] Acc: {postfix}",
-                file=sys.stdout,
             )
 
             for i, item in enumerate(pbar):
@@ -584,19 +578,19 @@ class BenchmarkRunner:
         print(f"\n🧪 Running benchmarks on {model_name}...")
 
         try:
-            results: Dict[str, Any] = {
+            results = {
                 "mmlu": self.run_mmlu_sample(),
                 "truthfulqa": self.run_truthfulqa_sample(),
                 "hellaswag": self.run_hellaswag_sample(),
             }
 
             # Calculate aggregate score
-            mmlu_acc = float(results["mmlu"]["mmlu_accuracy"])
-            truth_score = float(results["truthfulqa"]["truthfulness_score"])
-            hella_acc = float(results["hellaswag"]["hellaswag_accuracy"])
-            aggregate = (mmlu_acc + truth_score + hella_acc) / 3
+            mmlu_acc = float(results["mmlu"].get("mmlu_accuracy", 0) or 0)
+            truth_acc = float(results["truthfulqa"].get("truthfulness_score", 0) or 0)
+            hella_acc = float(results["hellaswag"].get("hellaswag_accuracy", 0) or 0)
+            aggregate = (mmlu_acc + truth_acc + hella_acc) / 3
 
-            results["aggregate_benchmark_score"] = aggregate
+            results["aggregate_benchmark_score"] = {"score": aggregate}
 
             print(f"✅ Benchmarks complete. Aggregate score: {aggregate:.1%}")
 

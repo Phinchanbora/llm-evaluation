@@ -119,15 +119,16 @@ class TestDetectProviderEdgeCases:
 
     def test_detect_no_provider(self):
         """Test when no provider is detected"""
-        import requests
-
         from llm_evaluator.cli import detect_provider_from_env
 
         # Clear all API keys
         env = {}
         with patch.dict(os.environ, env, clear=True):
-            # Mock requests to fail
-            with patch.object(requests, "get", side_effect=Exception):
+            # Mock socket to fail (Ollama not running)
+            with patch("socket.socket") as mock_socket:
+                mock_sock = Mock()
+                mock_sock.connect_ex.return_value = 1  # Port closed
+                mock_socket.return_value = mock_sock
                 provider, model = detect_provider_from_env()
                 assert provider is None
 

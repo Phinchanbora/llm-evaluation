@@ -1,42 +1,22 @@
-# Academic Usage Guide
+# 🎓 Academic Usage Guide
+
+> Publication-quality LLM evaluation with statistical rigor.
+
+**Navigation:** [← README](../README.md) | [Quick Start](QUICKSTART.md) | [Providers](PROVIDERS.md) | [API Reference](API.md) | [Benchmarks](FULL_BENCHMARKS.md)
+
+---
 
 ## Overview
 
-LLM Evaluation Suite v2.0 provides **publication-quality** evaluation capabilities designed for academic papers. This guide covers statistical rigor, baseline comparisons, and proper reporting formats.
+LLM Benchmark Toolkit provides **publication-ready** evaluation capabilities designed for academic papers, including:
 
-## Key Features for Academic Use
-
-### 1. Statistical Rigor
-
-All metrics include:
-- **95% Confidence Intervals** (Wilson score method)
-- **Standard Error calculations**
-- **Bootstrap confidence intervals** for complex metrics
-- **McNemar's test** for statistical significance between models
-
-### 2. Published Baselines
-
-Compare your results against documented performance from:
-- GPT-4 (OpenAI, 2023)
-- Claude 3 Opus (Anthropic, 2024)
-- Llama 3 70B (Meta, 2024)
-- Gemini Pro (Google, 2024)
-- Mistral Large (Mistral AI, 2024)
-
-### 3. Error Analysis
-
-Comprehensive error categorization:
-- Knowledge gaps
-- Reasoning failures
-- Format/parsing errors
-- Calibration metrics (Expected Calibration Error)
-- Inter-rater agreement (Cohen's Kappa)
-
-### 4. Export Formats
-
-- **LaTeX tables** ready for papers
-- **BibTeX citations** for benchmarks
-- **Reproducibility manifests** for appendices
+- ✅ **95% Confidence Intervals** (Wilson score method)
+- ✅ **Statistical Significance Tests** (McNemar's test)
+- ✅ **Effect Size Calculations** (Cohen's h)
+- ✅ **Baseline Comparisons** (GPT-4, Claude, Llama)
+- ✅ **LaTeX Export** (booktabs tables)
+- ✅ **BibTeX Citations** (benchmark papers)
+- ✅ **Reproducibility Manifests**
 
 ---
 
@@ -45,11 +25,12 @@ Comprehensive error categorization:
 ### Command Line
 
 ```bash
-# Basic academic evaluation
+# Basic academic evaluation (500 questions per benchmark)
 llm-eval academic --model llama3.2:1b --sample-size 500
 
 # Full export with LaTeX and BibTeX
-llm-eval academic --model gpt-4 --provider openai \
+llm-eval academic --model gpt-4o-mini \
+    --sample-size 500 \
     --output-latex results.tex \
     --output-bibtex citations.bib \
     --output-json results.json
@@ -59,11 +40,11 @@ llm-eval academic --model gpt-4 --provider openai \
 
 ```python
 from llm_evaluator import ModelEvaluator
-from llm_evaluator.providers.openai_provider import OpenAIProvider
+from llm_evaluator.providers import OpenAIProvider
 from llm_evaluator.export import export_to_latex, generate_bibtex
 
 # Setup
-provider = OpenAIProvider(model="gpt-4")
+provider = OpenAIProvider(model="gpt-4o-mini")
 evaluator = ModelEvaluator(provider=provider)
 
 # Run academic evaluation
@@ -72,13 +53,15 @@ results = evaluator.evaluate_all_academic(
     compare_baselines=True
 )
 
-# Access results with confidence intervals
+# Results with confidence intervals
 print(f"MMLU: {results.mmlu_accuracy:.1%}")
 print(f"95% CI: [{results.mmlu_ci[0]:.1%}, {results.mmlu_ci[1]:.1%}]")
+print(f"SE: ±{results.mmlu_se*100:.2f}%")
 
 # Compare to baselines
 for baseline, comparison in results.baseline_comparison.items():
-    print(f"vs {baseline}: {comparison['difference']:+.1%}")
+    diff = comparison['difference']
+    print(f"vs {baseline}: {diff:+.1%}")
 ```
 
 ---
@@ -87,182 +70,179 @@ for baseline, comparison in results.baseline_comparison.items():
 
 ### Wilson Score Confidence Intervals
 
-We use the **Wilson score interval** for binomial proportions, which is preferred over the normal approximation for:
-- Small sample sizes (n < 100)
-- Proportions near 0 or 1
-- Asymmetric confidence bounds
+We use the **Wilson score interval** for binomial proportions, which is preferred over the normal approximation because it:
+
+- Works well for small sample sizes (n < 100)
+- Handles proportions near 0 or 1
+- Produces asymmetric bounds when appropriate
 
 ```python
-from llm_evaluator.statistical_metrics import calculate_wilson_ci
+from llm_evaluator import calculate_wilson_ci
 
-accuracy = 0.85
-n_samples = 100
-lower, upper = calculate_wilson_ci(accuracy, n_samples, confidence=0.95)
-# Returns: (0.766, 0.908)
+# 85% accuracy on 100 samples
+lower, upper = calculate_wilson_ci(correct=85, total=100, confidence=0.95)
+print(f"95% CI: [{lower:.1%}, {upper:.1%}]")
+# Output: 95% CI: [76.7%, 90.8%]
+```
+
+**Reference:** Wilson, E. B. (1927). "Probable inference, the law of succession, and statistical inference". JASA.
+
+### Standard Error
+
+```python
+from llm_evaluator import calculate_standard_error
+
+se = calculate_standard_error(correct=850, total=1000)
+print(f"SE: {se:.4f}")  # 0.0113
 ```
 
 ### Bootstrap Confidence Intervals
 
-For complex metrics (e.g., F1 score, calibration error):
+For complex metrics (F1, calibration error):
 
 ```python
-from llm_evaluator.statistical_metrics import bootstrap_confidence_interval
+from llm_evaluator import bootstrap_confidence_interval
+import numpy as np
 
-scores = [0.8, 0.9, 0.75, 0.85, 0.92]
+scores = [0.8, 0.9, 0.75, 0.85, 0.92, 0.88, 0.79]
 lower, upper = bootstrap_confidence_interval(
-    scores, 
+    scores,
     statistic=np.mean,
     n_bootstrap=10000,
     confidence=0.95
 )
+print(f"Mean: {np.mean(scores):.1%} (95% CI: [{lower:.1%}, {upper:.1%}])")
 ```
 
 ### McNemar's Test
 
-For comparing two models on the same test set:
+For comparing two models on the **same** test set:
 
 ```python
-from llm_evaluator.statistical_metrics import mcnemar_test
+from llm_evaluator import mcnemar_test
 
-# model_a_correct[i] = True if model A got question i correct
-# model_b_correct[i] = True if model B got question i correct
+# model_a_correct[i] = 1 if model A got question i correct
+# model_b_correct[i] = 1 if model B got question i correct
+model_a = [1, 1, 0, 1, 0, 1, 1, 0, 1, 1]
+model_b = [1, 0, 1, 1, 0, 1, 0, 1, 1, 1]
+
 statistic, p_value, significant = mcnemar_test(
-    model_a_correct, 
-    model_b_correct,
+    model_a,
+    model_b,
     alpha=0.05
 )
 
 if significant:
-    print("Models are significantly different (p < 0.05)")
+    print(f"Significant difference (p={p_value:.4f})")
+else:
+    print(f"No significant difference (p={p_value:.4f})")
 ```
+
+**Reference:** McNemar, Q. (1947). "Note on the sampling error of the difference between correlated proportions or percentages". Psychometrika.
 
 ### Effect Size (Cohen's h)
 
-Measure practical significance between proportions:
+Measure practical significance:
 
 ```python
-from llm_evaluator.statistical_metrics import cohens_h
+from llm_evaluator import cohens_h
 
 p1 = 0.85  # Model A accuracy
 p2 = 0.80  # Model B accuracy
 h = cohens_h(p1, p2)
 
+print(f"Cohen's h: {h:.3f}")
 # Interpretation:
-# |h| < 0.2: Small effect
-# 0.2 ≤ |h| < 0.5: Medium effect
-# |h| ≥ 0.5: Large effect
+# h < 0.2: small effect
+# 0.2 ≤ h < 0.5: small-medium effect
+# 0.5 ≤ h < 0.8: medium-large effect
+# h ≥ 0.8: large effect
 ```
 
 ---
 
-## Baseline Comparison
+## Baseline Comparisons
 
-### Available Baselines
-
-```python
-from llm_evaluator.academic_baselines import ACADEMIC_BASELINES
-
-for model_name, data in ACADEMIC_BASELINES.items():
-    print(f"{model_name}:")
-    print(f"  MMLU: {data['mmlu']:.1%}")
-    print(f"  TruthfulQA: {data['truthfulqa']:.1%}")
-    print(f"  Reference: {data['reference']}")
-```
-
-### Comparing Your Model
+Compare your model against published results:
 
 ```python
-from llm_evaluator.academic_baselines import compare_to_baseline
+from llm_evaluator import ACADEMIC_BASELINES, compare_to_baselines
 
-your_results = {
-    "mmlu": 0.78,
-    "truthfulqa": 0.65,
-    "hellaswag": 0.82
+# Available baselines
+print(ACADEMIC_BASELINES.keys())
+# ['gpt-4', 'gpt-4-turbo', 'claude-3-opus', 'claude-3-sonnet',
+#  'llama-3-70b', 'llama-3-8b', 'mistral-large', 'gemini-pro']
+
+# Your model's results
+my_results = {
+    'mmlu': 0.68,
+    'truthfulqa': 0.55,
+    'hellaswag': 0.72
 }
 
-comparison = compare_to_baseline(your_results, "gpt-4")
-# Returns:
-# {
-#     "mmlu_difference": -0.084,      # 8.4% lower than GPT-4
-#     "truthfulqa_difference": -0.08, # 8% lower
-#     "hellaswag_difference": -0.14   # 14% lower
-# }
+# Compare
+comparisons = compare_to_baselines(my_results)
+for baseline, diff in comparisons.items():
+    print(f"vs {baseline}:")
+    print(f"  MMLU: {diff['mmlu']:+.1%}")
+    print(f"  TruthfulQA: {diff['truthfulqa']:+.1%}")
 ```
+
+### Built-in Baselines
+
+| Model | MMLU | TruthfulQA | HellaSwag | Source |
+|-------|------|------------|-----------|--------|
+| GPT-4 | 86.4% | 71.2% | 95.3% | OpenAI (2023) |
+| Claude 3 Opus | 86.8% | 73.5% | 95.4% | Anthropic (2024) |
+| Llama 3 70B | 79.5% | 65.3% | 88.0% | Meta (2024) |
+| Mistral Large | 81.2% | 68.2% | 89.1% | Mistral (2024) |
+| Gemini Pro | 79.1% | 64.8% | 84.7% | Google (2024) |
 
 ---
 
-## Error Analysis
-
-### Categorizing Errors
-
-```python
-from llm_evaluator.error_analysis import ErrorAnalyzer
-
-analyzer = ErrorAnalyzer()
-
-for question, expected, actual, confidence in results:
-    if expected != actual:
-        analyzer.add_error(
-            question=question,
-            expected=expected,
-            actual=actual,
-            confidence=confidence
-        )
-
-# Get error breakdown
-summary = analyzer.get_summary()
-print(f"Total errors: {summary['total_errors']}")
-print(f"By category: {summary['categories']}")
-```
-
-### Expected Calibration Error (ECE)
-
-Measures if model confidence matches actual accuracy:
-
-```python
-from llm_evaluator.error_analysis import expected_calibration_error
-
-# confidences[i] = model's confidence for question i
-# correctness[i] = 1 if correct, 0 if wrong
-ece = expected_calibration_error(confidences, correctness, n_bins=10)
-# ECE close to 0 = well-calibrated
-# ECE > 0.1 = poorly calibrated
-```
-
----
-
-## Export for Papers
+## Export Formats
 
 ### LaTeX Tables
 
 ```python
-from llm_evaluator.export import export_to_latex
+from llm_evaluator import export_to_latex
 
 results = {
-    "mmlu_accuracy": 0.85,
-    "mmlu_ci": (0.82, 0.88),
-    "truthfulqa_score": 0.72,
-    "truthfulqa_ci": (0.68, 0.76),
-    "hellaswag_accuracy": 0.89,
-    "hellaswag_ci": (0.86, 0.92),
+    'llama3.2:1b': {
+        'mmlu': 0.68, 'mmlu_ci': (0.65, 0.71),
+        'truthfulqa': 0.55, 'truthfulqa_ci': (0.51, 0.59),
+        'hellaswag': 0.72, 'hellaswag_ci': (0.69, 0.75)
+    },
+    'mistral:7b': {
+        'mmlu': 0.78, 'mmlu_ci': (0.75, 0.81),
+        'truthfulqa': 0.62, 'truthfulqa_ci': (0.58, 0.66),
+        'hellaswag': 0.81, 'hellaswag_ci': (0.78, 0.84)
+    }
 }
 
-latex = export_to_latex(results, model_name="Our Model")
+latex = export_to_latex(
+    results,
+    include_ci=True,
+    caption="Benchmark comparison of Llama and Mistral models",
+    label="tab:benchmark_results"
+)
+
 print(latex)
 ```
 
-Output:
+**Output:**
+
 ```latex
-\begin{table}[h]
+\begin{table}[htbp]
 \centering
-\caption{Benchmark Results for Our Model}
-\begin{tabular}{lcc}
+\caption{Benchmark comparison of Llama and Mistral models}
+\label{tab:benchmark_results}
+\begin{tabular}{lccc}
 \toprule
-\textbf{Benchmark} & \textbf{Score} & \textbf{95\% CI} \\
+Model & MMLU & TruthfulQA & HellaSwag \\
 \midrule
-MMLU & 85.0\% & [82.0\%, 88.0\%] \\
-TruthfulQA & 72.0\% & [68.0\%, 76.0\%] \\
-HellaSwag & 89.0\% & [86.0\%, 92.0\%] \\
+llama3.2:1b & 68.0$\pm$3.0 & 55.0$\pm$4.0 & 72.0$\pm$3.0 \\
+mistral:7b & 78.0$\pm$3.0 & 62.0$\pm$4.0 & 81.0$\pm$3.0 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -271,102 +251,174 @@ HellaSwag & 89.0\% & [86.0\%, 92.0\%] \\
 ### BibTeX Citations
 
 ```python
-from llm_evaluator.export import generate_bibtex
+from llm_evaluator import generate_bibtex
 
 bibtex = generate_bibtex()
-# Returns citations for MMLU, TruthfulQA, HellaSwag papers
+print(bibtex)
+```
+
+**Output:**
+
+```bibtex
+@article{hendrycks2021mmlu,
+  title={Measuring Massive Multitask Language Understanding},
+  author={Hendrycks, Dan and Burns, Collin and Basart, Steven and ...},
+  journal={ICLR},
+  year={2021}
+}
+
+@article{lin2022truthfulqa,
+  title={TruthfulQA: Measuring How Models Mimic Human Falsehoods},
+  author={Lin, Stephanie and Hilton, Jacob and Evans, Owain},
+  journal={ACL},
+  year={2022}
+}
+
+@article{zellers2019hellaswag,
+  title={HellaSwag: Can a Machine Really Finish Your Sentence?},
+  author={Zellers, Rowan and Holtzman, Ari and ...},
+  journal={ACL},
+  year={2019}
+}
 ```
 
 ### Reproducibility Manifest
 
 ```python
-from llm_evaluator.export import generate_reproducibility_manifest
+from llm_evaluator import generate_reproducibility_manifest
 
 manifest = generate_reproducibility_manifest(
-    model="llama3.2:1b",
-    provider="ollama",
-    sample_size=500,
-    random_seed=42,
-    results=results
+    model_name="llama3.2:1b",
+    sample_size=500
 )
-# Includes: timestamp, package version, hardware info, all parameters
+print(manifest)
 ```
 
----
+**Output:**
 
-## Best Practices for Papers
-
-### 1. Sample Size
-
-- **Minimum**: 100 samples per benchmark (for reasonable CIs)
-- **Recommended**: 500+ samples
-- **Full benchmark**: Use `--full` flag (24,901 questions)
-
-### 2. Reporting Format
-
-Always report:
-```
-MMLU: 85.0% (95% CI: [82.0%, 88.0%], n=500)
-```
-
-### 3. Statistical Significance
-
-When comparing models:
-```
-Model A vs Model B: Δ = +5.2% (p < 0.001, McNemar's test)
-Effect size: Cohen's h = 0.32 (medium)
-```
-
-### 4. Reproducibility
-
-Include in appendix:
-- Package version
-- Random seed
-- Sample size
-- Provider configuration
-- Full reproducibility manifest
-
-### 5. Citation
-
-```bibtex
-@software{llm_evaluation_suite,
-  title = {LLM Evaluation Suite},
-  version = {2.0.0},
-  year = {2024},
-  url = {https://github.com/yourusername/llm-evaluation}
+```json
+{
+  "model": "llama3.2:1b",
+  "sample_size": 500,
+  "python_version": "3.11.5",
+  "package_version": "2.1.0",
+  "timestamp": "2024-01-15T10:30:00Z",
+  "random_seed": 42,
+  "datasets": {
+    "mmlu": "cais/mmlu@validation",
+    "truthfulqa": "truthful_qa@validation",
+    "hellaswag": "hellaswag@validation"
+  }
 }
 ```
 
 ---
 
-## Example Paper Methods Section
+## Recommended Sample Sizes
+
+| Use Case | Sample Size | Statistical Power | Runtime |
+|----------|-------------|-------------------|---------|
+| Quick check | 50-100 | Low | 5-10 min |
+| Development | 200-300 | Medium | 20-30 min |
+| **Publication** | **500+** | **High** | 1-2 hours |
+| Full dataset | 24,901 | Maximum | 2-8 hours |
+
+**Recommendation:** Use 500+ samples for publications to achieve narrow confidence intervals.
 
 ```python
-from llm_evaluator.export import generate_methods_section
-
-methods = generate_methods_section(
-    model="llama3.2:1b",
-    sample_size=500,
-    benchmarks=["mmlu", "truthfulqa", "hellaswag"]
-)
-print(methods)
+# For 95% CI width of ±3%
+# Need ~1000 samples at 50% accuracy
+# Need ~500 samples at 85% accuracy (Wilson score)
 ```
-
-Output:
-> We evaluated model performance using the LLM Evaluation Suite (v2.0.0). 
-> We report accuracy on MMLU (Hendrycks et al., 2021), TruthfulQA 
-> (Lin et al., 2022), and HellaSwag (Zellers et al., 2019). All metrics 
-> include 95% Wilson score confidence intervals computed over n=500 
-> samples per benchmark. Statistical comparisons use McNemar's test 
-> with α=0.05.
 
 ---
 
-## Complete Example
+## Complete Academic Example
 
-See `examples/academic_evaluation.py` for a full working example that:
-1. Runs evaluation with proper sample size
-2. Compares against published baselines
-3. Performs error analysis
-4. Exports LaTeX tables and BibTeX
-5. Generates reproducibility manifest
+```python
+from llm_evaluator import (
+    ModelEvaluator,
+    export_to_latex,
+    generate_bibtex,
+    generate_reproducibility_manifest,
+    mcnemar_test
+)
+from llm_evaluator.providers import OllamaProvider, CachedProvider
+import json
+
+# Setup with caching
+provider = CachedProvider(OllamaProvider(model="llama3.2:1b"))
+evaluator = ModelEvaluator(provider=provider)
+
+# Run academic evaluation
+results = evaluator.evaluate_all_academic(
+    sample_size=500,
+    compare_baselines=True
+)
+
+# Print results
+print("=" * 60)
+print(f"Model: {results.model_name}")
+print("=" * 60)
+print(f"\nMMLU: {results.mmlu_accuracy:.1%}")
+print(f"  95% CI: [{results.mmlu_ci[0]:.1%}, {results.mmlu_ci[1]:.1%}]")
+print(f"  SE: ±{results.mmlu_se*100:.2f}%")
+print(f"  n = {results.mmlu_n}")
+
+print(f"\nTruthfulQA: {results.truthfulqa_accuracy:.1%}")
+print(f"  95% CI: [{results.truthfulqa_ci[0]:.1%}, {results.truthfulqa_ci[1]:.1%}]")
+
+print(f"\nHellaSwag: {results.hellaswag_accuracy:.1%}")
+print(f"  95% CI: [{results.hellaswag_ci[0]:.1%}, {results.hellaswag_ci[1]:.1%}]")
+
+print(f"\nAverage: {results.average_accuracy:.1%}")
+
+# Baseline comparisons
+print("\n" + "=" * 60)
+print("Baseline Comparisons")
+print("=" * 60)
+for baseline, comparison in results.baseline_comparison.items():
+    print(f"\nvs {baseline}:")
+    for metric, diff in comparison.items():
+        if isinstance(diff, (int, float)):
+            print(f"  {metric}: {diff:+.1%}")
+
+# Export for paper
+latex = export_to_latex({results.model_name: results.to_dict()})
+bibtex = generate_bibtex()
+manifest = results.reproducibility_manifest
+
+# Save files
+with open("results.tex", "w") as f:
+    f.write(latex)
+    
+with open("citations.bib", "w") as f:
+    f.write(bibtex)
+    
+with open("reproducibility.json", "w") as f:
+    json.dump(manifest, f, indent=2)
+
+print("\n✅ Exported: results.tex, citations.bib, reproducibility.json")
+```
+
+---
+
+## Paper Template
+
+Use this template for your methods section:
+
+> We evaluated [MODEL] using the LLM Benchmark Toolkit (v2.1.0) on three standard benchmarks: MMLU (Hendrycks et al., 2021), TruthfulQA (Lin et al., 2022), and HellaSwag (Zellers et al., 2019). We sampled 500 questions per benchmark and report accuracy with 95% Wilson score confidence intervals. Statistical significance was assessed using McNemar's test (α = 0.05).
+
+---
+
+## References
+
+1. Hendrycks, D., et al. (2021). "Measuring Massive Multitask Language Understanding." ICLR.
+2. Lin, S., et al. (2022). "TruthfulQA: Measuring How Models Mimic Human Falsehoods." ACL.
+3. Zellers, R., et al. (2019). "HellaSwag: Can a Machine Really Finish Your Sentence?" ACL.
+4. Wilson, E. B. (1927). "Probable inference, the law of succession, and statistical inference." JASA.
+5. McNemar, Q. (1947). "Note on the sampling error of the difference between correlated proportions." Psychometrika.
+
+---
+
+**Navigation:** [← README](../README.md) | [Quick Start](QUICKSTART.md) | [Providers](PROVIDERS.md) | [API Reference](API.md) | [Benchmarks](FULL_BENCHMARKS.md)

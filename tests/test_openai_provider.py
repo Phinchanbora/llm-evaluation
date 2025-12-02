@@ -63,7 +63,7 @@ def test_generate_with_system_prompt(provider, mock_openai_response):
     """Test generation with system prompt"""
     provider.client.chat.completions.create = Mock(return_value=mock_openai_response)
 
-    _ = provider.generate("Test prompt", system_prompt="You are a helpful assistant")
+    provider.generate("Test prompt", system_prompt="You are a helpful assistant")
 
     # Verify messages structure
     call_args = provider.client.chat.completions.create.call_args

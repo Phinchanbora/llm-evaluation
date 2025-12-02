@@ -81,7 +81,9 @@ class TestBenchmarkRunner:
         assert "truthfulqa" in results
         assert "hellaswag" in results
         assert "aggregate_benchmark_score" in results
-        assert 0.0 <= results["aggregate_benchmark_score"] <= 1.0
+        agg = results["aggregate_benchmark_score"]
+        score = agg["score"] if isinstance(agg, dict) else agg
+        assert 0.0 <= score <= 1.0
 
     def test_benchmark_error_handling(self):
         """Test benchmark handles provider errors"""

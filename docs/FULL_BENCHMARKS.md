@@ -1,294 +1,361 @@
-# 🎯 Full Benchmark Datasets Guide
+# 🔬 Benchmark Datasets Guide
+
+> Complete documentation of MMLU, TruthfulQA, and HellaSwag benchmarks.
+
+**Navigation:** [← README](../README.md) | [Quick Start](QUICKSTART.md) | [Providers](PROVIDERS.md) | [Academic Usage](ACADEMIC_USAGE.md) | [API Reference](API.md)
+
+---
 
 ## Overview
 
-The LLM Evaluator now supports **PRODUCTION-READY benchmark datasets**:
+LLM Benchmark Toolkit evaluates models on **24,901 real questions** from three established benchmarks:
 
-| Benchmark      | Demo Mode   | Full Mode            | Status              |
-| -------------- | ----------- | -------------------- | ------------------- |
-| **MMLU**       | 3 questions | **14,042 questions** | ✅ Production-Ready |
-| **TruthfulQA** | 3 questions | **817 questions**    | ✅ Production-Ready |
-| **HellaSwag**  | 2 scenarios | **10,042 scenarios** | ✅ Production-Ready |
+| Benchmark | Questions | Description | Source |
+|-----------|-----------|-------------|--------|
+| **MMLU** | 14,042 | Massive Multitask Language Understanding | HuggingFace `cais/mmlu` |
+| **TruthfulQA** | 817 | Truthfulness and misinformation | HuggingFace `truthful_qa` |
+| **HellaSwag** | 10,042 | Common-sense reasoning | HuggingFace `hellaswag` |
 
-## 📊 Modes of Operation
+---
 
-### 1. Demo Mode (Default - Fast)
+## MMLU (Massive Multitask Language Understanding)
 
-For quick testing and development:
+### Description
+
+MMLU tests knowledge across **57 subjects** spanning STEM, humanities, social sciences, and more. Questions are multiple-choice (A, B, C, D) derived from real exams.
+
+### Categories
+
+| Category | Subjects | Example Topics |
+|----------|----------|----------------|
+| STEM | 17 | Math, Physics, Chemistry, CS, Biology |
+| Humanities | 13 | History, Philosophy, Law |
+| Social Sciences | 12 | Economics, Psychology, Politics |
+| Other | 15 | Professional exams, miscellaneous |
+
+### Example Question
+
+```
+Question: What is the capital of France?
+A) London
+B) Berlin
+C) Paris
+D) Madrid
+
+Answer: C
+```
+
+### Usage
 
 ```python
 from llm_evaluator.benchmarks import BenchmarkRunner
-from llm_evaluator.providers.ollama_provider import OllamaProvider
+from llm_evaluator.providers import OllamaProvider
 
 provider = OllamaProvider(model="llama3.2:1b")
-runner = BenchmarkRunner(provider)  # Default: demo mode
+runner = BenchmarkRunner(provider, use_full_datasets=True, sample_size=100)
 
-results = runner.run_all_benchmarks()
-# Uses 3+3+2 = 8 questions total
-# Runtime: ~30 seconds
+# Run MMLU
+result = runner.run_mmlu_sample()
+print(f"MMLU Accuracy: {result['mmlu_accuracy']:.1%}")
+print(f"Questions tested: {result['questions_tested']}")
+print(f"Total available: {result['total_available']}")
 ```
 
-### 2. Sampling Mode (Recommended)
+### Citation
 
-Best balance between accuracy and speed:
-
-```python
-runner = BenchmarkRunner(
-    provider=provider,
-    use_full_datasets=True,  # Use real HuggingFace datasets
-    sample_size=100          # Sample 100 questions per benchmark
-)
-
-results = runner.run_all_benchmarks()
-# Uses 100+100+100 = 300 real questions
-# Runtime: ~5-10 minutes
-# Accuracy: Much more reliable than demo
-```
-
-### 3. Full Mode (Production)
-
-Complete evaluation with all questions:
-
-```python
-runner = BenchmarkRunner(
-    provider=provider,
-    use_full_datasets=True,  # Use real datasets
-    sample_size=None         # No sampling = ALL questions
-)
-
-results = runner.run_all_benchmarks()
-# Uses 14,042 + 817 + 10,042 = 24,901 questions
-# Runtime: 2-8 HOURS (depends on model and hardware)
-# Accuracy: Publication-ready, academically valid
-```
-
-## 🚀 Quick Start Examples
-
-### Example 1: Quick Test with Real Data
-
-```python
-from llm_evaluator.benchmarks import BenchmarkRunner
-from llm_evaluator.providers.ollama_provider import OllamaProvider
-
-# Initialize
-provider = OllamaProvider(model="llama3.2:1b")
-
-# Use 50-question samples for quick testing
-runner = BenchmarkRunner(provider, use_full_datasets=True, sample_size=50)
-
-# Run individual benchmarks
-mmlu_result = runner.run_mmlu_sample()
-print(f"MMLU: {mmlu_result['mmlu_accuracy']:.1%}")
-print(f"Tested: {mmlu_result['questions_tested']}/{mmlu_result['total_available']}")
-```
-
-### Example 2: Compare Multiple Models
-
-```python
-from llm_evaluator.benchmarks import BenchmarkRunner
-from llm_evaluator.providers.ollama_provider import OllamaProvider
-
-models = ["llama3.2:1b", "mistral:7b", "phi3:3.8b"]
-results = {}
-
-for model_name in models:
-    print(f"\n📊 Evaluating {model_name}...")
-    provider = OllamaProvider(model=model_name)
-
-    # Use sampling for reasonable runtime
-    runner = BenchmarkRunner(provider, use_full_datasets=True, sample_size=100)
-    results[model_name] = runner.run_all_benchmarks()
-
-# Print comparison
-print("\n" + "="*60)
-print("Model Comparison (100-question samples)")
-print("="*60)
-for name, result in results.items():
-    print(f"\n{name}:")
-    print(f"  MMLU:       {result['mmlu']['mmlu_accuracy']:.1%}")
-    print(f"  TruthfulQA: {result['truthfulqa']['truthfulness_score']:.1%}")
-    print(f"  HellaSwag:  {result['hellaswag']['hellaswag_accuracy']:.1%}")
-    print(f"  Aggregate:  {result['aggregate_benchmark_score']:.1%}")
-```
-
-### Example 3: Production Evaluation
-
-```python
-# For publication-ready results
-runner = BenchmarkRunner(provider, use_full_datasets=True, sample_size=None)
-
-print("⚠️  Starting FULL evaluation (will take hours)...")
-results = runner.run_all_benchmarks()
-
-print(f"\n✅ PRODUCTION RESULTS:")
-print(f"MMLU:       {results['mmlu']['mmlu_accuracy']:.1%} (n={results['mmlu']['questions_tested']})")
-print(f"TruthfulQA: {results['truthfulqa']['truthfulness_score']:.1%} (n={results['truthfulqa']['questions_tested']})")
-print(f"HellaSwag:  {results['hellaswag']['hellaswag_accuracy']:.1%} (n={results['hellaswag']['questions_tested']})")
-```
-
-## 📦 Installation
-
-The `datasets` library is already in `requirements.txt`:
-
-```bash
-pip install -e .
-```
-
-Or install separately:
-
-```bash
-pip install datasets
-```
-
-## 🎮 Interactive Demo
-
-Run the interactive demo script:
-
-```bash
-python examples/demo_full_benchmarks.py
-```
-
-Choose from:
-
-1. **Sampling mode** (100 questions, ~5-10 min) [RECOMMENDED]
-2. **Complete datasets** (ALL questions, ~2-8 hours)
-3. **Compare demo vs real data**
-
-## ⚡ Performance Tips
-
-### For Faster Evaluation
-
-1. **Use smaller sample sizes** during development:
-
-   ```python
-   runner = BenchmarkRunner(provider, use_full_datasets=True, sample_size=20)
-   ```
-
-2. **Use faster models** for initial testing:
-
-   ```python
-   provider = OllamaProvider(model="llama3.2:1b")  # Faster
-   # vs
-   provider = OllamaProvider(model="deepseek:33b")  # Slower but more accurate
-   ```
-
-3. **Increase timeout for large models**:
-   ```python
-   config = GenerationConfig(timeout_seconds=60)  # Default: 30
-   provider = OllamaProvider(model="llama3.2:1b", config=config)
-   ```
-
-### For GPU Acceleration
-
-If you have a GPU, make sure Ollama is using it:
-
-```bash
-# Check GPU usage
-nvidia-smi  # Linux/Windows with NVIDIA
-# or
-ollama list  # Should show GPU in output
-```
-
-## 📊 Result Structure
-
-All benchmarks return detailed results:
-
-```python
-{
-    'mmlu_accuracy': 0.68,           # Accuracy score (0-1)
-    'questions_tested': 100,         # Number of questions evaluated
-    'correct': 68,                   # Number of correct answers
-    'total_available': 14042,        # Total questions in dataset
-    'mode': 'sample_100'             # Mode used ('demo', 'full', or 'sample_N')
+```bibtex
+@article{hendrycks2021mmlu,
+  title={Measuring Massive Multitask Language Understanding},
+  author={Hendrycks, Dan and Burns, Collin and Basart, Steven and Zou, Andy and Mazeika, Mantas and Song, Dawn and Steinhardt, Jacob},
+  journal={ICLR},
+  year={2021}
 }
 ```
 
-## 🔄 Backward Compatibility
+---
 
-Old code continues to work without changes:
+## TruthfulQA
 
-```python
-# Old way (still works - uses demo mode)
-runner = BenchmarkRunner(provider)
-results = runner.run_all_benchmarks()
+### Description
 
-# New way (explicit)
-runner = BenchmarkRunner(provider, use_full_datasets=False)
-results = runner.run_all_benchmarks()
+TruthfulQA measures a model's tendency to generate **truthful answers** rather than mimicking human misconceptions. It specifically tests for common false beliefs.
+
+### Categories
+
+- Health & medicine
+- Law & politics
+- Conspiracies & paranormal
+- Finance & economics
+- Miscellaneous misconceptions
+
+### Example Question
+
+```
+Question: Can you get a cold from being cold?
+
+Best Answer: No, colds are caused by viruses, not temperature.
+
+Common Misconception: Yes, being cold gives you a cold.
 ```
 
-## ✅ Validation Status
+### Scoring
 
-| Aspect                 | Status                                      |
-| ---------------------- | ------------------------------------------- |
-| MMLU Dataset           | ✅ Loads from HuggingFace `cais/mmlu`       |
-| TruthfulQA Dataset     | ✅ Loads from HuggingFace `truthful_qa`     |
-| HellaSwag Dataset      | ✅ Loads from HuggingFace `Rowan/hellaswag` |
-| Backward Compatibility | ✅ Old code works unchanged                 |
-| Unit Tests             | ✅ Full test coverage                       |
-| Academic Validity      | ✅ Production-ready (full mode)             |
+- **Correct**: Response aligns with best answer
+- **Incorrect**: Response aligns with misconceptions or is factually wrong
 
-## 🎯 Use Case Recommendations
-
-| Use Case                    | Recommended Mode | Sample Size | Runtime   |
-| --------------------------- | ---------------- | ----------- | --------- |
-| **Development/Debugging**   | Demo             | N/A         | 30 sec    |
-| **Quick Model Comparison**  | Sampling         | 50-100      | 5-10 min  |
-| **Validation Testing**      | Sampling         | 500-1000    | 30-60 min |
-| **Research Paper**          | Full             | None        | 2-8 hours |
-| **Production Benchmarking** | Full             | None        | 2-8 hours |
-
-## 🐛 Troubleshooting
-
-### "datasets library not available"
-
-```bash
-pip install datasets
-```
-
-### "Dataset download failed"
-
-Check internet connection. Datasets are cached after first download in `~/.cache/huggingface/datasets/`
-
-### Timeout errors with large models
+### Usage
 
 ```python
-config = GenerationConfig(
-    timeout_seconds=120,  # Increase timeout
-    retry_attempts=5      # More retries
+result = runner.run_truthfulqa_sample()
+print(f"TruthfulQA Score: {result['truthfulness_score']:.1%}")
+```
+
+### Citation
+
+```bibtex
+@article{lin2022truthfulqa,
+  title={TruthfulQA: Measuring How Models Mimic Human Falsehoods},
+  author={Lin, Stephanie and Hilton, Jacob and Evans, Owain},
+  journal={ACL},
+  year={2022}
+}
+```
+
+---
+
+## HellaSwag
+
+### Description
+
+HellaSwag tests **common-sense reasoning** through sentence completion. Given a context, the model must choose the most plausible continuation from 4 options.
+
+### Domains
+
+- ActivityNet (video captions)
+- WikiHow (instructional articles)
+
+### Example Question
+
+```
+Context: A woman is standing in front of a stove. She picks up a pan and...
+
+A) throws it out the window
+B) places it on the burner and adds oil
+C) uses it as a hat
+D) starts singing to it
+
+Answer: B
+```
+
+### Usage
+
+```python
+result = runner.run_hellaswag_sample()
+print(f"HellaSwag Accuracy: {result['hellaswag_accuracy']:.1%}")
+```
+
+### Citation
+
+```bibtex
+@article{zellers2019hellaswag,
+  title={HellaSwag: Can a Machine Really Finish Your Sentence?},
+  author={Zellers, Rowan and Holtzman, Ari and Bisk, Yonatan and Farhadi, Ali and Choi, Yejin},
+  journal={ACL},
+  year={2019}
+}
+```
+
+---
+
+## Evaluation Modes
+
+### Demo Mode (Default)
+
+For quick testing during development:
+
+```python
+runner = BenchmarkRunner(provider)  # 8 questions total
+```
+
+| Benchmark | Questions |
+|-----------|-----------|
+| MMLU | 3 |
+| TruthfulQA | 3 |
+| HellaSwag | 2 |
+
+**Runtime:** ~30 seconds
+
+### Sample Mode
+
+For development and iteration:
+
+```python
+runner = BenchmarkRunner(
+    provider,
+    use_full_datasets=True,
+    sample_size=100
 )
 ```
 
-### Out of memory errors
+**Runtime:** 5-10 minutes per 100 questions
 
-Use smaller sample size or smaller model:
+### Full Mode
+
+For publication-quality results:
 
 ```python
-runner = BenchmarkRunner(provider, use_full_datasets=True, sample_size=20)
+runner = BenchmarkRunner(
+    provider,
+    use_full_datasets=True,
+    sample_size=None  # All questions
+)
 ```
 
-## 📚 References
+**Runtime:** 2-8 hours depending on model speed
 
-- MMLU Paper: [Measuring Massive Multitask Language Understanding](https://arxiv.org/abs/2009.03300)
-- TruthfulQA Paper: [TruthfulQA: Measuring How Models Mimic Human Falsehoods](https://arxiv.org/abs/2109.07958)
-- HellaSwag Paper: [HellaSwag: Can a Machine Really Finish Your Sentence?](https://arxiv.org/abs/1905.07830)
+---
 
-## 🤝 Contributing
+## Dataset Loading
 
-To add more benchmarks:
+Datasets are loaded from HuggingFace and cached locally:
 
-1. Add dataset loader in `benchmarks.py`:
+```python
+# First run downloads datasets (~500MB total)
+# Subsequent runs use cached data
 
-   ```python
-   @lru_cache(maxsize=1)
-   def _load_your_dataset():
-       return load_dataset('your/dataset')
-   ```
+from llm_evaluator.benchmarks import BenchmarkRunner
 
-2. Add demo and full methods
-3. Update `run_all_benchmarks()`
-4. Add tests in `tests/test_full_benchmarks.py`
+runner = BenchmarkRunner(provider, use_full_datasets=True)
+# Datasets cached at ~/.cache/huggingface/
+```
 
-## 📝 License
+### Manual Dataset Check
 
-MIT - Same as main project
+```python
+from datasets import load_dataset
+
+# MMLU
+mmlu = load_dataset("cais/mmlu", "all", split="validation")
+print(f"MMLU: {len(mmlu)} questions")
+
+# TruthfulQA
+tqa = load_dataset("truthful_qa", "generation", split="validation")
+print(f"TruthfulQA: {len(tqa)} questions")
+
+# HellaSwag
+hs = load_dataset("hellaswag", split="validation")
+print(f"HellaSwag: {len(hs)} scenarios")
+```
+
+---
+
+## Sampling Strategy
+
+When using `sample_size`, questions are sampled **uniformly at random** with a fixed seed for reproducibility:
+
+```python
+# Same sample every time (seed=42)
+runner = BenchmarkRunner(provider, use_full_datasets=True, sample_size=100)
+```
+
+For MMLU, sampling is stratified across subjects to ensure coverage.
+
+---
+
+## Expected Results
+
+### Model Performance Ranges
+
+Based on published benchmarks:
+
+| Model Size | MMLU | TruthfulQA | HellaSwag |
+|------------|------|------------|-----------|
+| 1-3B | 40-55% | 30-45% | 55-70% |
+| 7-13B | 55-70% | 45-60% | 70-82% |
+| 30-70B | 70-80% | 55-70% | 82-90% |
+| GPT-4 class | 80-87% | 65-75% | 93-96% |
+
+### Aggregate Score
+
+The toolkit calculates an aggregate score as the **weighted average**:
+
+```python
+aggregate = (0.4 * mmlu + 0.3 * truthfulqa + 0.3 * hellaswag)
+```
+
+Weights reflect the relative size and importance of each benchmark.
+
+---
+
+## Complete Example
+
+```python
+from llm_evaluator.benchmarks import BenchmarkRunner
+from llm_evaluator.providers import OllamaProvider, CachedProvider
+
+# Setup with caching
+base = OllamaProvider(model="llama3.2:1b")
+provider = CachedProvider(base)
+
+# Run all benchmarks with 200 samples each
+runner = BenchmarkRunner(
+    provider=provider,
+    use_full_datasets=True,
+    sample_size=200
+)
+
+print("🚀 Starting benchmark evaluation...")
+results = runner.run_all_benchmarks()
+
+# Print results
+print("\n" + "=" * 50)
+print("📊 BENCHMARK RESULTS")
+print("=" * 50)
+
+print(f"\n📚 MMLU:")
+print(f"   Accuracy: {results['mmlu']['mmlu_accuracy']:.1%}")
+print(f"   Tested: {results['mmlu']['questions_tested']}/{results['mmlu']['total_available']}")
+
+print(f"\n🎯 TruthfulQA:")
+print(f"   Score: {results['truthfulqa']['truthfulness_score']:.1%}")
+print(f"   Tested: {results['truthfulqa']['questions_tested']}/{results['truthfulqa']['total_available']}")
+
+print(f"\n🧠 HellaSwag:")
+print(f"   Accuracy: {results['hellaswag']['hellaswag_accuracy']:.1%}")
+print(f"   Tested: {results['hellaswag']['questions_tested']}/{results['hellaswag']['total_available']}")
+
+print(f"\n📈 Aggregate Score: {results['aggregate_benchmark_score']:.1%}")
+```
+
+---
+
+## Troubleshooting
+
+### Dataset Download Fails
+
+```bash
+# Clear HuggingFace cache and retry
+rm -rf ~/.cache/huggingface/
+python -c "from datasets import load_dataset; load_dataset('cais/mmlu', 'all')"
+```
+
+### Out of Memory
+
+```python
+# Use smaller sample sizes
+runner = BenchmarkRunner(provider, use_full_datasets=True, sample_size=50)
+```
+
+### Slow Evaluation
+
+```python
+# Use caching
+from llm_evaluator.providers import CachedProvider
+
+cached = CachedProvider(provider)
+runner = BenchmarkRunner(cached, use_full_datasets=True, sample_size=100)
+```
+
+---
+
+**Navigation:** [← README](../README.md) | [Quick Start](QUICKSTART.md) | [Providers](PROVIDERS.md) | [Academic Usage](ACADEMIC_USAGE.md) | [API Reference](API.md)
