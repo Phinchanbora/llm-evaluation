@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "llm-benchmark-toolkit"
-version = "2.2.1"
+version = "2.2.2"
 description = "Benchmark LLMs with real academic datasets: MMLU, TruthfulQA, HellaSwag, ARC & more. Web dashboard included."
 readme = "README.md"
 authors = [

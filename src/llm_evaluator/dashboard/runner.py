@@ -450,6 +450,12 @@ class EvaluationRunner:
         elif isinstance(run_status, str):
             status = run_status
 
+        # Calculate duration in seconds
+        duration_seconds: float | None = None
+        if started_at and completed_at:
+            if isinstance(completed_at, datetime) and isinstance(started_at, datetime):
+                duration_seconds = (completed_at - started_at).total_seconds()
+
         complete_data: dict[str, Any] = {
             "run_id": run_id,
             "model": run.get("model"),
@@ -462,6 +468,7 @@ class EvaluationRunner:
             "completed_at": (
                 completed_at.isoformat() if isinstance(completed_at, datetime) else completed_at
             ),
+            "duration_seconds": duration_seconds,
             "inference_settings": run.get("inference_settings", {}),
             "results": run.get("results", {}),
             "logs": run.get("logs", []),

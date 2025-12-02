@@ -164,6 +164,22 @@ function RunDetail() {
     return nameMap[name.toLowerCase()] || name.toUpperCase()
   }
 
+  // Calculate total inference time from benchmark elapsed_time values
+  function getTotalInferenceTime() {
+    if (!run.results) return null
+    let total = 0
+    let hasTime = false
+    for (const data of Object.values(run.results)) {
+      if (data.elapsed_time) {
+        total += data.elapsed_time
+        hasTime = true
+      }
+    }
+    return hasTime ? total : null
+  }
+
+  const totalInferenceTime = getTotalInferenceTime()
+
   // Prepare chart data
   const chartData = run.results
     ? Object.entries(run.results).map(([name, data]) => {
@@ -474,6 +490,20 @@ function RunDetail() {
                   }
                 </div>
               </div>
+              {totalInferenceTime && (
+                <div className="p-4 bg-slate-700/30 rounded-lg">
+                  <div className="text-sm text-slate-400 mb-1">Inference Time</div>
+                  <div className="text-white font-medium">
+                    {totalInferenceTime >= 60
+                      ? `${Math.floor(totalInferenceTime / 60)}m ${Math.round(totalInferenceTime % 60)}s`
+                      : `${totalInferenceTime.toFixed(1)}s`
+                    }
+                  </div>
+                  <div className="text-xs text-slate-500 mt-1">
+                    (sum of benchmark times)
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 

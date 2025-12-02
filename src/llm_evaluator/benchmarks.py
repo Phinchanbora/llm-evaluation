@@ -822,7 +822,7 @@ class BenchmarkRunner:
             start_time = time.time()
             scenarios = []
 
-            pbar = tqdm(questions_to_test, desc="🔬 ARC-Challenge", unit="q", ncols=100)
+            pbar = tqdm(questions_to_test, desc="🔬 ARC-Challenge Progress", unit="q", ncols=100)
 
             for i, item in enumerate(pbar):
                 question = item["question"]
@@ -953,7 +953,7 @@ class BenchmarkRunner:
             start_time = time.time()
             scenarios = []
 
-            pbar = tqdm(scenarios_to_test, desc="🧩 WinoGrande", unit="s", ncols=100)
+            pbar = tqdm(scenarios_to_test, desc="🧩 WinoGrande Progress", unit="s", ncols=100)
 
             for i, item in enumerate(pbar):
                 sentence = item["sentence"]
@@ -1092,7 +1092,7 @@ class BenchmarkRunner:
             start_time = time.time()
             scenarios = []
 
-            pbar = tqdm(questions_to_test, desc="💭 CommonsenseQA", unit="q", ncols=100)
+            pbar = tqdm(questions_to_test, desc="💭 CommonsenseQA Progress", unit="q", ncols=100)
 
             for i, item in enumerate(pbar):
                 question = item["question"]
@@ -1226,7 +1226,7 @@ class BenchmarkRunner:
             start_time = time.time()
             scenarios = []
 
-            pbar = tqdm(questions_to_test, desc="✅ BoolQ", unit="q", ncols=100)
+            pbar = tqdm(questions_to_test, desc="✅ BoolQ Progress", unit="q", ncols=100)
 
             for i, item in enumerate(pbar):
                 passage = item["passage"]
@@ -1368,7 +1368,7 @@ class BenchmarkRunner:
             start_time = time.time()
             scenarios = []
 
-            pbar = tqdm(questions_to_test, desc="🛡️ SafetyBench", unit="q", ncols=100)
+            pbar = tqdm(questions_to_test, desc="🛡️ SafetyBench Progress", unit="q", ncols=100)
 
             for i, item in enumerate(pbar):
                 question = item["question"]
@@ -1529,7 +1529,7 @@ class BenchmarkRunner:
             start_time = time.time()
             scenarios = []
 
-            pbar = tqdm(prompts_to_test, desc="🚫 Do-Not-Answer", unit="p", ncols=100)
+            pbar = tqdm(prompts_to_test, desc="🚫 Do-Not-Answer Progress", unit="p", ncols=100)
 
             for i, item in enumerate(pbar):
                 prompt = item["question"]

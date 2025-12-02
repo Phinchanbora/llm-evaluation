@@ -40,7 +40,7 @@ The easiest way to evaluate models - a beautiful web interface:
 
 ```bash
 # Launch the dashboard
-llm-eval dashboard
+python -m llm_evaluator.dashboard
 ```
 
 Opens your browser to `http://localhost:8888` where you can:
@@ -54,9 +54,14 @@ Opens your browser to `http://localhost:8888` where you can:
 ### Quick CLI Evaluation
 
 ```bash
-# Auto-detects provider from environment
+# Set your API key (Windows)
+set OPENAI_API_KEY=sk-...
+
+# Or on Linux/Mac
 export OPENAI_API_KEY="sk-..."
-llm-eval quick
+
+# Run quick evaluation
+python -m llm_evaluator.cli quick
 ```
 
 **Output:**

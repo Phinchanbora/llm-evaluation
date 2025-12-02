@@ -469,6 +469,17 @@ def create_app(outputs_dir: Optional[Path] = None) -> "FastAPI":
                         data["status"] = "cancelled"
                     elif "pending" in status:
                         data["status"] = "pending"
+                # Calculate duration if not present
+                if "duration_seconds" not in data:
+                    started = data.get("started_at")
+                    completed = data.get("completed_at")
+                    if started and completed:
+                        try:
+                            start_dt = datetime.fromisoformat(started)
+                            end_dt = datetime.fromisoformat(completed)
+                            data["duration_seconds"] = (end_dt - start_dt).total_seconds()
+                        except (ValueError, TypeError):
+                            pass
                 return data
             raise HTTPException(status_code=404, detail="Run not found")
         return run

@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.2] - 2025-12-02
+
+### Fixed
+
+- **Dashboard progress bar** - All benchmarks now correctly update the progress bar
+  - Fixed: ARC-Challenge, WinoGrande, CommonsenseQA, BoolQ, SafetyBench, Do-Not-Answer
+  - Previously only MMLU, TruthfulQA, and HellaSwag showed progress
+- **README documentation** - Corrected dashboard launch command
+
+### Added
+
+- **Duration display** - Run details now show total duration (wall clock time)
+- **Inference Time** - New metric showing sum of all benchmark execution times (scientific metric)
+  - Displayed in Run Details view alongside Duration
+  - More meaningful for reproducibility than wall clock time
+
 ## [2.2.1] - 2025-12-02
 
 ### Changed
