@@ -10,7 +10,8 @@
 </p>
 
 <p align="center">
-  <b>🎯 Benchmark LLMs with 24,901 real questions from MMLU, TruthfulQA & HellaSwag</b>
+  <b>🎯 Benchmark LLMs with 9 benchmarks & 100,000+ real questions</b><br>
+  <sub>MMLU • TruthfulQA • HellaSwag • ARC • WinoGrande • CommonsenseQA • BoolQ • SafetyBench • Do-Not-Answer</sub>
 </p>
 
 <p align="center">
@@ -115,13 +116,63 @@ llm-eval run --model claude-3-5-sonnet-20241022 --provider anthropic
 # DeepSeek (super affordable!)
 llm-eval quick --model deepseek-chat
 
-# Run specific benchmarks
-llm-eval benchmark --model gpt-4o --benchmarks mmlu,truthfulqa
+# Run specific benchmarks (any combination!)
+llm-eval benchmark --model gpt-4o --benchmarks mmlu,truthfulqa,arc,safetybench
+
+# Run ALL benchmarks
+llm-eval benchmark --model llama3.2:1b --benchmarks mmlu,truthfulqa,hellaswag,arc,winogrande,commonsenseqa,boolq,safetybench,donotanswer
 
 # Full academic evaluation
 llm-eval academic --model llama3.2:1b \
   --sample-size 500 \
   --output-latex results.tex
+```
+
+---
+
+## 🖥️ CLI Commands Reference
+
+| Command | Description |
+|---------|-------------|
+| `llm-eval quick` | 🚀 Zero-config evaluation (auto-detects provider) |
+| `llm-eval run` | Full evaluation on a single model |
+| `llm-eval benchmark` | Run specific benchmarks |
+| `llm-eval compare` | Compare multiple models side-by-side |
+| `llm-eval vs` | 🥊 Run same benchmark on multiple models sequentially |
+| `llm-eval dashboard` | 🌐 Launch web dashboard |
+| `llm-eval academic` | 🎓 Academic evaluation with statistics |
+| `llm-eval export` | 📤 Export results (JSON, CSV, LaTeX, BibTeX) |
+| `llm-eval providers` | Check available providers status |
+| `llm-eval list-runs` | 📋 List saved evaluation runs |
+
+### Key Options
+
+```bash
+# Common options for most commands
+-m, --model TEXT       # Model name
+-p, --provider TYPE    # ollama, openai, anthropic, huggingface, deepseek
+-s, --sample-size INT  # Number of questions to test
+-u, --base-url URL     # Custom API endpoint (vLLM, LM Studio, Azure)
+--cache / --no-cache   # Enable/disable caching
+
+# Benchmark selection
+-b, --benchmarks TEXT  # Comma-separated: mmlu,truthfulqa,hellaswag,arc,
+                       # winogrande,commonsenseqa,boolq,safetybench,donotanswer
+```
+
+### VS Command (Model Battle)
+
+Compare models head-to-head:
+
+```bash
+# Compare two local models
+llm-eval vs llama3.2:1b mistral:7b
+
+# Compare with specific benchmarks
+llm-eval vs llama3.2:1b mistral:7b -b mmlu,arc -s 50
+
+# Compare models from different providers
+llm-eval vs gpt-4o-mini claude-3.5-sonnet -p openai,anthropic
 ```
 
 ---
@@ -157,13 +208,16 @@ results = evaluator.evaluate_all()
 
 | Feature | Description |
 |---------|-------------|
-| 📊 **Real Benchmarks** | 14,042 MMLU + 817 TruthfulQA + 10,042 HellaSwag |
+| 📊 **9 Benchmarks** | MMLU, TruthfulQA, HellaSwag, ARC, WinoGrande, CommonsenseQA, BoolQ, SafetyBench, Do-Not-Answer |
+| 🔢 **100,000+ Questions** | Real academic datasets from HuggingFace |
 | 🔌 **5 Providers** | Ollama, OpenAI, Anthropic, DeepSeek, HuggingFace |
-| ⚡ **Zero Config** | Auto-detects provider from environment |
-| 💾 **10x Caching** | Intelligent caching for repeated evaluations |
+| 🌐 **Web Dashboard** | Beautiful UI with real-time progress, charts, and history |
+| ⚡ **Zero Config** | Auto-detects provider from environment variables |
+| 💾 **Smart Caching** | 10x faster repeated evaluations |
 | 📈 **Academic Rigor** | 95% CI, McNemar tests, baseline comparisons |
-| 📄 **Paper Exports** | LaTeX tables, BibTeX citations |
-| 🎨 **Beautiful CLI** | Progress bars, colored output |
+| 📄 **Paper Exports** | LaTeX tables, BibTeX citations, CSV, JSON |
+| 🛡️ **Safety Testing** | SafetyBench + Do-Not-Answer for security evaluation |
+| 🎨 **Beautiful CLI** | Progress bars, colored output, ETA tracking |
 
 ---
 
@@ -239,11 +293,26 @@ llm-eval providers
 
 ## 🔬 Benchmarks Included
 
+### 📚 Knowledge & Reasoning (7 benchmarks)
+
 | Benchmark | Questions | Description |
 |-----------|-----------|-------------|
 | **MMLU** | 14,042 | Massive Multitask Language Understanding - 57 subjects |
 | **TruthfulQA** | 817 | Truthfulness and avoiding misinformation |
-| **HellaSwag** | 10,042 | Common-sense reasoning |
+| **HellaSwag** | 10,042 | Common-sense reasoning and sentence completion |
+| **ARC-Challenge** | 2,590 | Grade-school science questions (hard subset) |
+| **WinoGrande** | 44,000 | Pronoun resolution and commonsense reasoning |
+| **CommonsenseQA** | 12,247 | Commonsense knowledge questions |
+| **BoolQ** | 15,942 | Yes/no reading comprehension questions |
+
+### 🛡️ Safety & Security (2 benchmarks)
+
+| Benchmark | Questions | Description |
+|-----------|-----------|-------------|
+| **SafetyBench** | 11,000 | Safety evaluation across multiple risk categories |
+| **Do-Not-Answer** | 939 | Harmful prompt detection and refusal testing |
+
+**Total: 9 benchmarks, 100,000+ questions**
 
 ---
 
@@ -260,12 +329,12 @@ pytest tests/ -v
 
 ### Wanted
 
-- [ ] More providers (Cohere, AI21, Groq, etc.)
-- [ ] More benchmarks (GSM8K, HumanEval, GPQA)
+- [ ] More providers (Cohere, AI21, Groq, Together.ai)
+- [ ] More benchmarks (GSM8K, HumanEval, GPQA, MT-Bench)
 - [ ] Async evaluation for faster throughput
-- [ ] Web UI (Gradio/Streamlit dashboard)
 - [ ] Batch evaluation mode
 - [ ] Custom benchmark support
+- [ ] Docker image for easy deployment
 
 **Contributors welcome!** 🎉
 
@@ -289,14 +358,16 @@ pytest tests/ -v
 # JSON (default)
 llm-eval run --model llama3.2:1b --output results.json
 
-# Markdown report
-llm-eval run --model llama3.2:1b --output report.md
+# Export to multiple formats
+llm-eval export results.json --format all
 
-# LaTeX tables (for papers)
-llm-eval academic --model llama3.2:1b --output-latex table.tex
+# Individual formats
+llm-eval export results.json --format csv
+llm-eval export results.json --format latex
+llm-eval export results.json --format bibtex
 
-# BibTeX citations
-llm-eval academic --model llama3.2:1b --output-bibtex refs.bib
+# Academic evaluation with direct exports
+llm-eval academic --model llama3.2:1b --output-latex table.tex --output-bibtex refs.bib
 ```
 
 ---
