@@ -134,17 +134,30 @@ class TestDetectProviderEdgeCases:
 
     def test_detect_ollama_running(self):
         """Test Ollama detection when running"""
-        import requests
+        import json
+        import socket
+        import urllib.request
 
         from llm_evaluator.cli import detect_provider_from_env
 
+        # Mock socket to simulate Ollama port is open
+        mock_socket = Mock()
+        mock_socket.connect_ex.return_value = 0  # Port is open
+
+        # Mock urllib response with models
         mock_response = Mock()
-        mock_response.status_code = 200
+        mock_response.read.return_value = json.dumps({
+            "models": [{"name": "tinyllama:latest"}]
+        }).encode()
+        mock_response.__enter__ = Mock(return_value=mock_response)
+        mock_response.__exit__ = Mock(return_value=False)
 
         with patch.dict(os.environ, {}, clear=True):
-            with patch.object(requests, "get", return_value=mock_response):
-                provider, model = detect_provider_from_env()
-                assert provider == "ollama"
+            with patch.object(socket, "socket", return_value=mock_socket):
+                with patch.object(urllib.request, "urlopen", return_value=mock_response):
+                    provider, model = detect_provider_from_env()
+                    assert provider == "ollama"
+                    assert "tinyllama" in model.lower()
 
 
 class TestCLIVersion:
