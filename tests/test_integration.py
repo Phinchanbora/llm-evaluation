@@ -3,11 +3,11 @@ Quick test to verify full benchmarks integration works correctly
 """
 
 from llm_evaluator.benchmarks import (
-    BenchmarkRunner,
     DATASETS_AVAILABLE,
+    BenchmarkRunner,
+    load_hellaswag_dataset,
     load_mmlu_dataset,
     load_truthfulqa_dataset,
-    load_hellaswag_dataset,
 )
 
 
@@ -21,8 +21,9 @@ def test_datasets_available() -> None:
 def test_demo_mode() -> None:
     """Test that demo mode works (no actual LLM calls)"""
     print("\n✓ Testing demo mode initialization...")
-    from llm_evaluator.providers import LLMProvider, GenerationResult
     from unittest.mock import Mock
+
+    from llm_evaluator.providers import GenerationResult, LLMProvider
 
     # Mock provider
     provider = Mock(spec=LLMProvider)
@@ -40,8 +41,9 @@ def test_demo_mode() -> None:
 def test_full_mode_initialization() -> None:
     """Test that full mode can be initialized"""
     print("\n✓ Testing full mode initialization...")
-    from llm_evaluator.providers import LLMProvider
     from unittest.mock import Mock
+
+    from llm_evaluator.providers import LLMProvider
 
     provider = Mock(spec=LLMProvider)
     provider.model = "test-model"

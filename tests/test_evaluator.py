@@ -5,9 +5,10 @@ Refactored for Clean Architecture with provider mocking
 """
 
 import pytest
-from llm_evaluator.evaluator import ModelEvaluator, EvaluationResults, DetailedMetrics
+
+from llm_evaluator.evaluator import DetailedMetrics, EvaluationResults, ModelEvaluator
 from llm_evaluator.providers import ProviderError
-from tests.mocks import MockProvider, create_mock_responses, create_failing_provider
+from tests.mocks import MockProvider, create_failing_provider, create_mock_responses
 
 
 class TestModelEvaluator:

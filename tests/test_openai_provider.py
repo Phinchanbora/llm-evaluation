@@ -4,14 +4,15 @@ Tests for OpenAI Provider
 Mocks OpenAI API calls to test provider logic without actual API requests.
 """
 
-import pytest
 from unittest.mock import Mock, patch
+
+import pytest
 
 # Skip all tests if openai not installed
 pytest.importorskip("openai", reason="openai not installed")
 
-from llm_evaluator.providers.openai_provider import OpenAIProvider
 from llm_evaluator.providers import GenerationConfig, RateLimitError, TimeoutError
+from llm_evaluator.providers.openai_provider import OpenAIProvider
 
 
 @pytest.fixture

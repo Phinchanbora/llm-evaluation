@@ -3,16 +3,18 @@ Tests for full benchmark datasets integration
 """
 
 from typing import Any, Dict, List
-import pytest
 from unittest.mock import Mock, patch
+
+import pytest
+
 from llm_evaluator.benchmarks import (
+    DATASETS_AVAILABLE,
     BenchmarkRunner,
+    load_hellaswag_dataset,
     load_mmlu_dataset,
     load_truthfulqa_dataset,
-    load_hellaswag_dataset,
-    DATASETS_AVAILABLE,
 )
-from llm_evaluator.providers import LLMProvider, GenerationResult
+from llm_evaluator.providers import GenerationResult, LLMProvider
 
 
 class TestFullBenchmarkIntegration:

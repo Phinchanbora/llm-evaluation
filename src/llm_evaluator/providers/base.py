@@ -189,7 +189,7 @@ class LLMProvider(ABC):
         pass
 
     @abstractmethod
-    def get_model_info(self) -> Dict[str, Union[str, int, float]]:
+    def get_model_info(self) -> Dict[str, Union[str, int, float, List[str]]]:
         """
         Get information about the model.
 

@@ -5,6 +5,7 @@ Refactored for Clean Architecture with provider mocking
 """
 
 import pytest
+
 from llm_evaluator.benchmarks import BenchmarkRunner
 from llm_evaluator.providers import ProviderError
 from tests.mocks import MockProvider, create_mock_responses

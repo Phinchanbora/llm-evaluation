@@ -6,7 +6,7 @@ Concrete implementation of LLMProvider for Ollama local models.
 
 import logging
 import time
-from typing import Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 import ollama
 
@@ -35,6 +35,8 @@ class OllamaProvider(LLMProvider):
         >>> print(result.text)
     """
 
+    _client: Any  # Can be ollama module or ollama.Client
+
     def __init__(
         self,
         model: str = "llama3.2:1b",
@@ -53,7 +55,7 @@ class OllamaProvider(LLMProvider):
         self.base_url = base_url
         self._client = None
 
-    def _get_client(self):
+    def _get_client(self) -> Any:
         """Lazy initialization of Ollama client"""
         if self._client is None:
             try:
@@ -219,7 +221,7 @@ class OllamaProvider(LLMProvider):
             logger.debug(f"Ollama not available: {e}")
             return False
 
-    def get_model_info(self) -> Dict[str, Union[str, int, float]]:
+    def get_model_info(self) -> Dict[str, Union[str, int, float, List[str]]]:
         """
         Get Ollama model information
 

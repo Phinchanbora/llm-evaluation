@@ -18,12 +18,7 @@ import time
 from pathlib import Path
 from typing import Dict, List, Optional, Union
 
-from .base import (
-    GenerationConfig,
-    GenerationResult,
-    LLMProvider,
-    ProviderType,
-)
+from .base import GenerationConfig, GenerationResult, LLMProvider, ProviderType
 
 logger = logging.getLogger(__name__)
 
@@ -76,12 +71,13 @@ class CachedProvider(LLMProvider):
         self.max_cache_size = max_cache_size
         self.ttl_seconds = ttl_seconds
 
-        # Disk cache
+        # Disk cache - sanitize model name for filesystem
         self.enable_disk_cache = enable_disk_cache
+        safe_model_name = self.model.replace("/", "_").replace(":", "_").replace("\\", "_")
         if cache_dir:
             self.cache_dir = Path(cache_dir)
         else:
-            self.cache_dir = Path.home() / ".cache" / "llm_eval" / self.model.replace("/", "_")
+            self.cache_dir = Path.home() / ".cache" / "llm_eval" / safe_model_name
 
         if self.enable_disk_cache:
             self.cache_dir.mkdir(parents=True, exist_ok=True)
@@ -188,7 +184,7 @@ class CachedProvider(LLMProvider):
                 return None
         return None
 
-    def _save_to_cache(self, cache_key: str, result: GenerationResult):
+    def _save_to_cache(self, cache_key: str, result: GenerationResult) -> None:
         """Save result to both memory and disk cache"""
         timestamp = time.time()
 
@@ -261,7 +257,7 @@ class CachedProvider(LLMProvider):
         """Generate batch with per-prompt caching"""
         return [self.generate(p, system_prompt, config) for p in prompts]
 
-    def clear_cache(self, disk_only: bool = False):
+    def clear_cache(self, disk_only: bool = False) -> None:
         """
         Clear cache
 
@@ -301,7 +297,7 @@ class CachedProvider(LLMProvider):
         """Check if underlying provider is available"""
         return self.provider.is_available()
 
-    def get_model_info(self) -> Dict[str, Union[str, int, float]]:
+    def get_model_info(self) -> Dict[str, Union[str, int, float, List[str]]]:
         """Get model info from underlying provider"""
         info = self.provider.get_model_info()
         info["cached"] = True

@@ -4,13 +4,13 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "llm-benchmark-toolkit"
-version = "2.0.0"
-description = "Comprehensive evaluation framework for Large Language Models with academic statistical rigor"
+version = "2.1.0"
+description = "Production-ready LLM evaluation with 24K+ real questions"
 readme = "README.md"
 authors = [
     {name = "Nahuel Giudizi", email = "nahuel@example.com"}
 ]
-license = {text = "MIT"}
+license = "MIT"
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
@@ -20,8 +20,12 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "License :: OSI Approved :: MIT License",
 ]
-keywords = ["llm", "evaluation", "benchmarking", "ai", "machine-learning"]
+keywords = [
+    "llm", "evaluation", "benchmark", "mmlu", "truthfulqa",
+    "hellaswag", "gpt", "claude", "ollama", "academic"
+]
 requires-python = ">=3.11"
 dependencies = [
     "ollama>=0.1.0",

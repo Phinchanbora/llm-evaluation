@@ -10,26 +10,22 @@ import time
 from typing import Dict, List, Optional, Union
 
 try:
-    from anthropic import (
-        Anthropic,
-        APIError,
-        RateLimitError as AnthropicRateLimitError,
-        APITimeoutError,
-    )
+    from anthropic import Anthropic, APIError, APITimeoutError
+    from anthropic import RateLimitError as AnthropicRateLimitError
 except ImportError:
     raise ImportError(
         "Anthropic provider requires 'anthropic' package. Install with: pip install anthropic"
     )
 
 from . import (
-    LLMProvider,
     GenerationConfig,
     GenerationResult,
+    LLMProvider,
+    ModelNotFoundError,
     ProviderError,
+    ProviderType,
     RateLimitError,
     TimeoutError,
-    ModelNotFoundError,
-    ProviderType,
 )
 
 logger = logging.getLogger(__name__)
@@ -84,14 +80,15 @@ class AnthropicProvider(LLMProvider):
         self.api_key = api_key
         self.base_url = base_url
 
-        # Initialize Anthropic client
-        client_kwargs = {}
-        if api_key:
-            client_kwargs["api_key"] = api_key
-        if base_url:
-            client_kwargs["base_url"] = base_url
-
-        self.client = Anthropic(**client_kwargs)
+        # Initialize Anthropic client with explicit parameters
+        if api_key and base_url:
+            self.client = Anthropic(api_key=api_key, base_url=base_url)
+        elif api_key:
+            self.client = Anthropic(api_key=api_key)
+        elif base_url:
+            self.client = Anthropic(base_url=base_url)
+        else:
+            self.client = Anthropic()
 
         logger.info(f"Initialized Anthropic provider with model: {model}")
 
@@ -119,26 +116,21 @@ class AnthropicProvider(LLMProvider):
         """
         cfg = config or self.config
 
-        # Build request parameters
-        request_params = {
-            "model": self.model,
-            "max_tokens": cfg.max_tokens,
-            "temperature": cfg.temperature,
-            "top_p": cfg.top_p,
-            "messages": [{"role": "user", "content": prompt}],
-            "timeout": cfg.timeout_seconds,
-        }
-
-        if system_prompt:
-            request_params["system"] = system_prompt
-
         # Retry logic with exponential backoff
-        last_error = None
+        last_error: Optional[Exception] = None
         for attempt in range(cfg.retry_attempts):
             try:
                 start_time = time.time()
 
-                response = self.client.messages.create(**request_params)
+                response = self.client.messages.create(
+                    model=self.model,
+                    max_tokens=cfg.max_tokens,
+                    temperature=cfg.temperature,
+                    top_p=cfg.top_p,
+                    messages=[{"role": "user", "content": prompt}],
+                    timeout=cfg.timeout_seconds,
+                    system=system_prompt if system_prompt else "",
+                )
 
                 elapsed = time.time() - start_time
 
@@ -161,8 +153,8 @@ class AnthropicProvider(LLMProvider):
                 return GenerationResult(
                     text=text,
                     response_time=elapsed,
-                    token_count=total_tokens,
-                    model_name=self.model,
+                    tokens_used=total_tokens,
+                    model=self.model,
                     metadata={
                         "input_tokens": input_tokens,
                         "output_tokens": output_tokens,
@@ -261,8 +253,8 @@ class AnthropicProvider(LLMProvider):
                     GenerationResult(
                         text="",
                         response_time=0.0,
-                        token_count=0,
-                        model_name=self.model,
+                        tokens_used=0,
+                        model=self.model,
                         metadata={"error": str(e), "provider": "anthropic"},
                     )
                 )
@@ -288,7 +280,7 @@ class AnthropicProvider(LLMProvider):
             logger.error(f"Anthropic API not available: {e}")
             return False
 
-    def get_model_info(self) -> Dict[str, Union[str, int, float]]:
+    def get_model_info(self) -> Dict[str, Union[str, int, float, List[str]]]:
         """
         Get information about the current model
 

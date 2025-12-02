@@ -11,7 +11,7 @@ from typing import Dict, List, Optional, Union
 
 try:
     from huggingface_hub import InferenceClient
-    from huggingface_hub.utils import HfHubHTTPError
+    from huggingface_hub.utils import HfHubHTTPError  # type: ignore[attr-defined]
 except ImportError:
     raise ImportError(
         "HuggingFace provider requires 'huggingface-hub' package. "
@@ -279,7 +279,7 @@ class HuggingFaceProvider(LLMProvider):
             logger.error(f"HuggingFace API not available: {e}")
             return False
 
-    def get_model_info(self) -> Dict[str, Union[str, int, float]]:
+    def get_model_info(self) -> Dict[str, Union[str, int, float, List[str]]]:
         """
         Get information about the current model
 

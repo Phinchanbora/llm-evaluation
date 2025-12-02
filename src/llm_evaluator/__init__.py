@@ -43,36 +43,28 @@ Documentation: docs/
 Repository: https://github.com/NahuelGiudizi/llm-evaluation
 """
 
-__version__ = "2.0.0"
+__version__ = "2.1.0"
 __author__ = "Nahuel Giudizi"
 __license__ = "MIT"
 
-from .evaluator import ModelEvaluator, EvaluationResults
-from .metrics import PerformanceMetrics, QualityMetrics
+from .academic_baselines import ACADEMIC_BASELINES, compare_to_baselines, get_baselines
 from .benchmarks import BenchmarkRunner
-from .visualizations import EvaluationVisualizer, quick_comparison
-from .providers import LLMProvider, GenerationConfig, ProviderError
+from .error_analysis import ErrorAnalyzer, expected_calibration_error
+from .evaluator import EvaluationResults, ModelEvaluator
+from .export import export_to_latex, generate_bibtex, generate_reproducibility_manifest
+from .metrics import PerformanceMetrics, QualityMetrics
+from .providers import GenerationConfig, LLMProvider, ProviderError
 
 # Academic features (v2.0)
 from .statistical_metrics import (
-    calculate_wilson_ci,
-    calculate_standard_error,
     bootstrap_confidence_interval,
-    mcnemar_test,
-    cohens_h,
     calculate_all_statistics,
+    calculate_standard_error,
+    calculate_wilson_ci,
+    cohens_h,
+    mcnemar_test,
 )
-from .academic_baselines import (
-    ACADEMIC_BASELINES,
-    compare_to_baselines,
-    get_baselines,
-)
-from .error_analysis import ErrorAnalyzer, expected_calibration_error
-from .export import (
-    export_to_latex,
-    generate_bibtex,
-    generate_reproducibility_manifest,
-)
+from .visualizations import EvaluationVisualizer, quick_comparison
 
 __all__ = [
     # Core

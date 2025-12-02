@@ -6,32 +6,28 @@ Tests statistical metrics, baselines, error analysis, and export functions.
 
 import pytest
 
-from llm_evaluator.statistical_metrics import (
-    calculate_wilson_ci,
-    calculate_standard_error,
-    bootstrap_confidence_interval,
-    mcnemar_test,
-    cohens_h,
-    calculate_all_statistics,
-)
 from llm_evaluator.academic_baselines import (
     ACADEMIC_BASELINES,
     compare_to_baselines,
-    get_baselines,
     generate_comparison_table,
+    get_baselines,
     list_available_baselines,
 )
-from llm_evaluator.error_analysis import (
-    ErrorAnalyzer,
-    expected_calibration_error,
-    cohens_kappa,
-)
+from llm_evaluator.error_analysis import ErrorAnalyzer, cohens_kappa, expected_calibration_error
 from llm_evaluator.export import (
     export_to_latex,
     generate_bibtex,
-    generate_reproducibility_manifest,
     generate_methods_section,
     generate_references_bibtex,
+    generate_reproducibility_manifest,
+)
+from llm_evaluator.statistical_metrics import (
+    bootstrap_confidence_interval,
+    calculate_all_statistics,
+    calculate_standard_error,
+    calculate_wilson_ci,
+    cohens_h,
+    mcnemar_test,
 )
 
 

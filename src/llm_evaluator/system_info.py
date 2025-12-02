@@ -2,13 +2,14 @@
 System information collection for reproducible benchmarks
 """
 
-import platform
-import psutil
-import subprocess
-from datetime import datetime
-from typing import Dict, Optional
-from dataclasses import dataclass, asdict
 import json
+import platform
+import subprocess
+from dataclasses import asdict, dataclass
+from datetime import datetime
+from typing import Any, Dict, Optional
+
+import psutil
 
 
 @dataclass
@@ -32,7 +33,7 @@ class SystemInfo:
     # Runtime
     timestamp: str
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary"""
         return asdict(self)
 
@@ -74,14 +75,14 @@ def get_cpu_model() -> str:
     """Get CPU model name"""
     try:
         if platform.system() == "Windows":
-            import winreg  # type: ignore[import-not-found,attr-defined]
+            import winreg
 
-            key = winreg.OpenKey(  # type: ignore[attr-defined]
-                winreg.HKEY_LOCAL_MACHINE,  # type: ignore[attr-defined]
+            key = winreg.OpenKey(
+                winreg.HKEY_LOCAL_MACHINE,
                 r"HARDWARE\DESCRIPTION\System\CentralProcessor\0",
             )
-            cpu_name: str = winreg.QueryValueEx(key, "ProcessorNameString")[0]  # type: ignore[attr-defined]
-            winreg.CloseKey(key)  # type: ignore[attr-defined]
+            cpu_name: str = winreg.QueryValueEx(key, "ProcessorNameString")[0]
+            winreg.CloseKey(key)
             return cpu_name.strip()
         elif platform.system() == "Linux":
             with open("/proc/cpuinfo") as f:
@@ -207,7 +208,7 @@ def collect_system_info() -> SystemInfo:
     )
 
 
-def print_system_info():
+def print_system_info() -> None:
     """Print system information to console"""
     info = collect_system_info()
     print(info.to_markdown())

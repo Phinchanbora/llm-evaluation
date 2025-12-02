@@ -8,14 +8,14 @@ from pathlib import Path
 from typing import Literal, Optional
 
 try:
-    from pydantic_settings import BaseSettings
     from pydantic import Field, field_validator
+    from pydantic_settings import BaseSettings
 
     PYDANTIC_V2 = True
 except ImportError:
     try:
-        from pydantic import BaseSettings, Field  # type: ignore[no-redef,assignment]
-        from pydantic import validator as field_validator  # type: ignore[no-redef,assignment]
+        from pydantic import BaseSettings, Field  # type: ignore[no-redef]
+        from pydantic import validator as field_validator  # type: ignore[no-redef]
 
         PYDANTIC_V2 = False
     except ImportError:
@@ -95,7 +95,7 @@ class EvaluatorConfig(BaseSettings):
         }
     else:
 
-        @field_validator("output_dir")  # type: ignore[no-redef]
+        @field_validator("output_dir")
         def create_output_dir(cls, v: Path) -> Path:  # type: ignore[misc]
             """Ensure output directory exists"""
             v.mkdir(parents=True, exist_ok=True)
@@ -172,7 +172,7 @@ class BenchmarkConfig(BaseSettings):
         }
     else:
 
-        @field_validator("cache_dir")  # type: ignore[no-redef]
+        @field_validator("cache_dir")
         def create_cache_dir(cls, v: Optional[Path]) -> Optional[Path]:  # type: ignore[misc]
             """Ensure cache directory exists"""
             if v:

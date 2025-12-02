@@ -12,21 +12,23 @@ import time
 from typing import Dict, List, Optional, Union
 
 try:
-    from openai import OpenAI, APIError, RateLimitError as OpenAIRateLimitError, APITimeoutError
+    from openai import APIError, APITimeoutError, OpenAI
+    from openai import RateLimitError as OpenAIRateLimitError
+    from openai.types.chat import ChatCompletionMessageParam
 except ImportError:
     raise ImportError(
         "DeepSeek provider requires 'openai' package. Install with: pip install openai"
     )
 
 from . import (
-    LLMProvider,
     GenerationConfig,
     GenerationResult,
+    LLMProvider,
+    ModelNotFoundError,
     ProviderError,
+    ProviderType,
     RateLimitError,
     TimeoutError,
-    ModelNotFoundError,
-    ProviderType,
 )
 
 logger = logging.getLogger(__name__)
@@ -121,7 +123,7 @@ class DeepSeekProvider(LLMProvider):
         cfg = config or self.config
         start_time = time.time()
 
-        messages: List[Dict[str, str]] = []
+        messages: List[ChatCompletionMessageParam] = []
         if system_prompt:
             messages.append({"role": "system", "content": system_prompt})
         messages.append({"role": "user", "content": prompt})
@@ -144,12 +146,11 @@ class DeepSeekProvider(LLMProvider):
                 # Calculate cost
                 prompt_tokens = response.usage.prompt_tokens if response.usage else 0
                 completion_tokens = response.usage.completion_tokens if response.usage else 0
-                
+
                 pricing = self.PRICING.get(self.model, {"input": 0.14, "output": 0.28})
-                cost = (
-                    (prompt_tokens / 1_000_000) * pricing["input"] +
-                    (completion_tokens / 1_000_000) * pricing["output"]
-                )
+                cost = (prompt_tokens / 1_000_000) * pricing["input"] + (
+                    completion_tokens / 1_000_000
+                ) * pricing["output"]
 
                 return GenerationResult(
                     text=text,
@@ -166,7 +167,7 @@ class DeepSeekProvider(LLMProvider):
 
             except OpenAIRateLimitError as e:
                 if attempt < cfg.retry_attempts - 1:
-                    wait_time = 2 ** attempt
+                    wait_time = 2**attempt
                     logger.warning(f"Rate limited, waiting {wait_time}s...")
                     time.sleep(wait_time)
                 else:
@@ -206,16 +207,13 @@ class DeepSeekProvider(LLMProvider):
         config: Optional[GenerationConfig] = None,
     ) -> List[GenerationResult]:
         """Generate responses for multiple prompts"""
-        return [
-            self.generate(prompt, system_prompt, config)
-            for prompt in prompts
-        ]
+        return [self.generate(prompt, system_prompt, config) for prompt in prompts]
 
     def is_available(self) -> bool:
         """Check if DeepSeek API is accessible"""
         try:
             # Simple test call
-            response = self.client.chat.completions.create(
+            self.client.chat.completions.create(
                 model=self.model,
                 messages=[{"role": "user", "content": "Hi"}],
                 max_tokens=5,
@@ -246,9 +244,9 @@ class DeepSeekProvider(LLMProvider):
         return len(text) // 4
 
     @property
-    def provider_type(self) -> str:
+    def provider_type(self) -> ProviderType:
         """Get provider type identifier"""
-        return "deepseek"
+        return ProviderType.DEEPSEEK
 
     def _get_provider_type(self) -> ProviderType:
         """Return the provider type enum"""

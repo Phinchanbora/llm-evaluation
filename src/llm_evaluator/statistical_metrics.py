@@ -12,7 +12,7 @@ References:
 """
 
 import math
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Union
 
 import numpy as np
 from scipy import stats
@@ -428,3 +428,157 @@ def calculate_all_statistics(
         result["bootstrap_ci_upper"] = bootstrap_ci[1]
 
     return result
+
+
+def calculate_cohens_kappa(
+    predictions_a: List[bool],
+    predictions_b: List[bool],
+) -> float:
+    """
+    Calculate Cohen's Kappa for inter-rater agreement.
+
+    Measures agreement between two sets of predictions, accounting for
+    agreement that would occur by chance.
+
+    Args:
+        predictions_a: First set of boolean predictions
+        predictions_b: Second set of boolean predictions
+
+    Returns:
+        Kappa coefficient (-1 to 1, where 1 is perfect agreement)
+
+    Example:
+        >>> kappa = calculate_cohens_kappa([True, True, False], [True, True, False])
+        >>> print(f"Kappa: {kappa:.2f}")  # 1.00 (perfect agreement)
+    """
+    if len(predictions_a) != len(predictions_b):
+        raise ValueError("Prediction lists must have the same length")
+
+    n = len(predictions_a)
+    if n == 0:
+        return 0.0
+
+    # Count agreements and disagreements
+    both_true = sum(1 for a, b in zip(predictions_a, predictions_b) if a and b)
+    both_false = sum(1 for a, b in zip(predictions_a, predictions_b) if not a and not b)
+    a_true_b_false = sum(1 for a, b in zip(predictions_a, predictions_b) if a and not b)
+    a_false_b_true = sum(1 for a, b in zip(predictions_a, predictions_b) if not a and b)
+
+    # Observed agreement
+    po = (both_true + both_false) / n
+
+    # Expected agreement by chance
+    p_a_true = (both_true + a_true_b_false) / n
+    p_b_true = (both_true + a_false_b_true) / n
+    pe = p_a_true * p_b_true + (1 - p_a_true) * (1 - p_b_true)
+
+    # Cohen's Kappa
+    if pe == 1:
+        return 1.0 if po == 1 else 0.0
+
+    kappa = (po - pe) / (1 - pe)
+    return kappa
+
+
+def calculate_effect_size(
+    accuracy_a: float,
+    accuracy_b: float,
+    n: int,
+) -> float:
+    """
+    Calculate Cohen's h effect size for two proportions.
+
+    Args:
+        accuracy_a: First accuracy (0-1)
+        accuracy_b: Second accuracy (0-1)
+        n: Sample size
+
+    Returns:
+        Effect size (Cohen's h)
+
+    Example:
+        >>> effect = calculate_effect_size(0.80, 0.70, 100)
+        >>> print(f"Effect size: {effect:.2f}")
+    """
+    # Cohen's h = 2 * (arcsin(sqrt(p1)) - arcsin(sqrt(p2)))
+    import math
+
+    phi_a = 2 * math.asin(math.sqrt(accuracy_a))
+    phi_b = 2 * math.asin(math.sqrt(accuracy_b))
+
+    return phi_a - phi_b
+
+
+def calculate_required_sample_size(
+    effect_size: float,
+    power: float = 0.8,
+    alpha: float = 0.05,
+) -> Union[int, float]:
+    """
+    Calculate required sample size for detecting an effect.
+
+    Uses power analysis to determine minimum sample size needed
+    to detect a given effect size with specified power.
+
+    Args:
+        effect_size: Expected effect size (e.g., 0.1 for 10% difference)
+        power: Desired statistical power (default: 0.8)
+        alpha: Significance level (default: 0.05)
+
+    Returns:
+        Required sample size per group
+
+    Example:
+        >>> n = calculate_required_sample_size(0.1, power=0.8)
+        >>> print(f"Need {n} samples per group")
+    """
+    from scipy import stats
+
+    # Z-scores for power and alpha
+    z_alpha = stats.norm.ppf(1 - alpha / 2)
+    z_beta = stats.norm.ppf(power)
+
+    # Sample size formula for comparing proportions
+    # n = 2 * ((z_alpha + z_beta) / effect_size)^2
+    if effect_size == 0:
+        return float("inf")
+
+    n = int(math.ceil(2 * ((z_alpha + z_beta) / effect_size) ** 2))
+    return max(n, 10)  # Minimum of 10 samples
+
+
+def calculate_aggregate_statistics(
+    accuracies: List[float],
+) -> Dict[str, float]:
+    """
+    Calculate aggregate statistics across multiple evaluations.
+
+    Args:
+        accuracies: List of accuracy values
+
+    Returns:
+        Dictionary with mean, std, min, max, median
+
+    Example:
+        >>> stats = calculate_aggregate_statistics([0.75, 0.80, 0.70])
+        >>> print(f"Mean: {stats['mean']:.2f}")
+    """
+    if not accuracies:
+        return {
+            "mean": 0.0,
+            "std": 0.0,
+            "min": 0.0,
+            "max": 0.0,
+            "median": 0.0,
+            "count": 0,
+        }
+
+    arr = np.array(accuracies)
+    return {
+        "mean": float(np.mean(arr)),
+        "std": float(np.std(arr)),
+        "min": float(np.min(arr)),
+        "max": float(np.max(arr)),
+        "median": float(np.median(arr)),
+        "count": len(accuracies),
+    }

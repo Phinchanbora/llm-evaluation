@@ -2,15 +2,16 @@
 Tests for DeepSeek provider
 """
 
-import pytest
-from unittest.mock import Mock, patch, MagicMock
 import os
+from unittest.mock import MagicMock, patch
+
+import pytest
 
 # Skip if openai not installed
 pytest.importorskip("openai")
 
+from llm_evaluator.providers import ProviderError
 from llm_evaluator.providers.deepseek_provider import DeepSeekProvider
-from llm_evaluator.providers import GenerationConfig, ProviderError
 
 
 class TestDeepSeekProvider:
@@ -42,10 +43,7 @@ class TestDeepSeekProvider:
     def test_init_with_api_key_param(self):
         """Test initialization with API key parameter"""
         with patch("llm_evaluator.providers.deepseek_provider.OpenAI"):
-            provider = DeepSeekProvider(
-                model="deepseek-chat", 
-                api_key="explicit-key-456"
-            )
+            provider = DeepSeekProvider(model="deepseek-chat", api_key="explicit-key-456")
             assert provider.api_key == "explicit-key-456"
 
     def test_init_without_api_key_raises(self):
@@ -71,10 +69,7 @@ class TestDeepSeekProvider:
     def test_custom_base_url(self, mock_api_key):
         """Test custom base URL"""
         with patch("llm_evaluator.providers.deepseek_provider.OpenAI"):
-            provider = DeepSeekProvider(
-                model="deepseek-chat",
-                base_url="https://custom.api.com"
-            )
+            provider = DeepSeekProvider(model="deepseek-chat", base_url="https://custom.api.com")
             assert provider.base_url == "https://custom.api.com"
 
     def test_generate_success(self, provider):
@@ -86,11 +81,11 @@ class TestDeepSeekProvider:
         mock_response.choices[0].finish_reason = "stop"
         mock_response.usage.prompt_tokens = 10
         mock_response.usage.completion_tokens = 5
-        
+
         provider.client.chat.completions.create.return_value = mock_response
-        
+
         result = provider.generate("Hi there!")
-        
+
         assert result.text == "Hello! How can I help?"
         assert result.provider == "deepseek"
         assert result.model == "deepseek-chat"
@@ -105,18 +100,18 @@ class TestDeepSeekProvider:
         mock_response.choices[0].finish_reason = "stop"
         mock_response.usage.prompt_tokens = 5
         mock_response.usage.completion_tokens = 3
-        
+
         provider.client.chat.completions.create.return_value = mock_response
-        
+
         results = provider.generate_batch(["Prompt 1", "Prompt 2"])
-        
+
         assert len(results) == 2
         assert all(r.text == "Response" for r in results)
 
     def test_get_model_info(self, provider):
         """Test getting model information"""
         info = provider.get_model_info()
-        
+
         assert info["model"] == "deepseek-chat"
         assert info["provider"] == "deepseek"
         assert "context_window" in info
@@ -127,14 +122,16 @@ class TestDeepSeekProvider:
         """Test token counting approximation"""
         text = "Hello world! This is a test."
         tokens = provider.count_tokens(text)
-        
+
         # Approximate: 1 token ≈ 4 characters
         assert tokens > 0
         assert tokens == len(text) // 4
 
     def test_provider_type(self, provider):
         """Test provider type property"""
-        assert provider.provider_type == "deepseek"
+        from llm_evaluator.providers import ProviderType
+
+        assert provider.provider_type == ProviderType.DEEPSEEK
 
     def test_pricing(self):
         """Test pricing information exists"""
@@ -147,13 +144,13 @@ class TestDeepSeekProvider:
         mock_response = MagicMock()
         mock_response.choices = [MagicMock()]
         mock_response.choices[0].message.content = "Hi"
-        
+
         provider.client.chat.completions.create.return_value = mock_response
-        
+
         assert provider.is_available() is True
 
     def test_is_available_failure(self, provider):
         """Test availability check when API fails"""
         provider.client.chat.completions.create.side_effect = Exception("API Error")
-        
+
         assert provider.is_available() is False

@@ -2,8 +2,8 @@
 Performance and Quality Metrics for LLM Evaluation
 """
 
-from typing import List, Dict
 from dataclasses import dataclass
+from typing import Dict, List
 
 
 @dataclass

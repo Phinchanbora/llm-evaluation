@@ -4,14 +4,15 @@ Provides functions to create charts and dashboards for comparing models
 and analyzing evaluation metrics.
 """
 
-import matplotlib.pyplot as plt
-import seaborn as sns
-import plotly.graph_objects as go
-import plotly.express as px
 from pathlib import Path
-from typing import Dict, List, Optional, Union
-import pandas as pd
+from typing import Any, Dict, List, Optional, Tuple, Union
+
+import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
+import seaborn as sns
 
 
 class EvaluationVisualizer:
@@ -127,7 +128,7 @@ class EvaluationVisualizer:
 
     def plot_performance_trends(
         self,
-        time_series: Dict[str, List[tuple]],
+        time_series: Dict[str, List[Tuple[int, float]]],
         metric_name: str = "Response Time",
         output_path: Optional[Union[str, Path]] = None,
     ) -> None:
@@ -235,7 +236,7 @@ class EvaluationVisualizer:
         self,
         results: Dict[str, Dict[str, float]],
         output_path: Union[str, Path],
-        detailed_results: Optional[Dict] = None,
+        detailed_results: Optional[Dict[str, Any]] = None,
     ) -> None:
         """Create comprehensive HTML dashboard with multiple visualizations and detailed stats
 
@@ -244,8 +245,8 @@ class EvaluationVisualizer:
             output_path: Path to save the HTML dashboard
             detailed_results: Optional dict with full EvaluationResults objects for extra info
         """
-        from plotly.subplots import make_subplots
         import plotly.graph_objects as go
+        from plotly.subplots import make_subplots
 
         # Extract benchmark and performance metrics
         benchmark_metrics = {}
@@ -517,7 +518,7 @@ class EvaluationVisualizer:
 def quick_comparison(
     results: Dict[str, Dict[str, float]],
     output_dir: Union[str, Path] = "outputs",
-    detailed_results: Optional[Dict] = None,
+    detailed_results: Optional[Dict[str, Any]] = None,
 ) -> None:
     """Generate all standard visualizations for model comparison
 

@@ -1,7 +1,8 @@
 """Pytest configuration and fixtures for LLM Evaluation tests"""
 
-import pytest
 from unittest.mock import Mock
+
+import pytest
 
 
 @pytest.fixture

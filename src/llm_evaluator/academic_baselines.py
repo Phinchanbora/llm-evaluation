@@ -9,7 +9,6 @@ References are provided for citation in academic papers.
 
 from typing import Any, Dict, List, Optional
 
-
 # Published baseline results from academic papers and model cards
 ACADEMIC_BASELINES: Dict[str, Dict[str, Dict[str, Any]]] = {
     "mmlu": {

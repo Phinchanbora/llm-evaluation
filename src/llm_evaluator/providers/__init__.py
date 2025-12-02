@@ -4,6 +4,8 @@ LLM Provider abstraction layer.
 Supports multiple backends: Ollama (local), OpenAI, Anthropic, HuggingFace.
 """
 
+from typing import Any
+
 from .base import (
     AuthenticationError,
     GenerationConfig,
@@ -15,46 +17,46 @@ from .base import (
     RateLimitError,
     TimeoutError,
 )
-from .ollama_provider import OllamaProvider
 from .cached_provider import CachedProvider
+from .ollama_provider import OllamaProvider
 
 # Conditional imports for optional providers
 _has_openai = False
-OpenAIProvider = None  # type: ignore[assignment]
+OpenAIProvider: Any = None
 try:
     from .openai_provider import OpenAIProvider as _OpenAIProvider
 
-    OpenAIProvider = _OpenAIProvider  # type: ignore[misc]
+    OpenAIProvider = _OpenAIProvider
     _has_openai = True
 except ImportError:
     pass
 
 _has_anthropic = False
-AnthropicProvider = None  # type: ignore[assignment]
+AnthropicProvider: Any = None
 try:
     from .anthropic_provider import AnthropicProvider as _AnthropicProvider
 
-    AnthropicProvider = _AnthropicProvider  # type: ignore[misc]
+    AnthropicProvider = _AnthropicProvider
     _has_anthropic = True
 except ImportError:
     pass
 
 _has_huggingface = False
-HuggingFaceProvider = None  # type: ignore[assignment]
+HuggingFaceProvider: Any = None
 try:
     from .huggingface_provider import HuggingFaceProvider as _HuggingFaceProvider
 
-    HuggingFaceProvider = _HuggingFaceProvider  # type: ignore[misc]
+    HuggingFaceProvider = _HuggingFaceProvider
     _has_huggingface = True
 except ImportError:
     pass
 
 _has_deepseek = False
-DeepSeekProvider = None  # type: ignore[assignment]
+DeepSeekProvider: Any = None
 try:
     from .deepseek_provider import DeepSeekProvider as _DeepSeekProvider
 
-    DeepSeekProvider = _DeepSeekProvider  # type: ignore[misc]
+    DeepSeekProvider = _DeepSeekProvider
     _has_deepseek = True
 except ImportError:
     pass

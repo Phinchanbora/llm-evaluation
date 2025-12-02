@@ -1,64 +1,174 @@
-# LLM Evaluation Suite
+# 🚀 LLM Benchmark Toolkit
 
-[![PyPI version](https://badge.fury.io/py/llm-benchmark-toolkit.svg)](https://pypi.org/project/llm-benchmark-toolkit/)
-[![Tests](https://github.com/NahuelGiudizi/llm-evaluation/workflows/Tests/badge.svg)](https://github.com/NahuelGiudizi/llm-evaluation/actions)
-[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+<p align="center">
+  <img src="https://img.shields.io/pypi/v/llm-benchmark-toolkit?style=for-the-badge&color=blue" alt="PyPI">
+  <img src="https://img.shields.io/pypi/dm/llm-benchmark-toolkit?style=for-the-badge&color=green" alt="Downloads">
+  <img src="https://img.shields.io/github/stars/NahuelGiudizi/llm-evaluation?style=for-the-badge" alt="Stars">
+  <img src="https://img.shields.io/badge/python-3.11+-blue?style=for-the-badge" alt="Python">
+  <img src="https://img.shields.io/badge/license-MIT-green?style=for-the-badge" alt="License">
+</p>
 
-> **Benchmark LLMs with real datasets** (24,901 questions from MMLU, TruthfulQA, HellaSwag)
+<p align="center">
+  <b>Benchmark LLMs with real datasets: 24,901 questions from MMLU, TruthfulQA & HellaSwag</b>
+</p>
 
-## ⚡ 30-Second Start
+<p align="center">
+  <a href="#-quick-start">Quick Start</a> •
+  <a href="#-features">Features</a> •
+  <a href="#-providers">Providers</a> •
+  <a href="#-academic-use">Academic</a> •
+  <a href="#-docs">Docs</a>
+</p>
+
+---
+
+## ⚡ Quick Start
 
 ```bash
 pip install llm-benchmark-toolkit
-llm-eval quick llama3.2:1b
+
+# Auto-detect your provider and run evaluation
+llm-eval quick
 ```
 
-**Output:**
+**That's it!** The tool auto-detects your LLM provider from environment variables:
+- `OPENAI_API_KEY` → Uses GPT-4o-mini
+- `ANTHROPIC_API_KEY` → Uses Claude 3.5 Sonnet
+- `DEEPSEEK_API_KEY` → Uses DeepSeek-V3
+- Ollama running → Uses Llama 3.2
+
 ```
-📊 Results for llama3.2:1b:
+🚀 LLM QUICK EVALUATION
 ==================================================
-MMLU:       42.3%
-TruthfulQA: 38.7%
-HellaSwag:  51.2%
+✅ Provider: openai (gpt-4o-mini)
+✅ Sample size: 20
+
+📊 RESULTS
 ==================================================
+  🎯 MMLU:       78.5%
+  🎯 TruthfulQA: 71.2%
+  🎯 HellaSwag:  82.4%
+  
+  📈 Overall:    77.4%
+==================================================
+✨ Evaluation complete!
 ```
 
 ## 🎯 Features
 
-- ✅ **Real benchmarks**: 14,042 MMLU + 817 TruthfulQA + 10,042 HellaSwag
-- ✅ **Multi-provider**: Ollama, OpenAI, Anthropic, HuggingFace
-- ✅ **CLI tool**: `llm-eval quick`, `run`, `compare`, `benchmark`, `academic`
-- ✅ **10x caching**: Intelligent caching for repeated evaluations
-- ✅ **Progress bars**: Real-time progress with ETA
-- ✅ **Academic rigor**: 95% confidence intervals, McNemar tests, baseline comparisons
-- ✅ **Paper exports**: LaTeX tables, BibTeX citations, reproducibility manifests
+| Feature | Description |
+|---------|-------------|
+| 📊 **Real Benchmarks** | 14,042 MMLU + 817 TruthfulQA + 10,042 HellaSwag questions |
+| 🔌 **5 Providers** | Ollama, OpenAI, Anthropic, DeepSeek, HuggingFace |
+| ⚡ **Zero Config** | Auto-detects provider from environment variables |
+| 💾 **10x Caching** | Intelligent caching for repeated evaluations |
+| 📈 **Academic Rigor** | 95% CI, McNemar tests, baseline comparisons |
+| 📄 **Paper Exports** | LaTeX tables, BibTeX citations, reproducibility manifests |
+| 🎨 **Beautiful CLI** | Progress bars, colored output, detailed reports |
 
-## 📊 CLI Commands
+## 📦 Installation
 
 ```bash
-# Quick benchmark (100 questions, ~5 min)
-llm-eval quick llama3.2:1b
+# Basic installation
+pip install llm-benchmark-toolkit
 
-# Full evaluation
-llm-eval run --model llama3.2:1b
+# With specific provider support
+pip install llm-benchmark-toolkit[openai]       # OpenAI GPT models
+pip install llm-benchmark-toolkit[anthropic]    # Claude models
+pip install llm-benchmark-toolkit[all]          # All providers
+```
 
-# Compare models
-llm-eval compare --models llama3.2:1b,mistral:7b
+## 🔌 Providers
 
-# Specific benchmarks
-llm-eval benchmark --model llama3.2:1b --benchmarks mmlu,truthfulqa
-
-# Academic evaluation with LaTeX export
-llm-eval academic --model llama3.2:1b --output-latex results.tex
-
-# List providers
+### Check Available Providers
+```bash
 llm-eval providers
 ```
 
-## 🎓 Academic Evaluation (v2.0)
+```
+🔌 Available Providers:
 
-Run publication-quality evaluations with statistical rigor:
+✅ Auto-detected: openai (gpt-4o-mini)
+
+  ✅ ollama          - Local LLMs (llama3.2, mistral, etc.)
+  ✅ openai          - GPT-3.5, GPT-4, GPT-4o (pip install openai)
+  ❌ anthropic       - Claude 3/3.5 (pip install anthropic)
+  ✅ deepseek        - DeepSeek-V3, DeepSeek-R1 (pip install openai)
+  ❌ huggingface     - Inference API (pip install huggingface-hub)
+
+📋 Environment Variables:
+  ✅ OPENAI_API_KEY       sk-abc1...
+  ❌ ANTHROPIC_API_KEY    Not set
+  ❌ DEEPSEEK_API_KEY     Not set
+  ❌ HF_TOKEN             Not set
+```
+
+### Provider Examples
+
+```bash
+# Ollama (local)
+ollama serve  # Start Ollama
+llm-eval quick --model llama3.2:1b
+
+# OpenAI
+export OPENAI_API_KEY="sk-..."
+llm-eval quick --model gpt-4o-mini
+
+# Anthropic
+export ANTHROPIC_API_KEY="sk-ant-..."
+llm-eval run --model claude-3-5-sonnet-20241022 --provider anthropic
+
+# DeepSeek (super affordable!)
+export DEEPSEEK_API_KEY="sk-..."
+llm-eval quick --model deepseek-chat
+```
+
+## 🖥️ CLI Commands
+
+```bash
+# Quick benchmark (20 questions, ~2 min)
+llm-eval quick
+
+# Full evaluation with report
+llm-eval run --model llama3.2:1b
+
+# Compare multiple models
+llm-eval compare --models llama3.2:1b,mistral:7b,phi3
+
+# Run specific benchmarks
+llm-eval benchmark --model gpt-4o --provider openai --benchmarks mmlu
+
+# Academic evaluation with exports
+llm-eval academic --model llama3.2:1b \
+  --sample-size 500 \
+  --output-latex results.tex \
+  --output-bibtex citations.bib
+```
+
+## 🐍 Python API
+
+```python
+from llm_evaluator import ModelEvaluator
+from llm_evaluator.providers import OllamaProvider, OpenAIProvider
+
+# Option 1: Local with Ollama
+provider = OllamaProvider(model="llama3.2:1b")
+
+# Option 2: OpenAI
+provider = OpenAIProvider(model="gpt-4o-mini")
+
+# Run evaluation
+evaluator = ModelEvaluator(provider=provider)
+results = evaluator.evaluate_all()
+
+print(f"Overall Score: {results.overall_score:.1%}")
+print(f"MMLU: {results.mmlu_accuracy:.1%}")
+print(f"TruthfulQA: {results.truthfulqa_score:.1%}")
+```
+
+## 🎓 Academic Use
+
+For publication-quality evaluations with statistical rigor:
 
 ```python
 from llm_evaluator import ModelEvaluator
@@ -89,89 +199,86 @@ bibtex = generate_bibtex()
 
 See [Academic Usage Guide](docs/ACADEMIC_USAGE.md) for full documentation.
 
-## 🐍 Python API
+## 🔬 Benchmarks Included
+
+| Benchmark | Questions | Description |
+|-----------|-----------|-------------|
+| **MMLU** | 14,042 | Massive Multitask Language Understanding - 57 subjects |
+| **TruthfulQA** | 817 | Measures truthfulness and avoiding misinformation |
+| **HellaSwag** | 10,042 | Common-sense reasoning and sentence completion |
+
+## 💾 Caching
+
+Caching is **enabled by default** and speeds up repeated evaluations by 10x:
 
 ```python
-from llm_evaluator import ModelEvaluator
-from llm_evaluator.providers.ollama_provider import OllamaProvider
+from llm_evaluator.providers import CachedProvider, OllamaProvider
 
-# Initialize
+# Automatic caching
 provider = OllamaProvider(model="llama3.2:1b")
-evaluator = ModelEvaluator(provider=provider)
+cached = CachedProvider(provider)
 
-# Run evaluation
-results = evaluator.evaluate_all()
-print(f"Overall Score: {results.overall_score:.1%}")
-
-# Generate report
-evaluator.generate_report(results, output="report.md")
+# Check cache stats
+stats = cached.get_cache_stats()
+print(f"Hit rate: {stats['hit_rate_percent']:.1f}%")
 ```
 
-## 🔬 Benchmarks
+Cache is stored in `~/.cache/llm-eval/` and persists between sessions.
+
+## 🏆 Model Comparison
+
+Compare your model against published baselines:
 
 ```python
-from llm_evaluator.benchmarks import BenchmarkRunner
-from llm_evaluator.providers.ollama_provider import OllamaProvider
+results = evaluator.evaluate_all_academic(sample_size=500)
 
-provider = OllamaProvider(model="llama3.2:1b")
+# Built-in baselines
+# - GPT-4: 86.4% MMLU
+# - Claude 3 Opus: 86.8% MMLU  
+# - Llama 3 70B: 79.5% MMLU
+# - Mistral 7B: 62.5% MMLU
 
-# Quick sample (100 questions, ~5 min) - DEFAULT
-runner = BenchmarkRunner(provider)
-results = runner.run_mmlu_sample()
-
-# Demo mode (3 questions, instant)
-runner = BenchmarkRunner(provider, use_full_datasets=False)
-results = runner.run_mmlu_sample()
-
-# Full dataset (14,042 questions, ~2 hours)
-runner = BenchmarkRunner(provider, sample_size=None)
-results = runner.run_mmlu_sample()
+for baseline, comparison in results.baseline_comparison.items():
+    print(f"vs {baseline}: {comparison['difference']:+.1%}")
 ```
 
-## 🔐 Providers
+## 📊 Output Formats
 
 ```bash
-# Ollama (local, free)
-pip install llm-benchmark-toolkit
+# JSON (default)
+llm-eval run --model llama3.2:1b --output results.json
 
-# OpenAI
-pip install llm-benchmark-toolkit[openai]
+# Markdown report
+llm-eval run --model llama3.2:1b --output report.md
 
-# Anthropic
-pip install llm-benchmark-toolkit[anthropic]
+# LaTeX tables (for papers)
+llm-eval academic --model llama3.2:1b --output-latex table.tex
 
-# All providers
-pip install llm-benchmark-toolkit[all-providers]
+# BibTeX citations
+llm-eval academic --model llama3.2:1b --output-bibtex refs.bib
 ```
 
-```python
-# OpenAI
-from llm_evaluator.providers.openai_provider import OpenAIProvider
-provider = OpenAIProvider(model="gpt-3.5-turbo")  # Uses OPENAI_API_KEY
+## 🤝 Contributing
 
-# Anthropic
-from llm_evaluator.providers.anthropic_provider import AnthropicProvider
-provider = AnthropicProvider(model="claude-3-haiku-20240307")
+Contributions welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+```bash
+git clone https://github.com/NahuelGiudizi/llm-evaluation.git
+cd llm-evaluation
+pip install -e ".[dev]"
+pytest tests/
 ```
 
-## 📖 Documentation
+## 📜 License
 
-- [Quick Start Guide](docs/QUICKSTART.md)
-- [Academic Usage Guide](docs/ACADEMIC_USAGE.md) - For papers with statistical rigor
-- [Full Benchmarks](docs/FULL_BENCHMARKS.md)
-- [Testing Guide](docs/TESTING_GUIDE.md)
-- [Blog Post](https://dev.to/nahuelgiudizi/building-an-honest-llm-evaluation-framework-from-fake-metrics-to-real-benchmarks-2b90)
+MIT License - see [LICENSE](LICENSE) for details.
 
-## 🔗 Requirements
+## ⭐ Star History
 
-- Python 3.11+
-- [Ollama](https://ollama.com/download) (for local models)
-- Models: `ollama pull llama3.2:1b`
-
-## 📝 License
-
-MIT
+If this project helped you, please star it! ⭐
 
 ---
 
-**Author:** Nahuel | **Date:** November 2025
+<p align="center">
+  Made with ❤️ by <a href="https://github.com/NahuelGiudizi">Nahuel Giudizi</a>
+</p>

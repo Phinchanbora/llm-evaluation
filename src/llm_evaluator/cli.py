@@ -14,9 +14,10 @@ import click
 
 from llm_evaluator import ModelEvaluator
 from llm_evaluator.benchmarks import BenchmarkRunner
-from llm_evaluator.providers.ollama_provider import OllamaProvider
 from llm_evaluator.evaluator import AcademicEvaluationResults
 from llm_evaluator.export import export_to_latex, generate_bibtex
+from llm_evaluator.providers import LLMProvider
+from llm_evaluator.providers.ollama_provider import OllamaProvider
 
 # Import optional providers
 try:
@@ -50,13 +51,13 @@ except ImportError:
 from llm_evaluator.providers.cached_provider import CachedProvider
 
 # Version
-__version__ = "2.0.0"
+__version__ = "2.1.0"
 
 
 def detect_provider_from_env() -> Tuple[Optional[str], Optional[str]]:
     """
     Auto-detect provider and model from environment variables.
-    
+
     Returns:
         Tuple of (provider_name, suggested_model) or (None, None)
     """
@@ -68,10 +69,11 @@ def detect_provider_from_env() -> Tuple[Optional[str], Optional[str]]:
         return ("deepseek", "deepseek-chat")
     if os.environ.get("HF_TOKEN") or os.environ.get("HUGGINGFACE_API_KEY"):
         return ("huggingface", "meta-llama/Llama-2-7b-chat-hf")
-    # Check if Ollama is running
+    # Check if Ollama is running (with longer timeout)
     try:
         import requests
-        resp = requests.get("http://localhost:11434/api/version", timeout=1)
+
+        resp = requests.get("http://localhost:11434/api/version", timeout=5)
         if resp.status_code == 200:
             return ("ollama", "llama3.2:1b")
     except Exception:
@@ -101,7 +103,7 @@ def echo_info(msg: str) -> None:
 
 @click.group()
 @click.version_option(version=__version__, prog_name="llm-eval")
-def cli():
+def cli() -> None:
     """
     🚀 LLM Evaluation Suite - Command Line Interface
 
@@ -115,9 +117,9 @@ def cli():
     pass
 
 
-def create_provider(model: str, provider_type: str, cache: bool = False):
+def create_provider(model: str, provider_type: str, cache: bool = False) -> LLMProvider:
     """Create provider instance based on type"""
-
+    base_provider: LLMProvider
     if provider_type == "ollama":
         base_provider = OllamaProvider(model=model)
     elif provider_type == "openai":
@@ -143,12 +145,15 @@ def create_provider(model: str, provider_type: str, cache: bool = False):
     elif provider_type == "auto":
         # Auto-detect from environment
         detected_provider, detected_model = detect_provider_from_env()
-        if detected_provider:
+        if detected_provider and detected_model:
             echo_info(f"Auto-detected provider: {detected_provider} (model: {detected_model})")
-            return create_provider(detected_model if model == "auto" else model, detected_provider, cache)
+            use_model = detected_model if model == "auto" else model
+            return create_provider(use_model, detected_provider, cache)
         else:
             echo_error("No provider detected. Set an API key or start Ollama.")
-            echo_info("Supported env vars: OPENAI_API_KEY, ANTHROPIC_API_KEY, DEEPSEEK_API_KEY, HF_TOKEN")
+            echo_info(
+                "Supported env vars: OPENAI_API_KEY, ANTHROPIC_API_KEY, DEEPSEEK_API_KEY, HF_TOKEN"
+            )
             sys.exit(1)
     else:
         echo_error(f"Unknown provider: {provider_type}")
@@ -164,7 +169,7 @@ def create_provider(model: str, provider_type: str, cache: bool = False):
 @click.option("--model", "-m", default=None, help="Model name (auto-detected if not set)")
 @click.option("--sample-size", "-s", type=int, default=20, help="Sample size (default: 20)")
 @click.option("--output", "-o", default=None, help="Output file (optional)")
-def quick(model: Optional[str], sample_size: int, output: Optional[str]):
+def quick(model: Optional[str], sample_size: int, output: Optional[str]) -> None:
     """
     🚀 Quick evaluation with zero configuration!
 
@@ -186,12 +191,17 @@ def quick(model: Optional[str], sample_size: int, output: Optional[str]):
 
     # Auto-detect provider
     detected_provider, detected_model = detect_provider_from_env()
-    
+
+    # If model is specified and looks like Ollama format (contains :), assume Ollama
+    if model and ":" in model and not detected_provider:
+        detected_provider = "ollama"
+        detected_model = model
+
     if not detected_provider:
         echo_error("No provider detected!")
         click.echo("\n📋 To use quick evaluation, set one of these environment variables:")
         click.echo("   • OPENAI_API_KEY    → For GPT models")
-        click.echo("   • ANTHROPIC_API_KEY → For Claude models")  
+        click.echo("   • ANTHROPIC_API_KEY → For Claude models")
         click.echo("   • DEEPSEEK_API_KEY  → For DeepSeek models")
         click.echo("   • HF_TOKEN          → For HuggingFace models")
         click.echo("   • Or start Ollama   → ollama serve")
@@ -199,11 +209,14 @@ def quick(model: Optional[str], sample_size: int, output: Optional[str]):
 
     # Use provided model or detected one
     use_model = model if model else detected_model
-    
+    if not use_model:
+        echo_error("No model specified and could not auto-detect")
+        sys.exit(1)
+
     echo_success(f"Provider: {detected_provider}")
     echo_success(f"Model: {use_model}")
     echo_success(f"Sample size: {sample_size}")
-    
+
     click.echo("\n⏳ Starting evaluation...")
 
     # Create provider with caching
@@ -214,16 +227,12 @@ def quick(model: Optional[str], sample_size: int, output: Optional[str]):
         sys.exit(1)
 
     # Run benchmarks
-    runner = BenchmarkRunner(
-        provider=llm_provider,
-        use_full_datasets=True,
-        sample_size=sample_size
-    )
+    runner = BenchmarkRunner(provider=llm_provider, use_full_datasets=True, sample_size=sample_size)
 
     click.echo("\n📊 Running benchmarks...")
-    
+
     results = {}
-    
+
     with click.progressbar(["mmlu", "truthfulqa", "hellaswag"], label="Progress") as benchmarks:
         for bench in benchmarks:
             if bench == "mmlu":
@@ -237,37 +246,37 @@ def quick(model: Optional[str], sample_size: int, output: Optional[str]):
     click.echo("\n" + "=" * 50)
     click.echo(click.style("📊 RESULTS", fg="green", bold=True))
     click.echo("=" * 50)
-    
+
     click.echo(f"\n  🎯 MMLU:       {results.get('mmlu', {}).get('mmlu_accuracy', 0):.1%}")
     click.echo(f"  🎯 TruthfulQA: {results.get('truthfulqa', {}).get('truthfulness_score', 0):.1%}")
     click.echo(f"  🎯 HellaSwag:  {results.get('hellaswag', {}).get('hellaswag_accuracy', 0):.1%}")
-    
+
     # Calculate overall
-    scores = [
-        results.get('mmlu', {}).get('mmlu_accuracy', 0),
-        results.get('truthfulqa', {}).get('truthfulness_score', 0),
-        results.get('hellaswag', {}).get('hellaswag_accuracy', 0)
+    scores: list[float] = [
+        float(results.get("mmlu", {}).get("mmlu_accuracy", 0)),
+        float(results.get("truthfulqa", {}).get("truthfulness_score", 0)),
+        float(results.get("hellaswag", {}).get("hellaswag_accuracy", 0)),
     ]
-    avg_score = sum(scores) / len(scores) if scores else 0
-    
+    avg_score = sum(scores) / len(scores) if scores else 0.0
+
     click.echo(f"\n  📈 Overall:    {avg_score:.1%}")
-    
+
     # Save if output specified
     if output:
         output_data = {
             "model": use_model,
             "provider": detected_provider,
             "sample_size": sample_size,
-            "results": results
+            "results": results,
         }
         Path(output).write_text(json.dumps(output_data, indent=2))
         echo_success(f"Results saved to: {output}")
-    
+
     # Cache stats
     if isinstance(llm_provider, CachedProvider):
         stats = llm_provider.get_cache_stats()
         click.echo(f"\n  💾 Cache: {stats['hit_rate_percent']:.0f}% hit rate")
-    
+
     click.echo("\n" + "=" * 50)
     click.echo("✨ Evaluation complete!")
     click.echo("=" * 50 + "\n")
@@ -284,7 +293,7 @@ def quick(model: Optional[str], sample_size: int, output: Optional[str]):
 )
 @click.option("--cache/--no-cache", default=True, help="Enable caching")
 @click.option("--output", "-o", default="evaluation_report.md", help="Output file")
-def run(model: str, provider: str, cache: bool, output: str):
+def run(model: str, provider: str, cache: bool, output: str) -> None:
     """
     Run full evaluation on a single model
 
@@ -336,7 +345,7 @@ def run(model: str, provider: str, cache: bool, output: str):
 )
 @click.option("--cache/--no-cache", default=True, help="Enable caching")
 @click.option("--output", "-o", default="comparison.json", help="Output JSON file")
-def compare(models: str, provider: str, cache: bool, output: str):
+def compare(models: str, provider: str, cache: bool, output: str) -> None:
     """
     Compare multiple models side-by-side
 
@@ -418,7 +427,7 @@ def benchmark(
     full: bool,
     cache: bool,
     output: str,
-):
+) -> None:
     """
     Run specific benchmarks on a model
 
@@ -482,7 +491,7 @@ def benchmark(
 @cli.command()
 @click.argument("results_file", type=click.Path(exists=True))
 @click.option("--output", "-o", default="visualization.html", help="Output HTML file")
-def visualize(results_file: str, output: str):
+def visualize(results_file: str, output: str) -> None:
     """
     Generate interactive visualizations from results
 
@@ -500,7 +509,7 @@ def visualize(results_file: str, output: str):
 
 
 @cli.command()
-def providers():
+def providers() -> None:
     """List available providers and their status"""
     click.echo("\n🔌 Available Providers:\n")
 
@@ -521,19 +530,43 @@ def providers():
     for name, available, description in providers_status:
         status = "✅" if available else "❌"
         click.echo(f"  {status} {name:<15} - {description}")
-    
+
     click.echo("\n📋 Environment Variables:")
     env_vars = [
-        ("OPENAI_API_KEY", os.environ.get("OPENAI_API_KEY", "")[:8] + "..." if os.environ.get("OPENAI_API_KEY") else "Not set"),
-        ("ANTHROPIC_API_KEY", os.environ.get("ANTHROPIC_API_KEY", "")[:8] + "..." if os.environ.get("ANTHROPIC_API_KEY") else "Not set"),
-        ("DEEPSEEK_API_KEY", os.environ.get("DEEPSEEK_API_KEY", "")[:8] + "..." if os.environ.get("DEEPSEEK_API_KEY") else "Not set"),
-        ("HF_TOKEN", os.environ.get("HF_TOKEN", "")[:8] + "..." if os.environ.get("HF_TOKEN") else "Not set"),
+        (
+            "OPENAI_API_KEY",
+            (
+                os.environ.get("OPENAI_API_KEY", "")[:8] + "..."
+                if os.environ.get("OPENAI_API_KEY")
+                else "Not set"
+            ),
+        ),
+        (
+            "ANTHROPIC_API_KEY",
+            (
+                os.environ.get("ANTHROPIC_API_KEY", "")[:8] + "..."
+                if os.environ.get("ANTHROPIC_API_KEY")
+                else "Not set"
+            ),
+        ),
+        (
+            "DEEPSEEK_API_KEY",
+            (
+                os.environ.get("DEEPSEEK_API_KEY", "")[:8] + "..."
+                if os.environ.get("DEEPSEEK_API_KEY")
+                else "Not set"
+            ),
+        ),
+        (
+            "HF_TOKEN",
+            os.environ.get("HF_TOKEN", "")[:8] + "..." if os.environ.get("HF_TOKEN") else "Not set",
+        ),
     ]
-    
+
     for var, value in env_vars:
         status = "✅" if "Not set" not in value else "❌"
         click.echo(f"  {status} {var:<20} {value}")
-    
+
     click.echo("")
 
 
@@ -565,7 +598,7 @@ def academic(
     output_bibtex: Optional[str],
     output_json: str,
     compare_baselines: bool,
-):
+) -> None:
     """
     Run academic-quality evaluation with statistical rigor
 

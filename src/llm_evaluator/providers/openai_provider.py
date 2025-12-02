@@ -10,19 +10,21 @@ import time
 from typing import Dict, List, Optional, Union
 
 try:
-    from openai import OpenAI, APIError, RateLimitError as OpenAIRateLimitError, APITimeoutError
+    from openai import APIError, APITimeoutError, OpenAI
+    from openai import RateLimitError as OpenAIRateLimitError
+    from openai.types.chat import ChatCompletionMessageParam
 except ImportError:
     raise ImportError("OpenAI provider requires 'openai' package. Install with: pip install openai")
 
 from . import (
-    LLMProvider,
     GenerationConfig,
     GenerationResult,
+    LLMProvider,
+    ModelNotFoundError,
     ProviderError,
+    ProviderType,
     RateLimitError,
     TimeoutError,
-    ModelNotFoundError,
-    ProviderType,
 )
 
 logger = logging.getLogger(__name__)
@@ -124,14 +126,14 @@ class OpenAIProvider(LLMProvider):
         """
         cfg = config or self.config
 
-        # Build messages
-        messages = []
+        # Build messages with proper typing
+        messages: List[ChatCompletionMessageParam] = []
         if system_prompt:
             messages.append({"role": "system", "content": system_prompt})
         messages.append({"role": "user", "content": prompt})
 
         # Retry logic with exponential backoff
-        last_error = None
+        last_error: Optional[Exception] = None
         for attempt in range(cfg.retry_attempts):
             try:
                 start_time = time.time()
@@ -159,10 +161,9 @@ class OpenAIProvider(LLMProvider):
 
                 # Calculate cost
                 pricing = self.PRICING.get(self.model, {"input": 0.0, "output": 0.0})
-                cost = (
-                    (prompt_tokens / 1_000_000) * pricing["input"] +
-                    (completion_tokens / 1_000_000) * pricing["output"]
-                )
+                cost = (prompt_tokens / 1_000_000) * pricing["input"] + (
+                    completion_tokens / 1_000_000
+                ) * pricing["output"]
 
                 logger.debug(
                     f"OpenAI generation successful: {total_tokens} tokens in {elapsed:.2f}s"
@@ -269,8 +270,8 @@ class OpenAIProvider(LLMProvider):
                     GenerationResult(
                         text="",
                         response_time=0.0,
-                        token_count=0,
-                        model_name=self.model,
+                        tokens_used=0,
+                        model=self.model,
                         metadata={"error": str(e), "provider": "openai"},
                     )
                 )
@@ -292,7 +293,7 @@ class OpenAIProvider(LLMProvider):
             logger.error(f"OpenAI API not available: {e}")
             return False
 
-    def get_model_info(self) -> Dict[str, Union[str, int, float]]:
+    def get_model_info(self) -> Dict[str, Union[str, int, float, List[str]]]:
         """
         Get information about the current model
 

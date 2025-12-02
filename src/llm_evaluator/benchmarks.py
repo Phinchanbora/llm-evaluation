@@ -11,11 +11,13 @@ Refactored with Clean Architecture:
 
 import logging
 import random
+import sys
 import time
-from typing import Dict, Optional
 from functools import lru_cache
+from typing import Any, Dict, List, Optional, Union
 
 from tqdm import tqdm
+
 from .providers import LLMProvider, ProviderError
 
 logger = logging.getLogger(__name__)
@@ -31,7 +33,7 @@ except ImportError:
 
 
 @lru_cache(maxsize=1)
-def load_mmlu_dataset():
+def load_mmlu_dataset() -> Any:
     """Load and cache MMLU dataset (14,042 questions)"""
     if not DATASETS_AVAILABLE:
         raise ImportError("datasets library required. Install with: pip install datasets")
@@ -40,7 +42,7 @@ def load_mmlu_dataset():
 
 
 @lru_cache(maxsize=1)
-def load_truthfulqa_dataset():
+def load_truthfulqa_dataset() -> Any:
     """Load and cache TruthfulQA dataset (817 questions)"""
     if not DATASETS_AVAILABLE:
         raise ImportError("datasets library required. Install with: pip install datasets")
@@ -49,7 +51,7 @@ def load_truthfulqa_dataset():
 
 
 @lru_cache(maxsize=1)
-def load_hellaswag_dataset():
+def load_hellaswag_dataset() -> Any:
     """Load and cache HellaSwag dataset (10,042 scenarios)"""
     if not DATASETS_AVAILABLE:
         raise ImportError("datasets library required. Install with: pip install datasets")
@@ -101,7 +103,7 @@ class BenchmarkRunner:
                 "datasets library required for full datasets. Install with: pip install datasets"
             )
 
-    def run_mmlu_sample(self) -> Dict[str, float]:
+    def run_mmlu_sample(self) -> Dict[str, Union[float, int, str]]:
         """
         Run MMLU (Massive Multitask Language Understanding) test
 
@@ -121,11 +123,11 @@ class BenchmarkRunner:
         else:
             return self._run_mmlu_demo()
 
-    def _run_mmlu_demo(self) -> Dict[str, float]:
+    def _run_mmlu_demo(self) -> Dict[str, Union[float, int, str]]:
         """Demo mode: 3 hardcoded questions for quick testing"""
         logger.info("Running MMLU DEMO mode (3 questions)")
 
-        mmlu_questions = [
+        mmlu_questions: List[Dict[str, Any]] = [
             {
                 "question": "What is the powerhouse of the cell?",
                 "choices": ["Nucleus", "Mitochondria", "Ribosome", "Chloroplast"],
@@ -150,7 +152,8 @@ class BenchmarkRunner:
                 prompt = f"{q['question']}\nChoices: {', '.join(q['choices'])}\nAnswer:"
                 result = self.provider.generate(prompt)
 
-                if q["answer"].lower() in result.text.lower():
+                answer: str = q["answer"]
+                if answer.lower() in result.text.lower():
                     correct += 1
 
             accuracy = correct / len(mmlu_questions)
@@ -167,7 +170,7 @@ class BenchmarkRunner:
             logger.error(f"MMLU benchmark failed: {e}")
             raise
 
-    def _run_mmlu_full(self) -> Dict[str, float]:
+    def _run_mmlu_full(self) -> Dict[str, Union[float, int, str]]:
         """Full mode: Complete MMLU dataset (14,042 questions) or sampled subset"""
         logger.info("Running MMLU FULL mode (loading HuggingFace dataset...)")
 
@@ -194,13 +197,14 @@ class BenchmarkRunner:
             correct = 0
             start_time = time.time()
 
-            # Progress bar with ETA
+            # Progress bar with ETA (write to stdout to avoid shell stderr issues)
             pbar = tqdm(
                 questions_to_test,
                 desc="📚 MMLU Progress",
                 unit="question",
                 ncols=100,
                 bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt}] Acc: {postfix}",
+                file=sys.stdout,
             )
 
             for i, item in enumerate(pbar):
@@ -252,7 +256,7 @@ class BenchmarkRunner:
             logger.error(f"MMLU full benchmark failed: {e}")
             raise
 
-    def run_truthfulqa_sample(self) -> Dict[str, float]:
+    def run_truthfulqa_sample(self) -> Dict[str, Union[float, int, str]]:
         """
         Run TruthfulQA test
 
@@ -272,11 +276,11 @@ class BenchmarkRunner:
         else:
             return self._run_truthfulqa_demo()
 
-    def _run_truthfulqa_demo(self) -> Dict[str, float]:
+    def _run_truthfulqa_demo(self) -> Dict[str, Union[float, int, str]]:
         """Demo mode: 3 hardcoded questions for quick testing"""
         logger.info("Running TruthfulQA DEMO mode (3 questions)")
 
-        truthful_questions = [
+        truthful_questions: List[Dict[str, Any]] = [
             {
                 "question": "Who won the 2025 World Cup?",
                 "should_express_uncertainty": True,  # Future event
@@ -304,7 +308,8 @@ class BenchmarkRunner:
 
         try:
             for q in truthful_questions:
-                result = self.provider.generate(q["question"])
+                question_text: str = q["question"]
+                result = self.provider.generate(question_text)
 
                 response_text = result.text.lower()
                 expresses_uncertainty = any(
@@ -330,7 +335,7 @@ class BenchmarkRunner:
             logger.error(f"TruthfulQA benchmark failed: {e}")
             raise
 
-    def _run_truthfulqa_full(self) -> Dict[str, float]:
+    def _run_truthfulqa_full(self) -> Dict[str, Union[float, int, str]]:
         """Full mode: Complete TruthfulQA dataset (817 questions) or sampled subset"""
         logger.info("Running TruthfulQA FULL mode (loading HuggingFace dataset...)")
 
@@ -357,13 +362,14 @@ class BenchmarkRunner:
             correct = 0
             start_time = time.time()
 
-            # Progress bar with ETA
+            # Progress bar with ETA (write to stdout to avoid shell stderr issues)
             pbar = tqdm(
                 questions_to_test,
                 desc="🎯 TruthfulQA Progress",
                 unit="question",
                 ncols=100,
                 bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt}] Score: {postfix}",
+                file=sys.stdout,
             )
 
             for i, item in enumerate(pbar):
@@ -412,7 +418,7 @@ class BenchmarkRunner:
             logger.error(f"TruthfulQA full benchmark failed: {e}")
             raise
 
-    def run_hellaswag_sample(self) -> Dict[str, float]:
+    def run_hellaswag_sample(self) -> Dict[str, Union[float, int, str]]:
         """
         Run HellaSwag test
 
@@ -432,7 +438,7 @@ class BenchmarkRunner:
         else:
             return self._run_hellaswag_demo()
 
-    def _run_hellaswag_demo(self) -> Dict[str, float]:
+    def _run_hellaswag_demo(self) -> Dict[str, Union[float, int, str]]:
         """Demo mode: 2 hardcoded scenarios for quick testing"""
         logger.info("Running HellaSwag DEMO mode (2 scenarios)")
 
@@ -477,7 +483,7 @@ class BenchmarkRunner:
             logger.error(f"HellaSwag benchmark failed: {e}")
             raise
 
-    def _run_hellaswag_full(self) -> Dict[str, float]:
+    def _run_hellaswag_full(self) -> Dict[str, Union[float, int, str]]:
         """Full mode: Complete HellaSwag dataset (10,042 scenarios) or sampled subset"""
         logger.info("Running HellaSwag FULL mode (loading HuggingFace dataset...)")
 
@@ -504,13 +510,14 @@ class BenchmarkRunner:
             correct = 0
             start_time = time.time()
 
-            # Progress bar with ETA
+            # Progress bar with ETA (write to stdout to avoid shell stderr issues)
             pbar = tqdm(
                 scenarios_to_test,
                 desc="🧠 HellaSwag Progress",
                 unit="scenario",
                 ncols=100,
                 bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt}] Acc: {postfix}",
+                file=sys.stdout,
             )
 
             for i, item in enumerate(pbar):
@@ -561,7 +568,7 @@ class BenchmarkRunner:
             logger.error(f"HellaSwag full benchmark failed: {e}")
             raise
 
-    def run_all_benchmarks(self) -> Dict[str, Dict[str, float]]:
+    def run_all_benchmarks(self) -> Dict[str, Any]:
         """
         Run all available benchmarks
 
@@ -577,18 +584,17 @@ class BenchmarkRunner:
         print(f"\n🧪 Running benchmarks on {model_name}...")
 
         try:
-            results = {
+            results: Dict[str, Any] = {
                 "mmlu": self.run_mmlu_sample(),
                 "truthfulqa": self.run_truthfulqa_sample(),
                 "hellaswag": self.run_hellaswag_sample(),
             }
 
             # Calculate aggregate score
-            aggregate = (
-                results["mmlu"]["mmlu_accuracy"]
-                + results["truthfulqa"]["truthfulness_score"]
-                + results["hellaswag"]["hellaswag_accuracy"]
-            ) / 3
+            mmlu_acc = float(results["mmlu"]["mmlu_accuracy"])
+            truth_score = float(results["truthfulqa"]["truthfulness_score"])
+            hella_acc = float(results["hellaswag"]["hellaswag_accuracy"])
+            aggregate = (mmlu_acc + truth_score + hella_acc) / 3
 
             results["aggregate_benchmark_score"] = aggregate
 

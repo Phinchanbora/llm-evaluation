@@ -1,8 +1,14 @@
 """Tests for visualization module"""
 
-import pytest
-from pathlib import Path
 import tempfile
+from pathlib import Path
+
+import matplotlib
+
+matplotlib.use("Agg")  # Use non-interactive backend for testing
+
+import pytest
+
 from llm_evaluator.visualizations import EvaluationVisualizer, quick_comparison
 
 
