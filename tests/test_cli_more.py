@@ -146,9 +146,9 @@ class TestDetectProviderEdgeCases:
 
         # Mock urllib response with models
         mock_response = Mock()
-        mock_response.read.return_value = json.dumps({
-            "models": [{"name": "tinyllama:latest"}]
-        }).encode()
+        mock_response.read.return_value = json.dumps(
+            {"models": [{"name": "tinyllama:latest"}]}
+        ).encode()
         mock_response.__enter__ = Mock(return_value=mock_response)
         mock_response.__exit__ = Mock(return_value=False)
 
