@@ -232,6 +232,95 @@ print(result.text)
 
 ---
 
+## Google Gemini
+
+Access Google's Gemini models via API.
+
+### Setup
+
+```bash
+# Windows
+set GEMINI_API_KEY=AIza...
+
+# Linux/Mac
+export GEMINI_API_KEY="AIza..."
+```
+
+Or set in Python:
+
+```python
+provider = GeminiProvider(
+    model="gemini-2.0-flash",
+    api_key="AIza..."
+)
+```
+
+### Usage
+
+```python
+from llm_evaluator.providers import GeminiProvider
+
+provider = GeminiProvider(model="gemini-2.0-flash")
+
+result = provider.generate("What is 2+2?")
+print(result.text)
+print(f"Tokens: {result.total_tokens}")
+```
+
+### Available Models
+
+| Model | Context | Price (Input/Output) | Free Tier Limit |
+|-------|---------|---------------------|-----------------|
+| `gemini-2.5-flash` | 1M | $0.075 / $0.30 per 1M | 10 req/min |
+| `gemini-2.5-pro` | 2M | $3.50 / $10.50 per 1M | 10 req/min |
+| `gemini-2.0-flash` | 1M | $0.10 / $0.40 per 1M | 10 req/min |
+
+### ⚠️ Free Tier Limitations
+
+The Gemini free tier has **very strict rate limits**:
+
+- **10 requests per minute** maximum
+- Additional daily/hourly quotas may apply
+- Rate limit errors automatically retry with exponential backoff
+
+**Recommended usage for free tier:**
+
+```bash
+# Use small sample sizes (5-10 questions max)
+llm-eval quick --model gemini-2.0-flash --provider gemini -s 5
+
+# Run ONE benchmark at a time with pauses
+llm-eval benchmark --model gemini-2.0-flash --provider gemini -b mmlu -s 5
+
+# Wait 60+ seconds between runs to avoid hitting limits
+```
+
+**For serious evaluation work:**
+- Upgrade to a paid plan for higher rate limits
+- Use Ollama (local, unlimited) or Groq (generous free tier) for testing
+
+### Pros & Cons
+
+✅ **Pros:**
+
+- Latest Google AI models
+- Very long context windows (1-2M tokens)
+- Competitive pricing on paid tier
+- Auto-retry on rate limits
+
+❌ **Cons:**
+
+- Free tier extremely limited (10 req/min)
+- May hit daily quotas quickly
+- Not suitable for large benchmarks on free tier
+- Requires API key setup
+
+### Testing Status
+
+⚠️ **Partially Tested**: Gemini provider has been tested with `gemini-2.0-flash` on small sample sizes. Works correctly but free tier limitations make extensive testing impractical. Unit tests verify the implementation, but real-world usage on free tier is limited.
+
+---
+
 ## HuggingFace
 
 Access models via HuggingFace Inference API.
@@ -362,13 +451,39 @@ class MyProvider(LLMProvider):
 
 ## Comparison Table
 
-| Feature | Ollama | OpenAI | Anthropic | DeepSeek | HuggingFace |
-|---------|--------|--------|-----------|----------|-------------|
-| Local | ✅ | ❌ | ❌ | ❌ | ❌ |
-| Free | ✅ | ❌ | ❌ | ❌ | Partial |
-| API Key | ❌ | ✅ | ✅ | ✅ | ✅ |
-| Speed | Varies | Fast | Fast | Fast | Varies |
-| Best Models | Llama, Mistral | GPT-4o | Claude 3.5 | DeepSeek-V3 | Varies |
+| Feature | Ollama | OpenAI | Anthropic | Gemini | DeepSeek | Groq | Together | Fireworks | HuggingFace |
+|---------|--------|--------|-----------|--------|----------|------|----------|-----------|-------------|
+| Local | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Free | ✅ | ❌ | ❌ | Limited* | ❌ | ✅ | ❌ | ❌ | Partial |
+| API Key | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Speed | Varies | Fast | Fast | Fast | Fast | Very Fast | Fast | Fast | Varies |
+| Best Models | Llama, Mistral | GPT-4o | Claude 3.5 | Gemini 2.5 | DeepSeek-V3 | Llama 3.1 | Various | Various | Varies |
+| **Tested** | ✅ Full | ⚠️ Units | ⚠️ Units | ⚠️ Partial | ⚠️ Units | ⚠️ Units | ⚠️ Units | ⚠️ Units | ⚠️ Units |
+
+\* Gemini free tier: 10 requests/minute only
+
+---
+
+## Provider Testing Status
+
+### ✅ Fully Tested
+- **Ollama**: Extensively tested with Llama 3.2, Mistral, Phi3, and other models. All features verified with real-world usage.
+
+### ⚠️ Partially Tested
+- **Gemini**: Tested with `gemini-2.0-flash` on small sample sizes. Works correctly but free tier limitations (10 req/min) prevent extensive testing. Auto-retry logic verified. Unit tests pass.
+
+### ⚠️ Unit Tests Only
+The following providers have **unit tests** and follow the same patterns as tested providers, but have **NOT been verified with real API keys** to avoid subscription costs:
+
+- **OpenAI** - Should work with valid API key (standard OpenAI SDK)
+- **Anthropic** - Should work with valid API key (standard Anthropic SDK)
+- **DeepSeek** - Should work with valid API key (OpenAI-compatible)
+- **Groq** - Should work with valid API key (OpenAI-compatible)
+- **Together** - Should work with valid API key (OpenAI-compatible)
+- **Fireworks** - Should work with valid API key (OpenAI-compatible)
+- **HuggingFace** - Should work with valid token (HF Inference API)
+
+**If you test any of these providers and find issues, please [open an issue](https://github.com/NahuelGiudizi/llm-evaluation/issues)!**
 
 ---
 

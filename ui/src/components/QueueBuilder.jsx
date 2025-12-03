@@ -10,7 +10,10 @@ import {
     CheckCircle,
     Loader2,
     XCircle,
-    Pause
+    Pause,
+    Settings,
+    ChevronRight,
+    Copy
 } from 'lucide-react'
 import { startQueue, fetchQueueStatus, cancelQueue, subscribeToQueueProgress } from '../api'
 
@@ -28,6 +31,7 @@ const formatBenchmarkName = (name) => {
         'safetybench': 'SafetyBench',
         'donotanswer': 'Do-Not-Answer',
         'do-not-answer': 'Do-Not-Answer',
+        'gsm8k': 'GSM8K',
     }
     const normalized = name.toLowerCase().replace(/[-_\s]/g, '')
     return benchmarkNames[normalized] || name
@@ -39,11 +43,99 @@ const formatBenchmarks = (benchmarks) => {
     return benchmarks.map(formatBenchmarkName).join(', ')
 }
 
-function QueueBuilder({ queue, onQueueChange, onStartQueue }) {
+// Inline inference settings editor
+function InferenceSettingsEditor({ settings, onChange }) {
+    const [expanded, setExpanded] = useState(false)
+
+    if (!settings) return null
+
+    return (
+        <div className="mt-2">
+            <button
+                onClick={() => setExpanded(!expanded)}
+                className="flex items-center gap-1 text-xs text-slate-400 hover:text-slate-300 transition-colors"
+            >
+                <Settings className="w-3 h-3" />
+                <span>Inference: T={settings.temperature}, P={settings.top_p}, K={settings.top_k}</span>
+                <ChevronRight className={`w-3 h-3 transition-transform ${expanded ? 'rotate-90' : ''}`} />
+            </button>
+
+            {expanded && (
+                <div className="mt-2 p-3 bg-slate-800 rounded-lg grid grid-cols-5 gap-2">
+                    <div>
+                        <label className="block text-[10px] text-slate-500 mb-0.5">Temp</label>
+                        <input
+                            type="number"
+                            step="0.1"
+                            min="0"
+                            max="2"
+                            value={settings.temperature}
+                            onChange={(e) => onChange({ ...settings, temperature: parseFloat(e.target.value) })}
+                            className="w-full bg-slate-900 border border-slate-600 rounded px-2 py-1 text-white text-xs focus:outline-none focus:ring-1 focus:ring-primary-500"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-[10px] text-slate-500 mb-0.5">Top P</label>
+                        <input
+                            type="number"
+                            step="0.1"
+                            min="0"
+                            max="1"
+                            value={settings.top_p}
+                            onChange={(e) => onChange({ ...settings, top_p: parseFloat(e.target.value) })}
+                            className="w-full bg-slate-900 border border-slate-600 rounded px-2 py-1 text-white text-xs focus:outline-none focus:ring-1 focus:ring-primary-500"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-[10px] text-slate-500 mb-0.5">Top K</label>
+                        <input
+                            type="number"
+                            min="-1"
+                            max="100"
+                            value={settings.top_k}
+                            onChange={(e) => onChange({ ...settings, top_k: parseInt(e.target.value) })}
+                            className="w-full bg-slate-900 border border-slate-600 rounded px-2 py-1 text-white text-xs focus:outline-none focus:ring-1 focus:ring-primary-500"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-[10px] text-slate-500 mb-0.5">Max Tok</label>
+                        <input
+                            type="number"
+                            min="1"
+                            max="32768"
+                            value={settings.max_tokens}
+                            onChange={(e) => onChange({ ...settings, max_tokens: parseInt(e.target.value) })}
+                            className="w-full bg-slate-900 border border-slate-600 rounded px-2 py-1 text-white text-xs focus:outline-none focus:ring-1 focus:ring-primary-500"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-[10px] text-slate-500 mb-0.5">Seed</label>
+                        <input
+                            type="number"
+                            min="0"
+                            value={settings.seed}
+                            onChange={(e) => onChange({ ...settings, seed: parseInt(e.target.value) })}
+                            className="w-full bg-slate-900 border border-slate-600 rounded px-2 py-1 text-white text-xs focus:outline-none focus:ring-1 focus:ring-primary-500"
+                        />
+                    </div>
+                </div>
+            )}
+        </div>
+    )
+}
+
+function QueueBuilder({ queue, onQueueChange, onStartQueue, onRunningChange }) {
     const [isRunning, setIsRunning] = useState(false)
     const [queueStatus, setQueueStatus] = useState(null)
     const [starting, setStarting] = useState(false)
     const [sseError, setSseError] = useState(false)
+
+    // Notify parent of running state changes
+    useEffect(() => {
+        if (onRunningChange) {
+            onRunningChange(isRunning)
+        }
+    }, [isRunning, onRunningChange])
 
     useEffect(() => {
         // Only check for existing queue on mount
@@ -121,6 +213,19 @@ function QueueBuilder({ queue, onQueueChange, onStartQueue }) {
     function removeFromQueue(index) {
         const newQueue = [...queue]
         newQueue.splice(index, 1)
+        onQueueChange(newQueue)
+    }
+
+    function duplicateItem(index) {
+        const newQueue = [...queue]
+        const item = { ...queue[index], inference_settings: { ...queue[index].inference_settings } }
+        newQueue.splice(index + 1, 0, item)
+        onQueueChange(newQueue)
+    }
+
+    function updateItemSettings(index, newSettings) {
+        const newQueue = [...queue]
+        newQueue[index] = { ...newQueue[index], inference_settings: newSettings }
         onQueueChange(newQueue)
     }
 
@@ -238,6 +343,11 @@ function QueueBuilder({ queue, onQueueChange, onStartQueue }) {
                                 <div className="text-xs text-slate-400">
                                     {formatBenchmarks(item.benchmarks)} • {item.sample_size} samples
                                 </div>
+                                {item.inference_settings && (
+                                    <div className="text-[10px] text-slate-500 mt-0.5 font-mono">
+                                        ⚙ T={item.inference_settings.temperature ?? 0}, P={item.inference_settings.top_p ?? 1}, K={item.inference_settings.top_k ?? -1}, Seed={item.inference_settings.seed ?? 42}
+                                    </div>
+                                )}
                             </div>
                             {item.score !== null && item.score !== undefined && (
                                 <div className="text-lg font-bold text-green-400">
@@ -300,43 +410,58 @@ function QueueBuilder({ queue, onQueueChange, onStartQueue }) {
                 {queue.map((item, index) => (
                     <div
                         key={index}
-                        className="flex items-center gap-3 p-3 bg-slate-700/50 rounded-lg"
+                        className="p-3 bg-slate-700/50 rounded-lg"
                     >
-                        <span className="w-6 h-6 rounded-full bg-slate-600 flex items-center justify-center text-sm font-medium text-white">
-                            {index + 1}
-                        </span>
-                        <div className="flex-1">
-                            <div className="font-medium text-white">{item.model}</div>
-                            <div className="text-xs text-slate-400">
-                                {formatBenchmarks(item.benchmarks)} • {item.sample_size} samples
+                        <div className="flex items-center gap-3">
+                            <span className="w-6 h-6 rounded-full bg-slate-600 flex items-center justify-center text-sm font-medium text-white">
+                                {index + 1}
+                            </span>
+                            <div className="flex-1">
+                                <div className="font-medium text-white">{item.model}</div>
+                                <div className="text-xs text-slate-400">
+                                    {formatBenchmarks(item.benchmarks)} • {item.sample_size || 'all'} samples
+                                </div>
+                            </div>
+                            <div className="text-sm text-slate-400 flex items-center gap-1">
+                                <Clock className="w-3 h-3" />
+                                ~{estimateTime(item)}min
+                            </div>
+                            <div className="flex items-center gap-1">
+                                <button
+                                    onClick={() => duplicateItem(index)}
+                                    title="Duplicate"
+                                    className="p-1.5 rounded text-slate-400 hover:text-primary-400 hover:bg-primary-500/10 transition-colors"
+                                >
+                                    <Copy className="w-4 h-4" />
+                                </button>
+                                <button
+                                    onClick={() => moveUp(index)}
+                                    disabled={index === 0}
+                                    className="p-1.5 rounded text-slate-400 hover:text-white hover:bg-slate-600 disabled:opacity-30 transition-colors"
+                                >
+                                    <ChevronUp className="w-4 h-4" />
+                                </button>
+                                <button
+                                    onClick={() => moveDown(index)}
+                                    disabled={index === queue.length - 1}
+                                    className="p-1.5 rounded text-slate-400 hover:text-white hover:bg-slate-600 disabled:opacity-30 transition-colors"
+                                >
+                                    <ChevronDown className="w-4 h-4" />
+                                </button>
+                                <button
+                                    onClick={() => removeFromQueue(index)}
+                                    className="p-1.5 rounded text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                                >
+                                    <Trash2 className="w-4 h-4" />
+                                </button>
                             </div>
                         </div>
-                        <div className="text-sm text-slate-400 flex items-center gap-1">
-                            <Clock className="w-3 h-3" />
-                            ~{estimateTime(item)}min
-                        </div>
-                        <div className="flex items-center gap-1">
-                            <button
-                                onClick={() => moveUp(index)}
-                                disabled={index === 0}
-                                className="p-1.5 rounded text-slate-400 hover:text-white hover:bg-slate-600 disabled:opacity-30 transition-colors"
-                            >
-                                <ChevronUp className="w-4 h-4" />
-                            </button>
-                            <button
-                                onClick={() => moveDown(index)}
-                                disabled={index === queue.length - 1}
-                                className="p-1.5 rounded text-slate-400 hover:text-white hover:bg-slate-600 disabled:opacity-30 transition-colors"
-                            >
-                                <ChevronDown className="w-4 h-4" />
-                            </button>
-                            <button
-                                onClick={() => removeFromQueue(index)}
-                                className="p-1.5 rounded text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
-                            >
-                                <Trash2 className="w-4 h-4" />
-                            </button>
-                        </div>
+                        {item.inference_settings && (
+                            <InferenceSettingsEditor
+                                settings={item.inference_settings}
+                                onChange={(newSettings) => updateItemSettings(index, newSettings)}
+                            />
+                        )}
                     </div>
                 ))}
             </div>

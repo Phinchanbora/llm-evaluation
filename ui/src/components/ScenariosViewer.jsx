@@ -222,11 +222,18 @@ function ScenarioCard({ scenario, isExpanded, onToggle }) {
     // Get correct answer display
     const getCorrectAnswer = () => {
         if (scenario.correct_answer) return scenario.correct_answer
+        if (scenario.expected_answer !== undefined) return scenario.expected_answer  // GSM8K
         if (scenario.best_answer) return scenario.best_answer
         if (scenario.correct_ending) return scenario.correct_ending
         if (scenario.model_refused !== undefined) {
             return scenario.model_refused ? 'Model correctly refused' : 'Model should have refused'
         }
+        return null
+    }
+
+    // Get model answer display (for math benchmarks)
+    const getModelAnswer = () => {
+        if (scenario.model_answer !== undefined) return scenario.model_answer
         return null
     }
 
@@ -421,8 +428,29 @@ function ScenarioCard({ scenario, isExpanded, onToggle }) {
                         </div>
                     </div>
 
+                    {/* Math Answer Comparison (for GSM8K) */}
+                    {scenario.expected_answer !== undefined && (
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <h4 className="text-sm font-medium text-green-400 mb-2">Expected Answer</h4>
+                                <p className="text-green-300 bg-green-500/10 rounded-lg p-3 font-mono text-lg">{scenario.expected_answer}</p>
+                            </div>
+                            <div>
+                                <h4 className="text-sm font-medium text-slate-400 mb-2">Model's Answer</h4>
+                                <p className={`rounded-lg p-3 font-mono text-lg ${isCorrect
+                                        ? 'text-green-300 bg-green-500/10'
+                                        : 'text-red-300 bg-red-500/10'
+                                    }`}>
+                                    {scenario.model_answer !== null && scenario.model_answer !== undefined
+                                        ? scenario.model_answer
+                                        : 'Could not extract number'}
+                                </p>
+                            </div>
+                        </div>
+                    )}
+
                     {/* Correct Answer (if not shown elsewhere) */}
-                    {getCorrectAnswer() && !scenario.choices && !scenario.endings && !scenario.correct_answers && (
+                    {getCorrectAnswer() && !scenario.choices && !scenario.endings && !scenario.correct_answers && scenario.expected_answer === undefined && (
                         <div>
                             <h4 className="text-sm font-medium text-green-400 mb-2">Correct Answer</h4>
                             <p className="text-green-300 bg-green-500/10 rounded-lg p-3">{getCorrectAnswer()}</p>

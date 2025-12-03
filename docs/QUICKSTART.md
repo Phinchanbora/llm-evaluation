@@ -52,7 +52,8 @@ llm-eval quick
 The CLI auto-detects providers from environment:
 
 - `OPENAI_API_KEY` → OpenAI
-- `ANTHROPIC_API_KEY` → Anthropic  
+- `ANTHROPIC_API_KEY` → Anthropic
+- `GEMINI_API_KEY` → Google Gemini (⚠️ Free tier: 10 req/min limit)
 - `DEEPSEEK_API_KEY` → DeepSeek
 - Ollama running locally → Ollama
 
@@ -64,6 +65,9 @@ llm-eval quick --model llama3.2:1b
 
 # OpenAI
 llm-eval quick --model gpt-4o-mini
+
+# Google Gemini (use small sample size for free tier)
+llm-eval quick --model gemini-2.0-flash --provider gemini --sample-size 5
 
 # With sample size
 llm-eval quick --model gpt-4o-mini --sample-size 50

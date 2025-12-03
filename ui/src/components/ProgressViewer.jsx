@@ -292,16 +292,47 @@ function ProgressViewer({ activeRun }) {
     }
   }
 
+  // Helper to format inference settings compactly
+  const formatInferenceSettings = (settings) => {
+    if (!settings) return null
+    return `T=${settings.temperature ?? 0}, P=${settings.top_p ?? 1}, K=${settings.top_k ?? -1}, Seed=${settings.seed ?? 42}`
+  }
+
   // If there's a queue running, ALWAYS show it (priority over stale activeRun)
   if (showQueue && queueStatus && (queueStatus.status === 'running' || queueStatus.status === 'pending')) {
     const completed = queueStatus.items?.filter(i => i.status === 'completed').length || 0
     const currentItem = queueStatus.items?.find(i => i.status === 'running')
 
+    // Calculate total progress based on samples
+    const totalSamples = queueStatus.items?.reduce((sum, item) => sum + (item.sample_size || 100), 0) || 0
+    const completedSamples = queueStatus.items?.reduce((sum, item) => {
+      if (item.status === 'completed') return sum + (item.sample_size || 100)
+      return sum
+    }, 0) || 0
+
+    // Get current run progress from logs
+    const currentRunLogs = currentQueueRun?.logs || []
+    let currentRunProgress = 0
+    for (let i = currentRunLogs.length - 1; i >= 0; i--) {
+      const line = typeof currentRunLogs[i] === 'object' ? currentRunLogs[i].message : currentRunLogs[i]
+      if (line && line.includes('Progress:')) {
+        const match = line.match(/(\d+)\/(\d+)/)
+        if (match) {
+          currentRunProgress = parseInt(match[1])
+          break
+        }
+      }
+    }
+
+    const totalProgress = totalSamples > 0
+      ? ((completedSamples + currentRunProgress) / totalSamples) * 100
+      : 0
+
     return (
       <div className="max-w-4xl mx-auto">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-white mb-2">Queue Progress</h1>
-          <p className="text-slate-400">Running {completed}/{queueStatus.total} evaluations</p>
+          <p className="text-slate-400">Running {completed}/{queueStatus.total} evaluations • {completedSamples + currentRunProgress}/{totalSamples} samples</p>
         </div>
 
         {/* Queue Status Card */}
@@ -343,12 +374,16 @@ function ProgressViewer({ activeRun }) {
           </div>
         </div>
 
-        {/* Progress Bar */}
+        {/* Progress Bar - Total samples progress */}
         <div className="mb-6">
+          <div className="flex justify-between text-xs text-slate-400 mb-1">
+            <span>{Math.round(totalProgress)}% complete</span>
+            <span>{completedSamples + currentRunProgress} / {totalSamples} samples</span>
+          </div>
           <div className="h-4 bg-slate-700 rounded-full overflow-hidden">
             <div
               className="h-full bg-gradient-to-r from-primary-500 to-purple-500 transition-all duration-500"
-              style={{ width: `${(completed / queueStatus.total) * 100}%` }}
+              style={{ width: `${totalProgress}%` }}
             />
           </div>
         </div>
@@ -377,6 +412,11 @@ function ProgressViewer({ activeRun }) {
                   <div className="text-sm text-slate-400">
                     {formatBenchmarks(item.benchmarks)} • {item.sample_size} samples
                   </div>
+                  {item.inference_settings && (
+                    <div className="text-xs text-slate-500 mt-1 font-mono">
+                      ⚙ {formatInferenceSettings(item.inference_settings)}
+                    </div>
+                  )}
                 </div>
                 {item.score !== null && item.score !== undefined && (
                   <div className="text-lg font-bold text-green-400">
@@ -443,7 +483,7 @@ function ProgressViewer({ activeRun }) {
 
   // Show "No Active Run" if there's no activeRun OR if the activeRun is already finished
   const isRunFinished = run && ['completed', 'failed', 'cancelled'].includes(run.status)
-  
+
   if (!activeRun || (isRunFinished && !showQueue)) {
     return (
       <div className="max-w-4xl mx-auto">
@@ -451,7 +491,7 @@ function ProgressViewer({ activeRun }) {
           <Activity className="w-16 h-16 text-slate-600 mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-white mb-2">No Active Run</h2>
           <p className="text-slate-400 mb-6">
-            {isRunFinished 
+            {isRunFinished
               ? 'The last evaluation has finished. Start a new one or view results in History.'
               : 'Start a new evaluation to see progress here'
             }

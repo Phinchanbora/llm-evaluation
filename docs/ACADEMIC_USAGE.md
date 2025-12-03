@@ -395,6 +395,7 @@ for bench, info in result['recommendations'].items():
 - **Large differences (10%+)**: Achievable with most benchmarks (~300 per model)
 
 **Tip:** If you can't achieve the required sample size, consider:
+
 1. Increasing expected effect size (comparing more different models)
 2. Combining multiple benchmarks
 3. Using 80% power instead of 95%

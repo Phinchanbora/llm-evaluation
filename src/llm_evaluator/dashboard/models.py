@@ -56,6 +56,7 @@ class ModelsResponse(BaseModel):
     ollama: list[ModelInfo] = []
     openai: list[ModelInfo] = []
     anthropic: list[ModelInfo] = []
+    gemini: list[ModelInfo] = []
     deepseek: list[ModelInfo] = []
     huggingface: list[ModelInfo] = []
 
@@ -180,6 +181,7 @@ class QueueItemStatus(BaseModel):
     score: Optional[float] = None
     duration_seconds: Optional[float] = None
     error: Optional[str] = None
+    inference_settings: Optional[dict[str, Any]] = None
 
 
 class QueueStatus(BaseModel):

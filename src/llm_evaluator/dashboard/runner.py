@@ -649,6 +649,9 @@ class EvaluationRunner:
                     benchmarks=item.benchmarks,
                     sample_size=item.sample_size,
                     status=RunStatus.PENDING,
+                    inference_settings=(
+                        item.inference_settings.model_dump() if item.inference_settings else None
+                    ),
                 )
                 for i, item in enumerate(runs)
             ]

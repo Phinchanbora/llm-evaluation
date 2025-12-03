@@ -71,6 +71,13 @@ try:
 except ImportError:
     HAS_FIREWORKS = False
 
+try:
+    from llm_evaluator.providers.gemini_provider import GeminiProvider
+
+    HAS_GEMINI = True
+except ImportError:
+    HAS_GEMINI = False
+
 from llm_evaluator.providers.cached_provider import CachedProvider
 from llm_evaluator.statistical_metrics import minimum_sample_size_table, power_analysis_sample_size
 
@@ -85,6 +92,8 @@ def detect_provider_from_env() -> Tuple[Optional[str], Optional[str]]:
     Returns:
         Tuple of (provider_name, suggested_model) or (None, None)
     """
+    if os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY"):
+        return ("gemini", "gemini-2.5-flash")
     if os.environ.get("OPENAI_API_KEY"):
         return ("openai", "gpt-4o-mini")
     if os.environ.get("ANTHROPIC_API_KEY"):
@@ -278,6 +287,11 @@ def create_provider(
             echo_error("Fireworks provider requires openai package. Run: pip install openai")
             sys.exit(1)
         base_provider = FireworksProvider(model=model, api_key=api_key)
+    elif provider_type == "gemini":
+        if not HAS_GEMINI:
+            echo_error("Gemini provider not installed. Run: pip install google-genai")
+            sys.exit(1)
+        base_provider = GeminiProvider(model=model, api_key=api_key)
     elif provider_type == "auto":
         # Auto-detect from environment
         detected_provider, detected_model = detect_provider_from_env()
@@ -289,7 +303,7 @@ def create_provider(
         else:
             echo_error("No provider detected. Set an API key or start Ollama.")
             echo_info(
-                "Supported env vars: OPENAI_API_KEY, ANTHROPIC_API_KEY, DEEPSEEK_API_KEY, HF_TOKEN"
+                "Supported env vars: GEMINI_API_KEY, OPENAI_API_KEY, ANTHROPIC_API_KEY, DEEPSEEK_API_KEY, HF_TOKEN"
             )
             sys.exit(1)
     else:
@@ -311,6 +325,7 @@ def quick(model: Optional[str], sample_size: int, output: Optional[str]) -> None
     🚀 Quick evaluation with zero configuration!
 
     Auto-detects your provider from environment variables:
+    - GEMINI_API_KEY → Uses Google Gemini (gemini-2.5-flash)
     - OPENAI_API_KEY → Uses OpenAI (gpt-4o-mini)
     - ANTHROPIC_API_KEY → Uses Anthropic (claude-3-5-sonnet)
     - DEEPSEEK_API_KEY → Uses DeepSeek (deepseek-chat)
@@ -470,6 +485,7 @@ def quick(model: Optional[str], sample_size: int, output: Optional[str]) -> None
             "groq",
             "together",
             "fireworks",
+            "gemini",
             "auto",
         ]
     ),
@@ -552,6 +568,7 @@ def run(
             "groq",
             "together",
             "fireworks",
+            "gemini",
         ]
     ),
     help="Provider type (same for all models)",
@@ -647,6 +664,7 @@ def compare(
             "groq",
             "together",
             "fireworks",
+            "gemini",
         ]
     ),
     help="Provider type",
@@ -914,6 +932,206 @@ def providers() -> None:
 
 
 @cli.command()
+def doctor() -> None:
+    """
+    🩺 Diagnose your LLM evaluation setup
+
+    Checks:
+    - Python version and dependencies
+    - Installed providers and API keys
+    - Ollama availability and models
+    - Dataset cache status
+    - Dashboard dependencies
+
+    Example:
+        llm-eval doctor
+    """
+    import socket
+    import urllib.error
+    import urllib.request
+
+    click.echo("\n" + "=" * 60)
+    click.echo(click.style("🩺 LLM-EVAL DOCTOR - System Diagnosis", fg="cyan", bold=True))
+    click.echo("=" * 60)
+
+    all_ok = True
+    warnings = []
+    fixes = []
+
+    # 1. Python version
+    click.echo("\n📦 Python Environment:")
+    py_version = sys.version_info
+    if py_version >= (3, 11):
+        echo_success(f"Python {py_version.major}.{py_version.minor}.{py_version.micro}")
+    else:
+        echo_warning(f"Python {py_version.major}.{py_version.minor} - Recommended: 3.11+")
+        warnings.append("Python version is old")
+
+    # 2. Core dependencies
+    click.echo("\n📚 Core Dependencies:")
+    core_deps = [
+        ("numpy", "numpy"),
+        ("pandas", "pandas"),
+        ("scipy", "scipy"),
+        ("click", "click"),
+        ("pydantic", "pydantic"),
+        ("tqdm", "tqdm"),
+    ]
+    for name, module in core_deps:
+        try:
+            __import__(module)
+            click.echo(f"  ✅ {name}")
+        except ImportError:
+            click.echo(f"  ❌ {name}")
+            all_ok = False
+            fixes.append(f"pip install {name}")
+
+    # 3. Provider dependencies
+    click.echo("\n🔌 Provider Dependencies:")
+    provider_deps = [
+        ("OpenAI", "openai", HAS_OPENAI, "pip install openai"),
+        ("Anthropic", "anthropic", HAS_ANTHROPIC, "pip install anthropic"),
+        ("HuggingFace", "huggingface_hub", HAS_HUGGINGFACE, "pip install huggingface-hub"),
+    ]
+    for name, module, available, install_cmd in provider_deps:
+        if available:
+            click.echo(f"  ✅ {name}")
+        else:
+            click.echo(f"  ⚠️  {name} (optional) - {install_cmd}")
+
+    # 4. Dashboard dependencies
+    click.echo("\n🌐 Dashboard Dependencies:")
+    dashboard_deps = [
+        ("FastAPI", "fastapi"),
+        ("Uvicorn", "uvicorn"),
+        ("SSE Starlette", "sse_starlette"),
+    ]
+    dashboard_ok = True
+    for name, module in dashboard_deps:
+        try:
+            __import__(module)
+            click.echo(f"  ✅ {name}")
+        except ImportError:
+            click.echo(f"  ❌ {name}")
+            dashboard_ok = False
+            fixes.append(f"pip install {module.replace('_', '-')}")
+
+    if not dashboard_ok:
+        warnings.append("Dashboard dependencies missing")
+
+    # 5. Ollama status
+    click.echo("\n🦙 Ollama Status:")
+    ollama_running = False
+    ollama_models: list[str] = []
+
+    try:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(2)
+        result = sock.connect_ex(("localhost", 11434))
+        sock.close()
+
+        if result == 0:
+            ollama_running = True
+            echo_success("Ollama is running (port 11434)")
+
+            # Get models
+            try:
+                req = urllib.request.Request(
+                    "http://localhost:11434/api/tags",
+                    headers={"Accept": "application/json"},
+                )
+                with urllib.request.urlopen(req, timeout=3) as response:
+                    import json as json_module
+
+                    data = json_module.loads(response.read().decode("utf-8"))
+                    ollama_models = [m.get("name", "") for m in data.get("models", [])]
+                    if ollama_models:
+                        click.echo(f"  📋 Models: {', '.join(ollama_models[:5])}")
+                        if len(ollama_models) > 5:
+                            click.echo(f"     ... and {len(ollama_models) - 5} more")
+                    else:
+                        echo_warning("No models installed")
+                        fixes.append("ollama pull llama3.2:1b")
+            except Exception:
+                echo_warning("Could not list models")
+        else:
+            echo_warning("Ollama not running")
+            fixes.append("Start Ollama: ollama serve")
+    except Exception as e:
+        echo_warning(f"Could not check Ollama: {e}")
+
+    # 6. API Keys
+    click.echo("\n🔑 API Keys:")
+    api_keys = [
+        ("OPENAI_API_KEY", "OpenAI (GPT-4, GPT-4o)"),
+        ("ANTHROPIC_API_KEY", "Anthropic (Claude)"),
+        ("DEEPSEEK_API_KEY", "DeepSeek"),
+        ("GROQ_API_KEY", "Groq (fast inference)"),
+        ("TOGETHER_API_KEY", "Together.ai"),
+        ("FIREWORKS_API_KEY", "Fireworks.ai"),
+        ("HF_TOKEN", "HuggingFace"),
+    ]
+
+    has_any_key = False
+    for var, description in api_keys:
+        value = os.environ.get(var)
+        if value:
+            has_any_key = True
+            masked = value[:8] + "..." + value[-4:] if len(value) > 12 else "***"
+            click.echo(f"  ✅ {var}: {masked}")
+        else:
+            click.echo(f"  ⚪ {var}: Not set ({description})")
+
+    if not has_any_key and not ollama_running:
+        all_ok = False
+        warnings.append("No providers available")
+        fixes.append("Set an API key OR start Ollama")
+
+    # 7. Datasets
+    click.echo("\n📊 Datasets:")
+    try:
+        from llm_evaluator.benchmarks import DATASETS_AVAILABLE
+
+        if DATASETS_AVAILABLE:
+            echo_success("HuggingFace datasets library available")
+            click.echo("  💡 Datasets download automatically on first use")
+        else:
+            echo_warning("Datasets library not available - using demo mode")
+    except ImportError:
+        echo_warning("Could not check datasets")
+
+    # 8. Auto-detection
+    click.echo("\n🔍 Auto-Detection:")
+    detected_provider, detected_model = detect_provider_from_env()
+    if detected_provider:
+        echo_success(f"Detected: {detected_provider} → {detected_model}")
+        click.echo("  💡 'llm-eval quick' will use this automatically")
+    else:
+        echo_warning("No provider auto-detected")
+        fixes.append("Set an API key or start Ollama")
+
+    # Summary
+    click.echo("\n" + "=" * 60)
+    if all_ok and not warnings:
+        click.echo(click.style("✅ ALL CHECKS PASSED!", fg="green", bold=True))
+        click.echo("\n🚀 You're ready to go! Try:")
+        click.echo("   llm-eval quick           # Quick evaluation")
+        click.echo("   llm-eval dashboard       # Web UI")
+    else:
+        if warnings:
+            click.echo(click.style("⚠️  WARNINGS:", fg="yellow", bold=True))
+            for w in warnings:
+                click.echo(f"   • {w}")
+
+        if fixes:
+            click.echo(click.style("\n🔧 SUGGESTED FIXES:", fg="cyan", bold=True))
+            for f in fixes:
+                click.echo(f"   $ {f}")
+
+    click.echo("=" * 60 + "\n")
+
+
+@cli.command()
 @click.option("--model", "-m", default="llama3.2:1b", help="Model name")
 @click.option(
     "--provider",
@@ -929,6 +1147,7 @@ def providers() -> None:
             "groq",
             "together",
             "fireworks",
+            "gemini",
             "auto",
         ]
     ),
@@ -1867,6 +2086,126 @@ def power(
     click.echo("  • Use --show-table for quick reference")
 
     click.echo("\n" + "=" * 60 + "\n")
+
+
+@cli.command()
+@click.argument(
+    "datasets",
+    nargs=-1,
+    type=click.Choice(
+        [
+            "mmlu",
+            "truthfulqa",
+            "hellaswag",
+            "gsm8k",
+            "arc",
+            "winogrande",
+            "commonsenseqa",
+            "boolq",
+            "all",
+        ],
+        case_sensitive=False,
+    ),
+)
+@click.option("--cache-dir", default=None, help="Custom cache directory for datasets")
+def download(datasets: tuple, cache_dir: Optional[str]) -> None:
+    """
+    📥 Download benchmark datasets
+
+    Pre-download HuggingFace datasets to avoid delays during evaluation.
+
+    Examples:
+        llm-eval download mmlu truthfulqa
+        llm-eval download all
+        llm-eval download gsm8k --cache-dir ./data
+    """
+    from datasets import load_dataset
+
+    # Dataset mapping
+    DATASETS_MAP = {
+        "mmlu": ("cais/mmlu", "all"),
+        "truthfulqa": ("truthful_qa", "generation"),
+        "hellaswag": ("Rowan/hellaswag", None),
+        "gsm8k": ("gsm8k", "main"),
+        "arc": ("allenai/ai2_arc", "ARC-Challenge"),
+        "winogrande": ("winogrande", "winogrande_xl"),
+        "commonsenseqa": ("tau/commonsense_qa", None),
+        "boolq": ("google/boolq", None),
+    }
+
+    # If no datasets specified, show help
+    if not datasets:
+        click.echo("\n❌ No datasets specified!")
+        click.echo("\n📋 Available datasets:")
+        for name in DATASETS_MAP.keys():
+            click.echo(f"  • {name}")
+        click.echo("\n💡 Usage: llm-eval download mmlu truthfulqa")
+        click.echo("💡 Usage: llm-eval download all\n")
+        return
+
+    # Expand "all" to all datasets
+    if "all" in datasets:
+        datasets = tuple(DATASETS_MAP.keys())
+
+    # Set cache directory if specified
+    if cache_dir:
+        os.environ["HF_DATASETS_CACHE"] = cache_dir
+        click.echo(f"\n📁 Using cache directory: {cache_dir}\n")
+
+    click.echo("\n" + "=" * 60)
+    click.echo(click.style("📥 Downloading Benchmark Datasets", fg="cyan", bold=True))
+    click.echo("=" * 60 + "\n")
+
+    success_count = 0
+    failed = []
+
+    for dataset_name in datasets:
+        if dataset_name not in DATASETS_MAP:
+            echo_warning(f"Unknown dataset: {dataset_name}")
+            continue
+
+        hf_name, config = DATASETS_MAP[dataset_name]
+
+        try:
+            click.echo(
+                f"📥 Downloading {click.style(dataset_name.upper(), fg='cyan', bold=True)}..."
+            )
+            click.echo(f"   HuggingFace: {hf_name}" + (f" ({config})" if config else ""))
+
+            # Download with progress
+            if config:
+                load_dataset(hf_name, config, trust_remote_code=True)
+            else:
+                load_dataset(hf_name, trust_remote_code=True)
+
+            echo_success(f"✓ {dataset_name.upper()} downloaded successfully")
+            success_count += 1
+
+        except Exception as e:
+            echo_error(f"✗ Failed to download {dataset_name}: {str(e)}")
+            failed.append(dataset_name)
+
+        click.echo()  # Empty line between datasets
+
+    # Summary
+    click.echo("─" * 60)
+    click.echo(click.style("📋 Download Summary", fg="green", bold=True))
+    click.echo("─" * 60)
+    click.echo(f"  ✅ Successful: {success_count}/{len(datasets)}")
+
+    if failed:
+        click.echo(f"  ❌ Failed: {len(failed)}")
+        for name in failed:
+            click.echo(f"     • {name}")
+
+    click.echo("─" * 60)
+
+    if success_count > 0:
+        click.echo("\n💡 Datasets are now cached and ready for evaluation!")
+        click.echo("💡 Run: llm-eval quick --full\n")
+    else:
+        click.echo("\n⚠️ No datasets were successfully downloaded.")
+        click.echo("💡 Check your internet connection and try again.\n")
 
 
 if __name__ == "__main__":

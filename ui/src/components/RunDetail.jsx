@@ -82,12 +82,12 @@ function RunDetail() {
     try {
       const response = await fetch(`${API_BASE}/run/${id}/export/${format}`)
       if (!response.ok) throw new Error('Export failed')
-      
+
       const blob = await response.blob()
       const contentDisposition = response.headers.get('Content-Disposition')
       const filenameMatch = contentDisposition?.match(/filename="(.+)"/)
       const filename = filenameMatch ? filenameMatch[1] : `${id}_export.${format}`
-      
+
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url

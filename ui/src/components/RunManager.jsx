@@ -28,6 +28,84 @@ import {
 import { fetchModels, fetchBenchmarks, fetchPresets, startRun, fetchModelInfo } from '../api'
 import QueueBuilder from './QueueBuilder'
 
+// Tooltip component for inference parameters
+function ParamTooltip({ children, tooltip }) {
+  const [show, setShow] = useState(false)
+
+  return (
+    <div className="relative inline-block">
+      <div
+        onMouseEnter={() => setShow(true)}
+        onMouseLeave={() => setShow(false)}
+        className="cursor-help"
+      >
+        {children}
+      </div>
+      {show && (
+        <div className="absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-2 w-72 p-3 bg-slate-900 border border-slate-600 rounded-lg shadow-xl text-xs">
+          <div className="text-slate-200 leading-relaxed whitespace-pre-line">{tooltip}</div>
+          <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1">
+            <div className="border-4 border-transparent border-t-slate-600"></div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// Inference parameter descriptions
+const PARAM_TOOLTIPS = {
+  temperature: `🎲 Controls randomness/creativity
+
+• 0 = Deterministic (always picks most probable)
+• 0.1-0.5 = Conservative responses
+• 0.7-1.0 = More creative and varied
+• >1.0 = Very random, may produce incoherence
+
+✅ For benchmarks: 0 is ideal for consistent, reproducible results.`,
+
+  top_p: `🎯 Nucleus Sampling
+
+Limits tokens to those whose cumulative probability sums to P.
+
+• 1.0 = Consider all tokens (no filter)
+• 0.9 = Only tokens summing 90% probability
+• 0.5 = Only most probable tokens
+
+✅ For benchmarks: 1.0 (temperature=0 handles control).`,
+
+  top_k: `📊 Top-K Sampling
+
+Limits to the K most probable tokens.
+
+• -1 = Disabled (no limit)
+• 50 = Only top 50 tokens
+• 10 = Very restrictive
+
+✅ For benchmarks: -1 (disabled) since we use temperature=0.`,
+
+  max_tokens: `📝 Response Limit
+
+Maximum tokens the model can generate.
+
+• 128 = Very short responses
+• 512 = Medium responses
+• 1024 = Long responses (good for GSM8K)
+• 2048+ = Extended text
+
+✅ For benchmarks: 1024 is sufficient for most.`,
+
+  seed: `🌱 Reproducibility Seed
+
+Controls the random number generator.
+
+• Same seed + same params = same response
+• 42 = Classic value in data science
+  (reference to "The Hitchhiker's Guide to the Galaxy")
+
+✅ Crucial for replicating scientific results.`
+}
+
 function RunManager({ onRunStart }) {
   const navigate = useNavigate()
   const [models, setModels] = useState([])
@@ -62,6 +140,7 @@ function RunManager({ onRunStart }) {
 
   // Queue state
   const [queue, setQueue] = useState([])
+  const [isQueueRunning, setIsQueueRunning] = useState(false)
 
   useEffect(() => {
     loadData()
@@ -144,6 +223,28 @@ function RunManager({ onRunStart }) {
       return
     }
 
+    // If queue is already running, add to queue instead
+    if (isQueueRunning) {
+      handleAddToQueue()
+      return
+    }
+
+    // If there are items in the queue, start the queue with this as first item
+    if (queue.length > 0) {
+      const newItem = {
+        model: selectedModel,
+        provider: selectedProvider,
+        benchmarks: selectedBenchmarks,
+        sample_size: useAllSamples ? null : questionsPerDataset,
+        inference_settings: { ...inferenceSettings },
+        base_url: baseUrl || undefined,
+        api_key: apiKey || undefined,
+      }
+      setQueue([newItem, ...queue])
+      // Start queue will be triggered by user clicking Start Queue
+      return
+    }
+
     setStarting(true)
     setError(null)
     try {
@@ -176,9 +277,9 @@ function RunManager({ onRunStart }) {
     const queueItem = {
       model: selectedModel,
       provider: selectedProvider,
-      benchmarks: selectedBenchmarks,
+      benchmarks: [...selectedBenchmarks],
       sample_size: useAllSamples ? null : questionsPerDataset,
-      inference_settings: inferenceSettings,
+      inference_settings: { ...inferenceSettings },
       base_url: baseUrl || undefined,
       api_key: apiKey || undefined,
     }
@@ -205,17 +306,25 @@ function RunManager({ onRunStart }) {
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-5xl mx-auto">
+      {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-white mb-2">Run Evaluation</h1>
-        <p className="text-slate-400">Configure and start a new LLM benchmark evaluation</p>
+        <div className="flex items-center gap-3 mb-2">
+          <div className="w-10 h-10 bg-amber-500 rounded-xl flex items-center justify-center">
+            <Play className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-white">Run Evaluation</h1>
+            <p className="text-sm text-slate-400">Configure and benchmark your LLM models</p>
+          </div>
+        </div>
       </div>
 
       {error && (
-        <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-lg flex items-center gap-3">
-          <XCircle className="w-5 h-5 text-red-400" />
-          <span className="text-red-400">{error}</span>
-          <button onClick={() => setError(null)} className="ml-auto text-red-400 hover:text-red-300">
+        <div className="mb-6 p-4 bg-error-500/10 border border-error-500/30 rounded-xl flex items-center gap-3 animate-fade-in">
+          <XCircle className="w-5 h-5 text-error-400" />
+          <span className="text-error-400 flex-1">{error}</span>
+          <button onClick={() => setError(null)} className="text-error-400 hover:text-error-300 transition-colors">
             <XCircle className="w-4 h-4" />
           </button>
         </div>
@@ -231,16 +340,16 @@ function RunManager({ onRunStart }) {
           {presets.map(preset => {
             // Icon based on category
             const PresetIcon = preset.category === 'Speed' ? Zap :
-                              preset.category === 'Knowledge' ? BookOpen :
-                              preset.category === 'Reasoning' ? Brain :
-                              preset.category === 'Safety' ? Shield :
-                              preset.category === 'Complete' ? Sparkles : Zap
-            
+              preset.category === 'Knowledge' ? BookOpen :
+                preset.category === 'Reasoning' ? Brain :
+                  preset.category === 'Safety' ? Shield :
+                    preset.category === 'Complete' ? Sparkles : Zap
+
             const iconColor = preset.category === 'Speed' ? 'text-yellow-400' :
-                             preset.category === 'Knowledge' ? 'text-blue-400' :
-                             preset.category === 'Reasoning' ? 'text-purple-400' :
-                             preset.category === 'Safety' ? 'text-green-400' :
-                             preset.category === 'Complete' ? 'text-primary-400' : 'text-slate-400'
+              preset.category === 'Knowledge' ? 'text-blue-400' :
+                preset.category === 'Reasoning' ? 'text-purple-400' :
+                  preset.category === 'Safety' ? 'text-green-400' :
+                    preset.category === 'Complete' ? 'text-primary-400' : 'text-slate-400'
 
             return (
               <button
@@ -262,15 +371,15 @@ function RunManager({ onRunStart }) {
                 <div className="flex gap-1.5 flex-wrap">
                   {preset.benchmarks.map(b => (
                     <span key={b} className="px-2 py-0.5 bg-slate-700/50 rounded text-xs text-slate-300 capitalize">
-                      {b === 'mmlu' ? 'MMLU' : 
-                       b === 'truthfulqa' ? 'TruthfulQA' :
-                       b === 'hellaswag' ? 'HellaSwag' :
-                       b === 'arc' ? 'ARC' :
-                       b === 'winogrande' ? 'WinoGrande' :
-                       b === 'commonsenseqa' ? 'CommonsenseQA' :
-                       b === 'boolq' ? 'BoolQ' :
-                       b === 'safetybench' ? 'SafetyBench' :
-                       b === 'donotanswer' ? 'Do-Not-Answer' : b}
+                      {b === 'mmlu' ? 'MMLU' :
+                        b === 'truthfulqa' ? 'TruthfulQA' :
+                          b === 'hellaswag' ? 'HellaSwag' :
+                            b === 'arc' ? 'ARC' :
+                              b === 'winogrande' ? 'WinoGrande' :
+                                b === 'commonsenseqa' ? 'CommonsenseQA' :
+                                  b === 'boolq' ? 'BoolQ' :
+                                    b === 'safetybench' ? 'SafetyBench' :
+                                      b === 'donotanswer' ? 'Do-Not-Answer' : b}
                     </span>
                   ))}
                 </div>
@@ -362,8 +471,8 @@ function RunManager({ onRunStart }) {
                   onChange={(e) => setApiKey(e.target.value)}
                   placeholder={
                     selectedProvider === 'openai' ? 'sk-... or leave empty to use OPENAI_API_KEY env var' :
-                    selectedProvider === 'anthropic' ? 'sk-ant-... or leave empty to use ANTHROPIC_API_KEY env var' :
-                    'Leave empty to use DEEPSEEK_API_KEY env var'
+                      selectedProvider === 'anthropic' ? 'sk-ant-... or leave empty to use ANTHROPIC_API_KEY env var' :
+                        'Leave empty to use DEEPSEEK_API_KEY env var'
                   }
                   className="w-full bg-slate-900 border border-slate-600 rounded-lg px-4 py-2.5 pr-12 text-white focus:outline-none focus:ring-2 focus:ring-primary-500 placeholder-slate-500"
                 />
@@ -397,9 +506,8 @@ function RunManager({ onRunStart }) {
                   value={questionsPerDataset}
                   onChange={(e) => setQuestionsPerDataset(parseInt(e.target.value) || 10)}
                   disabled={useAllSamples}
-                  className={`w-full bg-slate-900 border border-slate-600 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-primary-500 ${
-                    useAllSamples ? 'opacity-50 cursor-not-allowed' : ''
-                  }`}
+                  className={`w-full bg-slate-900 border border-slate-600 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-primary-500 ${useAllSamples ? 'opacity-50 cursor-not-allowed' : ''
+                    }`}
                 />
               </div>
               <label className="flex items-center gap-2 bg-slate-900 border border-slate-600 rounded-lg px-4 py-2.5 cursor-pointer hover:border-slate-500 transition-colors">
@@ -416,7 +524,7 @@ function RunManager({ onRunStart }) {
               <div className="mt-2 p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg flex items-start gap-2">
                 <AlertTriangle className="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0" />
                 <p className="text-xs text-amber-300">
-                  <strong>Warning:</strong> Using all samples can take several hours per benchmark. 
+                  <strong>Warning:</strong> Using all samples can take several hours per benchmark.
                   MMLU has 14K questions, HellaSwag 10K, etc. Consider using a subset for faster results.
                 </p>
               </div>
@@ -426,46 +534,191 @@ function RunManager({ onRunStart }) {
 
         {/* Benchmarks */}
         <div className="mt-6">
-          <label className="block text-sm font-medium text-slate-300 mb-3">
-            Benchmarks
+          <label className="block text-sm font-medium text-slate-300 mb-4 flex items-center gap-2">
+            <BookOpen className="w-4 h-4" />
+            Select Benchmarks
           </label>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            {benchmarks.map(benchmark => (
-              <label
-                key={benchmark.id}
-                className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${selectedBenchmarks.includes(benchmark.id)
-                  ? 'bg-primary-500/20 border-primary-500/50'
-                  : 'bg-slate-900 border-slate-700 hover:border-slate-600'
-                  }`}
-              >
-                <input
-                  type="checkbox"
-                  checked={selectedBenchmarks.includes(benchmark.id)}
-                  onChange={(e) => {
-                    if (e.target.checked) {
-                      setSelectedBenchmarks([...selectedBenchmarks, benchmark.id])
-                    } else {
-                      setSelectedBenchmarks(selectedBenchmarks.filter(b => b !== benchmark.id))
-                    }
-                  }}
-                  className="w-4 h-4 mt-1 rounded border-slate-600 bg-slate-900 text-primary-500 focus:ring-primary-500"
-                />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="font-medium text-white">{benchmark.name}</span>
-                    {benchmark.questions_count > 0 && (
-                      <span className="text-xs text-slate-500 bg-slate-800 px-2 py-0.5 rounded flex items-center gap-1">
+
+          {/* Knowledge Benchmarks */}
+          <div className="mb-6">
+            <div className="flex items-center gap-2 mb-3">
+              <Brain className="w-4 h-4 text-primary-400" />
+              <span className="text-sm font-medium text-slate-400">Knowledge & Reasoning</span>
+              <span className="text-xs text-slate-500">
+                ({benchmarks.filter(b => !['safetybench', 'donotanswer'].includes(b.id)).length} benchmarks)
+              </span>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {benchmarks.filter(b => !['safetybench', 'donotanswer'].includes(b.id)).map(benchmark => {
+                const icons = {
+                  mmlu: '📚',
+                  truthfulqa: '✓',
+                  hellaswag: '💭',
+                  arc: '🔬',
+                  winogrande: '🧩',
+                  commonsenseqa: '💡',
+                  boolq: '❓',
+                  gsm8k: '🔢',
+                }
+                const descriptions = {
+                  mmlu: '57 subjects knowledge',
+                  truthfulqa: 'Truthfulness evaluation',
+                  hellaswag: 'Common sense reasoning',
+                  arc: 'Science reasoning',
+                  winogrande: 'Pronoun resolution',
+                  commonsenseqa: 'Commonsense knowledge',
+                  boolq: 'Yes/No comprehension',
+                  gsm8k: 'Grade school math',
+                }
+                const isSelected = selectedBenchmarks.includes(benchmark.id)
+
+                return (
+                  <button
+                    key={benchmark.id}
+                    onClick={() => {
+                      if (isSelected) {
+                        setSelectedBenchmarks(selectedBenchmarks.filter(b => b !== benchmark.id))
+                      } else {
+                        setSelectedBenchmarks([...selectedBenchmarks, benchmark.id])
+                      }
+                    }}
+                    className={`
+                      p-4 rounded-xl border-2 text-left transition-all
+                      ${isSelected
+                        ? 'border-primary-500 bg-primary-500/10 shadow-lg shadow-primary-500/10'
+                        : 'border-slate-700 hover:border-slate-500 bg-slate-800/50'
+                      }
+                    `}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg">{icons[benchmark.id] || '📋'}</span>
+                        <span className="font-medium text-white">{benchmark.name}</span>
+                      </div>
+                      <div className={`
+                        w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all
+                        ${isSelected
+                          ? 'border-primary-500 bg-primary-500'
+                          : 'border-slate-600'
+                        }
+                      `}>
+                        {isSelected && <CheckCircle className="w-3 h-3 text-white" />}
+                      </div>
+                    </div>
+                    <p className="text-xs text-slate-400 mt-1.5">
+                      {descriptions[benchmark.id] || benchmark.description}
+                    </p>
+                    <div className="flex items-center gap-2 mt-2">
+                      <span className="text-xs text-slate-500 font-mono flex items-center gap-1">
                         <Hash className="w-3 h-3" />
-                        {benchmark.questions_count >= 1000 
-                          ? `${(benchmark.questions_count / 1000).toFixed(1)}K` 
-                          : benchmark.questions_count}
+                        {benchmark.questions_count >= 1000
+                          ? `${(benchmark.questions_count / 1000).toFixed(1)}K`
+                          : benchmark.questions_count || '?'} questions
                       </span>
-                    )}
-                  </div>
-                  <div className="text-xs text-slate-400 mt-0.5">{benchmark.description}</div>
-                </div>
-              </label>
-            ))}
+                    </div>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Safety Benchmarks */}
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <Shield className="w-4 h-4 text-emerald-400" />
+              <span className="text-sm font-medium text-slate-400">Safety & Security</span>
+              <span className="text-xs text-slate-500">
+                ({benchmarks.filter(b => ['safetybench', 'donotanswer'].includes(b.id)).length} benchmarks)
+              </span>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {benchmarks.filter(b => ['safetybench', 'donotanswer'].includes(b.id)).map(benchmark => {
+                const icons = {
+                  safetybench: '🛡️',
+                  donotanswer: '🚫',
+                }
+                const descriptions = {
+                  safetybench: 'Safety scenario evaluation',
+                  donotanswer: 'Harmful prompt rejection',
+                }
+                const isSelected = selectedBenchmarks.includes(benchmark.id)
+
+                return (
+                  <button
+                    key={benchmark.id}
+                    onClick={() => {
+                      if (isSelected) {
+                        setSelectedBenchmarks(selectedBenchmarks.filter(b => b !== benchmark.id))
+                      } else {
+                        setSelectedBenchmarks([...selectedBenchmarks, benchmark.id])
+                      }
+                    }}
+                    className={`
+                      p-4 rounded-xl border-2 text-left transition-all
+                      ${isSelected
+                        ? 'border-emerald-500 bg-emerald-500/10 shadow-lg shadow-emerald-500/10'
+                        : 'border-slate-700 hover:border-slate-500 bg-slate-800/50'
+                      }
+                    `}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg">{icons[benchmark.id] || '📋'}</span>
+                        <span className="font-medium text-white">{benchmark.name}</span>
+                      </div>
+                      <div className={`
+                        w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all
+                        ${isSelected
+                          ? 'border-emerald-500 bg-emerald-500'
+                          : 'border-slate-600'
+                        }
+                      `}>
+                        {isSelected && <CheckCircle className="w-3 h-3 text-white" />}
+                      </div>
+                    </div>
+                    <p className="text-xs text-slate-400 mt-1.5">
+                      {descriptions[benchmark.id] || benchmark.description}
+                    </p>
+                    <div className="flex items-center gap-2 mt-2">
+                      <span className="text-xs text-slate-500 font-mono flex items-center gap-1">
+                        <Hash className="w-3 h-3" />
+                        {benchmark.questions_count >= 1000
+                          ? `${(benchmark.questions_count / 1000).toFixed(1)}K`
+                          : benchmark.questions_count || '?'} questions
+                      </span>
+                    </div>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Quick select buttons */}
+          <div className="mt-4 flex gap-2">
+            <button
+              onClick={() => setSelectedBenchmarks(benchmarks.map(b => b.id))}
+              className="text-xs px-3 py-1.5 rounded-lg bg-slate-700 text-slate-300 hover:bg-slate-600 transition-colors"
+            >
+              Select All
+            </button>
+            <button
+              onClick={() => setSelectedBenchmarks([])}
+              className="text-xs px-3 py-1.5 rounded-lg bg-slate-700 text-slate-300 hover:bg-slate-600 transition-colors"
+            >
+              Clear All
+            </button>
+            <button
+              onClick={() => setSelectedBenchmarks(benchmarks.filter(b => !['safetybench', 'donotanswer'].includes(b.id)).map(b => b.id))}
+              className="text-xs px-3 py-1.5 rounded-lg bg-primary-500/20 text-primary-400 hover:bg-primary-500/30 transition-colors"
+            >
+              Knowledge Only
+            </button>
+            <button
+              onClick={() => setSelectedBenchmarks(['safetybench', 'donotanswer'])}
+              className="text-xs px-3 py-1.5 rounded-lg bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 transition-colors"
+            >
+              Safety Only
+            </button>
           </div>
         </div>
       </div>
@@ -568,7 +821,12 @@ function RunManager({ onRunStart }) {
           <div className="p-6 pt-2 border-t border-slate-700">
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
               <div>
-                <label className="block text-xs text-slate-400 mb-1">Temperature</label>
+                <label className="flex items-center gap-1.5 text-xs text-slate-400 mb-1">
+                  Temperature
+                  <ParamTooltip tooltip={PARAM_TOOLTIPS.temperature}>
+                    <Info className="w-3.5 h-3.5 text-slate-500 hover:text-primary-400 transition-colors" />
+                  </ParamTooltip>
+                </label>
                 <input
                   type="number"
                   step="0.1"
@@ -582,7 +840,12 @@ function RunManager({ onRunStart }) {
               </div>
 
               <div>
-                <label className="block text-xs text-slate-400 mb-1">Top P</label>
+                <label className="flex items-center gap-1.5 text-xs text-slate-400 mb-1">
+                  Top P
+                  <ParamTooltip tooltip={PARAM_TOOLTIPS.top_p}>
+                    <Info className="w-3.5 h-3.5 text-slate-500 hover:text-primary-400 transition-colors" />
+                  </ParamTooltip>
+                </label>
                 <input
                   type="number"
                   step="0.1"
@@ -596,7 +859,12 @@ function RunManager({ onRunStart }) {
               </div>
 
               <div>
-                <label className="block text-xs text-slate-400 mb-1">Top K</label>
+                <label className="flex items-center gap-1.5 text-xs text-slate-400 mb-1">
+                  Top K
+                  <ParamTooltip tooltip={PARAM_TOOLTIPS.top_k}>
+                    <Info className="w-3.5 h-3.5 text-slate-500 hover:text-primary-400 transition-colors" />
+                  </ParamTooltip>
+                </label>
                 <input
                   type="number"
                   min="-1"
@@ -609,7 +877,12 @@ function RunManager({ onRunStart }) {
               </div>
 
               <div>
-                <label className="block text-xs text-slate-400 mb-1">Max Tokens</label>
+                <label className="flex items-center gap-1.5 text-xs text-slate-400 mb-1">
+                  Max Tokens
+                  <ParamTooltip tooltip={PARAM_TOOLTIPS.max_tokens}>
+                    <Info className="w-3.5 h-3.5 text-slate-500 hover:text-primary-400 transition-colors" />
+                  </ParamTooltip>
+                </label>
                 <input
                   type="number"
                   min="1"
@@ -622,7 +895,12 @@ function RunManager({ onRunStart }) {
               </div>
 
               <div>
-                <label className="block text-xs text-slate-400 mb-1">Seed</label>
+                <label className="flex items-center gap-1.5 text-xs text-slate-400 mb-1">
+                  Seed
+                  <ParamTooltip tooltip={PARAM_TOOLTIPS.seed}>
+                    <Info className="w-3.5 h-3.5 text-slate-500 hover:text-primary-400 transition-colors" />
+                  </ParamTooltip>
+                </label>
                 <input
                   type="number"
                   min="0"
@@ -642,42 +920,59 @@ function RunManager({ onRunStart }) {
         queue={queue}
         onQueueChange={setQueue}
         onStartQueue={handleQueueStart}
+        onRunningChange={setIsQueueRunning}
       />
 
-      {/* Start button */}
-      <div className="flex justify-end gap-4">
-        <button
-          onClick={loadData}
-          className="px-6 py-3 rounded-lg border border-slate-600 text-slate-300 hover:bg-slate-800 flex items-center gap-2 transition-colors"
-        >
-          <RefreshCw className="w-4 h-4" />
-          Refresh
-        </button>
-        <button
-          onClick={handleAddToQueue}
-          disabled={!selectedModel || selectedBenchmarks.length === 0}
-          className="px-6 py-3 rounded-lg border border-primary-500/50 text-primary-400 hover:bg-primary-500/10 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
-        >
-          <Plus className="w-5 h-5" />
-          Add to Queue
-        </button>
-        <button
-          onClick={handleStartRun}
-          disabled={starting || !selectedModel || selectedBenchmarks.length === 0}
-          className="px-8 py-3 rounded-lg bg-gradient-to-r from-primary-500 to-purple-500 text-white font-semibold hover:from-primary-600 hover:to-purple-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-all"
-        >
-          {starting ? (
-            <>
-              <Loader2 className="w-5 h-5 animate-spin" />
-              Starting...
-            </>
+      {/* Action Buttons */}
+      <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-8 pt-6 border-t border-surface-700">
+        <div className="text-sm text-slate-400">
+          {selectedBenchmarks.length > 0 ? (
+            <span className="flex items-center gap-2">
+              <CheckCircle className="w-4 h-4 text-primary-400" />
+              {selectedBenchmarks.length} benchmark{selectedBenchmarks.length > 1 ? 's' : ''} selected
+              {!useAllSamples && ` • ${questionsPerDataset} samples each`}
+            </span>
           ) : (
-            <>
-              <Play className="w-5 h-5" />
-              Run Now
-            </>
+            <span className="text-slate-500">Select at least one benchmark to continue</span>
           )}
-        </button>
+        </div>
+
+        <div className="flex gap-3">
+          <button
+            onClick={loadData}
+            className="btn-secondary"
+          >
+            <RefreshCw className="w-4 h-4" />
+            Refresh
+          </button>
+          <button
+            onClick={handleAddToQueue}
+            disabled={!selectedModel || selectedBenchmarks.length === 0}
+            className="btn-ghost border border-primary-500/30 text-primary-400 hover:bg-primary-500/10 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Plus className="w-5 h-5" />
+            Add to Queue
+          </button>
+          {!isQueueRunning && (
+            <button
+              onClick={handleStartRun}
+              disabled={starting || !selectedModel || selectedBenchmarks.length === 0}
+              className="btn-accent px-6 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {starting ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Starting...
+                </>
+              ) : (
+                <>
+                  <Play className="w-5 h-5" />
+                  Run Now
+                </>
+              )}
+            </button>
+          )}
+        </div>
       </div>
     </div>
   )

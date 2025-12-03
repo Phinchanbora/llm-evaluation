@@ -21,6 +21,7 @@ class ProviderType(Enum):
     GROQ = "groq"
     TOGETHER = "together"
     FIREWORKS = "fireworks"
+    GEMINI = "gemini"
 
 
 @dataclass

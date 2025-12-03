@@ -51,6 +51,83 @@ const benchmarkDescriptions = {
   'GSM8K': 'Grade School Math - Mathematical reasoning with multi-step word problems',
 }
 
+// Custom tick component for XAxis with tooltip
+function CustomXAxisTick({ x, y, payload }) {
+  const [showTooltip, setShowTooltip] = useState(false)
+  const description = benchmarkDescriptions[payload.value] || ''
+
+  return (
+    <g transform={`translate(${x},${y})`}>
+      <text
+        x={0}
+        y={0}
+        dy={16}
+        textAnchor="end"
+        fill="#94a3b8"
+        fontSize={12}
+        transform="rotate(-35)"
+        style={{ cursor: 'help' }}
+        onMouseEnter={() => setShowTooltip(true)}
+        onMouseLeave={() => setShowTooltip(false)}
+      >
+        {payload.value}
+      </text>
+      {showTooltip && description && (
+        <foreignObject x={-200} y={20} width={220} height={100} style={{ overflow: 'visible' }}>
+          <div className="bg-slate-900 border border-slate-600 rounded-lg p-2 shadow-xl text-xs text-slate-300 z-50">
+            <p className="font-semibold text-white mb-1">{payload.value}</p>
+            <p>{description}</p>
+          </div>
+        </foreignObject>
+      )}
+    </g>
+  )
+}
+
+// Custom tick component for Radar chart labels with tooltip
+function CustomRadarTick({ payload, x, y, cx, cy, ...rest }) {
+  const [showTooltip, setShowTooltip] = useState(false)
+  const description = benchmarkDescriptions[payload.value] || ''
+
+  // Calculate text anchor based on position
+  const textAnchor = x > cx ? 'start' : x < cx ? 'end' : 'middle'
+  const dy = y > cy ? 10 : y < cy ? -5 : 0
+
+  return (
+    <g>
+      <text
+        {...rest}
+        x={x}
+        y={y}
+        dy={dy}
+        textAnchor={textAnchor}
+        fill="#e2e8f0"
+        fontSize={12}
+        fontWeight={500}
+        style={{ cursor: 'help' }}
+        onMouseEnter={() => setShowTooltip(true)}
+        onMouseLeave={() => setShowTooltip(false)}
+      >
+        {payload.value}
+      </text>
+      {showTooltip && description && (
+        <foreignObject
+          x={textAnchor === 'end' ? x - 230 : textAnchor === 'start' ? x + 10 : x - 110}
+          y={y - 30}
+          width={220}
+          height={80}
+          style={{ overflow: 'visible' }}
+        >
+          <div className="bg-slate-900 border border-slate-600 rounded-lg p-2 shadow-xl text-xs text-slate-300 z-50">
+            <p className="font-semibold text-white mb-1">{payload.value}</p>
+            <p>{description}</p>
+          </div>
+        </foreignObject>
+      )}
+    </g>
+  )
+}
+
 // Custom tooltip component for charts
 function CustomTooltip({ active, payload, label }) {
   if (!active || !payload || !payload.length) return null
@@ -156,10 +233,26 @@ function ModelComparison() {
     }
   })
 
-  // Generate unique keys for each run that include sample size info
+  // Generate unique keys for each run that include sample size and run_id for uniqueness
   const getRunKey = (run) => {
     const samples = run.sample_size ? `n=${run.sample_size}` : ''
-    return `${run.model} ${samples}`.trim()
+    const runIdShort = run.run_id ? `#${run.run_id.slice(-6)}` : ''
+    // Include inference settings if different from defaults
+    let inferenceInfo = ''
+    if (run.inference_settings) {
+      const settings = run.inference_settings
+      const parts = []
+      if (settings.temperature !== undefined && settings.temperature !== 0) {
+        parts.push(`T=${settings.temperature}`)
+      }
+      if (settings.seed !== undefined && settings.seed !== 42) {
+        parts.push(`S=${settings.seed}`)
+      }
+      if (parts.length > 0) {
+        inferenceInfo = ` (${parts.join(', ')})`
+      }
+    }
+    return `${run.model} ${samples} ${runIdShort}${inferenceInfo}`.trim()
   }
 
   benchmarkNames.forEach(benchmark => {
@@ -174,7 +267,8 @@ function ModelComparison() {
     chartData.push(dataPoint)
   })
 
-  // Radar chart data - needs numeric values, not strings
+  // Radar chart data - needs numeric values for all runs on each benchmark
+  // Use 0 as default when a model doesn't have data for a benchmark
   const radarData = Array.from(benchmarkNames).map(benchmark => {
     const dataPoint = { benchmark: formatBenchmarkName(benchmark) }
     selectedRunsData.forEach(run => {
@@ -182,12 +276,25 @@ function ModelComparison() {
       if (data) {
         const score = extractScore(benchmark, data)
         dataPoint[getRunKey(run)] = parseFloat((score * 100).toFixed(1))
+      } else {
+        // Set 0 for missing benchmarks so the area can be drawn
+        dataPoint[getRunKey(run)] = 0
       }
     })
     return dataPoint
   })
 
-  const colors = ['#0ea5e9', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444']
+  // More vibrant and distinguishable colors for charts
+  const colors = [
+    '#3b82f6', // Blue
+    '#8b5cf6', // Purple  
+    '#10b981', // Emerald
+    '#f59e0b', // Amber
+    '#ef4444', // Red
+    '#06b6d4', // Cyan
+    '#ec4899', // Pink
+    '#84cc16', // Lime
+  ]
 
   if (loading) {
     return (
@@ -232,6 +339,15 @@ function ModelComparison() {
                 const runIdShort = run.run_id?.slice(-6) || ''
                 const sampleInfo = run.sample_size ? `${run.sample_size} samples` : run.preset || 'custom'
 
+                // Show inference settings if different from defaults
+                let inferenceTag = ''
+                if (run.inference_settings) {
+                  const s = run.inference_settings
+                  if (s.temperature !== undefined && s.temperature !== 0) {
+                    inferenceTag = `T=${s.temperature}`
+                  }
+                }
+
                 return (
                   <button
                     key={run.run_id}
@@ -244,6 +360,9 @@ function ModelComparison() {
                     <div className="flex items-center gap-2">
                       <span className="font-medium">{run.model}</span>
                       <span className="text-xs opacity-60 font-mono">#{runIdShort}</span>
+                      {inferenceTag && (
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400">{inferenceTag}</span>
+                      )}
                     </div>
                     <div className="flex items-center gap-2 text-xs opacity-60">
                       <span>{dateStr} {timeStr}</span>
@@ -288,11 +407,9 @@ function ModelComparison() {
                 <ResponsiveContainer width="100%" height={450}>
                   <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 80 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                    <XAxis 
-                      dataKey="benchmark" 
-                      tick={{ fill: '#94a3b8', fontSize: 12 }} 
-                      angle={-35}
-                      textAnchor="end"
+                    <XAxis
+                      dataKey="benchmark"
+                      tick={<CustomXAxisTick />}
                       height={80}
                       interval={0}
                     />
@@ -309,23 +426,57 @@ function ModelComparison() {
                   </BarChart>
                 </ResponsiveContainer>
               ) : radarData.length >= 3 ? (
-                <ResponsiveContainer width="100%" height={400}>
-                  <RadarChart data={radarData}>
-                    <PolarGrid stroke="#334155" />
-                    <PolarAngleAxis dataKey="benchmark" tick={{ fill: '#94a3b8' }} />
-                    <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fill: '#94a3b8' }} />
+                <ResponsiveContainer width="100%" height={500}>
+                  <RadarChart data={radarData} cx="50%" cy="50%" outerRadius="70%">
+                    <PolarGrid
+                      stroke="#334155"
+                      strokeWidth={1}
+                      gridType="polygon"
+                    />
+                    <PolarAngleAxis
+                      dataKey="benchmark"
+                      tick={<CustomRadarTick />}
+                      tickLine={false}
+                    />
+                    <PolarRadiusAxis
+                      angle={90}
+                      domain={[0, 100]}
+                      tick={{ fill: '#64748b', fontSize: 10 }}
+                      tickCount={5}
+                      axisLine={false}
+                    />
                     {selectedRunsData.map((run, i) => (
                       <Radar
                         key={run.run_id}
                         name={getRunKey(run)}
                         dataKey={getRunKey(run)}
                         stroke={colors[i % colors.length]}
+                        strokeWidth={2}
                         fill={colors[i % colors.length]}
-                        fillOpacity={0.3}
+                        fillOpacity={0.4}
+                        dot={{
+                          r: 5,
+                          fill: colors[i % colors.length],
+                          stroke: '#fff',
+                          strokeWidth: 2,
+                        }}
+                        activeDot={{
+                          r: 7,
+                          fill: colors[i % colors.length],
+                          stroke: '#fff',
+                          strokeWidth: 2,
+                        }}
+                        isAnimationActive={false}
                       />
                     ))}
                     <Tooltip content={<CustomTooltip />} />
-                    <Legend />
+                    <Legend
+                      wrapperStyle={{
+                        paddingTop: 20,
+                        fontSize: 13,
+                      }}
+                      iconType="circle"
+                    />
                   </RadarChart>
                 </ResponsiveContainer>
               ) : (
@@ -369,6 +520,11 @@ function ModelComparison() {
                     const sampleSize = run.sample_size || '-'
                     const preset = run.preset || 'custom'
 
+                    // Get inference settings info
+                    const inferenceInfo = run.inference_settings
+                      ? `T=${run.inference_settings.temperature ?? 0} S=${run.inference_settings.seed ?? 42}`
+                      : 'Default'
+
                     return (
                       <tr key={run.run_id} className="border-b border-slate-700/50">
                         <td className="px-4 py-3">
@@ -382,6 +538,7 @@ function ModelComparison() {
                               <span>{sampleSize} samples</span>
                             </div>
                             <div className="text-slate-500 capitalize">{preset}</div>
+                            <div className="text-slate-400 font-mono text-[10px]">{inferenceInfo}</div>
                           </div>
                         </td>
                         {Array.from(benchmarkNames).map(name => {

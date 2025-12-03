@@ -51,6 +51,7 @@ def discover_api_models() -> dict[str, list[ModelInfo]]:
     models: dict[str, list[ModelInfo]] = {
         "openai": [],
         "anthropic": [],
+        "gemini": [],
         "deepseek": [],
         "huggingface": [],
     }
@@ -70,6 +71,13 @@ def discover_api_models() -> dict[str, list[ModelInfo]]:
             ),
             ModelInfo(id="claude-3-opus-20240229", name="Claude 3 Opus", provider="anthropic"),
             ModelInfo(id="claude-3-haiku-20240307", name="Claude 3 Haiku", provider="anthropic"),
+        ]
+
+    if os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY"):
+        models["gemini"] = [
+            ModelInfo(id="gemini-2.5-flash", name="Gemini 2.5 Flash", provider="gemini"),
+            ModelInfo(id="gemini-2.5-pro", name="Gemini 2.5 Pro", provider="gemini"),
+            ModelInfo(id="gemini-2.0-flash", name="Gemini 2.0 Flash", provider="gemini"),
         ]
 
     if os.environ.get("DEEPSEEK_API_KEY"):
@@ -104,6 +112,7 @@ def discover_models() -> ModelsResponse:
         ollama=ollama_models,
         openai=api_models["openai"],
         anthropic=api_models["anthropic"],
+        gemini=api_models["gemini"],
         deepseek=api_models["deepseek"],
         huggingface=api_models["huggingface"],
     )

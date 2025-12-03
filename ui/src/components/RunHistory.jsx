@@ -300,11 +300,10 @@ function RunHistory() {
               return (
                 <div
                   key={run.run_id}
-                  className={`bg-slate-800 rounded-xl border transition-all ${
-                    isSelected 
-                      ? 'border-primary-500/50 bg-slate-800/80' 
+                  className={`bg-slate-800 rounded-xl border transition-all ${isSelected
+                      ? 'border-primary-500/50 bg-slate-800/80'
                       : 'border-slate-700 hover:border-slate-600'
-                  }`}
+                    }`}
                 >
                   {/* Main Row */}
                   <div className="p-4 flex items-center gap-4">
@@ -359,10 +358,9 @@ function RunHistory() {
                         className="text-right cursor-pointer flex-shrink-0"
                         onClick={() => navigate(`/run/${run.run_id}`)}
                       >
-                        <div className={`text-2xl font-bold ${
-                          avgScore >= 0.7 ? 'text-green-400' :
-                          avgScore >= 0.4 ? 'text-yellow-400' : 'text-red-400'
-                        }`}>
+                        <div className={`text-2xl font-bold ${avgScore >= 0.7 ? 'text-green-400' :
+                            avgScore >= 0.4 ? 'text-yellow-400' : 'text-red-400'
+                          }`}>
                           {(avgScore * 100).toFixed(1)}%
                         </div>
                         <div className="text-xs text-slate-500">avg score</div>
@@ -390,7 +388,7 @@ function RunHistory() {
 
                   {/* Benchmark Scores - Compact Grid */}
                   {run.results && Object.keys(run.results).length > 0 && (
-                    <div 
+                    <div
                       className="px-4 pb-4 pt-0 cursor-pointer"
                       onClick={() => navigate(`/run/${run.run_id}`)}
                     >
@@ -401,7 +399,7 @@ function RunHistory() {
                             const score = extractScore(name, data)
                             const scoreColor = score === null ? 'text-slate-500' :
                               score >= 0.7 ? 'text-green-400' :
-                              score >= 0.4 ? 'text-yellow-400' : 'text-red-400'
+                                score >= 0.4 ? 'text-yellow-400' : 'text-red-400'
                             return (
                               <span
                                 key={name}

@@ -3,6 +3,30 @@
 
 services:
   # ============================================
+  # Ollama - Local LLM server (optional)
+  # ============================================
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    # Uncomment for GPU support:
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:11434/api/tags" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ============================================
   # Main benchmark service
   # ============================================
   benchmark:
@@ -19,7 +43,7 @@ services:
     volumes:
       - ./outputs:/app/outputs
       - ./data:/app/data
-    command: ["--help"]
+    command: [ "--help" ]
 
   # ============================================
   # Dashboard service (web UI)
@@ -40,7 +64,7 @@ services:
     volumes:
       - ./outputs:/app/outputs
       - ./data:/app/data
-    command: ["dashboard", "--host", "0.0.0.0", "--port", "8888"]
+    command: [ "dashboard", "--host", "0.0.0.0", "--port", "8888" ]
 
   # ============================================
   # Quick evaluation service
@@ -53,25 +77,48 @@ services:
       - GROQ_API_KEY=${GROQ_API_KEY:-}
     volumes:
       - ./outputs:/app/outputs
-    command: ["quick"]
+    command: [ "quick" ]
 
-# ============================================
-# Usage:
-# ============================================
-#
-# Create .env file with your API keys:
-#   OPENAI_API_KEY=sk-...
-#   GROQ_API_KEY=gsk_...
-#
-# Run quick evaluation:
-#   docker compose run quick
-#
-# Start dashboard:
-#   docker compose up dashboard
-#   # Open http://localhost:8888
-#
-# Run custom benchmark:
-#   docker compose run benchmark benchmark --model gpt-4o-mini --benchmarks mmlu -s 50
-#
-# Build image:
-#   docker compose build
+  # ============================================
+  # Quick with local Ollama
+  # ============================================
+  quick-local:
+    build: .
+    image: llm-benchmark:latest
+    depends_on:
+      ollama:
+        condition: service_healthy
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
+    volumes:
+      - ./outputs:/app/outputs
+    command: [ "quick", "--provider", "ollama", "--model", "tinyllama:latest" ]
+
+volumes:
+  ollama_data:
+
+    # ============================================
+    # Usage:
+    # ============================================
+    #
+    # 🚀 QUICKSTART (zero config, uses local Ollama):
+    #   docker compose up ollama -d
+    #   docker compose exec ollama ollama pull tinyllama
+    #   docker compose run quick-local
+    #
+    # Create .env file with your API keys:
+    #   OPENAI_API_KEY=sk-...
+    #   GROQ_API_KEY=gsk_...
+    #
+    # Run quick evaluation:
+    #   docker compose run quick
+    #
+    # Start dashboard:
+    #   docker compose up dashboard
+    #   # Open http://localhost:8888
+    #
+    # Run custom benchmark:
+    #   docker compose run benchmark benchmark --model gpt-4o-mini --benchmarks mmlu -s 50
+    #
+    # Build image:
+    #   docker compose build

@@ -24,16 +24,35 @@
 
 ---
 
+<!-- TODO: Add GIF demo here -->
+<!-- ![Demo](docs/images/demo.gif) -->
+
+> **⚡ One command to evaluate any LLM**  
+> Zero config • Auto-detection • Beautiful dashboard • Academic-grade results
+
+---
+
 ## 🚀 Get Started (60 Seconds)
 
 ### Install
 
 ```bash
-# Full installation (dashboard + all providers)
+# Full installation (everything included)
 pip install llm-benchmark-toolkit
+
+# Or with all extras (notebooks, dev tools)
+pip install llm-benchmark-toolkit[all]
 ```
 
 That's it! Everything included: Dashboard, OpenAI, Anthropic, Ollama, HuggingFace.
+
+### 🩺 Check Your Setup
+
+```bash
+llm-eval doctor
+```
+
+This diagnoses your environment and shows what's ready to use.
 
 ### 🌐 Web Dashboard (Recommended!)
 
@@ -88,6 +107,7 @@ python -m llm_evaluator.cli quick
 
 - `OPENAI_API_KEY` → GPT-4o-mini
 - `ANTHROPIC_API_KEY` → Claude 3.5 Sonnet
+- `GEMINI_API_KEY` → Gemini 2.0 Flash (⚠️ Free tier: 10 req/min)
 - `DEEPSEEK_API_KEY` → DeepSeek-V3
 - Ollama running locally → Llama 3.2
 
@@ -104,6 +124,10 @@ llm-eval compare \
 **More examples:**
 
 ```bash
+# Pre-download datasets (optional, speeds up first run)
+llm-eval download mmlu truthfulqa gsm8k
+llm-eval download all  # Download all benchmarks
+
 # Ollama (local models)
 llm-eval quick --model llama3.2:1b
 
@@ -115,6 +139,9 @@ llm-eval run --model claude-3-5-sonnet-20241022 --provider anthropic
 
 # DeepSeek (super affordable!)
 llm-eval quick --model deepseek-chat
+
+# Google Gemini (NEW!)
+llm-eval quick --model gemini-1.5-flash --provider gemini
 
 # Run specific benchmarks (any combination!)
 llm-eval benchmark --model gpt-4o --benchmarks mmlu,truthfulqa,arc,safetybench
@@ -135,6 +162,8 @@ llm-eval academic --model llama3.2:1b \
 | Command | Description |
 |---------|-------------|
 | `llm-eval quick` | 🚀 Zero-config evaluation (auto-detects provider) |
+| `llm-eval doctor` | 🩺 Diagnose your setup (dependencies, providers, API keys) |
+| `llm-eval download` | 📥 Pre-download benchmark datasets (MMLU, TruthfulQA, etc.) |
 | `llm-eval run` | Full evaluation on a single model |
 | `llm-eval benchmark` | Run specific benchmarks |
 | `llm-eval compare` | Compare multiple models side-by-side |
@@ -214,7 +243,7 @@ results = evaluator.evaluate_all()
 |---------|-------------|
 | 📊 **10 Benchmarks** | MMLU, TruthfulQA, HellaSwag, ARC, WinoGrande, CommonsenseQA, BoolQ, SafetyBench, Do-Not-Answer, GSM8K |
 | 🔢 **108,000+ Questions** | Real academic datasets from HuggingFace |
-| 🔌 **8 Providers** | Ollama, OpenAI, Anthropic, DeepSeek, Groq, Together.ai, Fireworks, HuggingFace |
+| 🔌 **9 Providers** | Ollama, OpenAI, Anthropic, Google Gemini, DeepSeek, Groq, Together.ai, Fireworks, HuggingFace |
 | 🐳 **Docker Support** | `docker run llm-benchmark quick` |
 | 🌐 **Web Dashboard** | Beautiful UI with real-time progress, charts, and history |
 | ⚡ **Parallel Execution** | 5-10x speedup with `--workers 4` |
@@ -240,6 +269,7 @@ llm-eval benchmark --model llama3-8b-8192 --provider groq --workers 8 --sample-s
 ```
 
 **Note**: Set workers based on your provider's rate limits:
+
 - **Groq**: 8-16 workers (very high rate limits)
 - **OpenAI**: 4-8 workers
 - **Ollama**: 1-2 workers (local, CPU-bound)
@@ -428,6 +458,18 @@ llm-eval export results.json --format bibtex
 # Academic evaluation with direct exports
 llm-eval academic --model llama3.2:1b --output-latex table.tex --output-bibtex refs.bib
 ```
+
+---
+
+## 🧪 Provider Testing Status
+
+- ✅ **Ollama**: Fully tested with multiple models (Llama, Mistral, Phi3)
+- ⚠️ **Gemini**: Tested with free tier - works but has strict rate limits (10 req/min)
+- ⚠️ **OpenAI, Anthropic, DeepSeek, Groq, Together, Fireworks, HuggingFace**: Unit tests pass, should work with valid API keys but not extensively tested to avoid subscription costs
+
+**Found an issue?** [Report it here](https://github.com/NahuelGiudizi/llm-evaluation/issues)
+
+For detailed provider documentation, see [PROVIDERS.md](docs/PROVIDERS.md).
 
 ---
 
