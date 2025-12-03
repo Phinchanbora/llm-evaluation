@@ -9,6 +9,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Power Analysis Tool** - Calculate required sample sizes for academic rigor:
+  - `llm-eval power --difference 0.05` - Calculate sample size for detecting 5% differences
+  - `llm-eval power --show-table` - Display reference table for common scenarios
+  - Based on Cohen's h effect size and statistical power analysis (Cohen, 1988)
+  - Benchmark-specific recommendations with available sample sizes
+- **Reproducibility Controls** - Ensure reproducible benchmark runs:
+  - `--seed` option for deterministic sample selection
+  - `--temperature` option for LLM generation (default 0.0 for determinism)
+  - Works with `llm-eval benchmark` and `llm-eval academic` commands
+  - Sets both Python's `random.seed()` and `numpy.random.seed()`
+- **GSM8K Benchmark** - Grade school math reasoning (8,500 problems)
+  - Tests mathematical reasoning capabilities
+  - Extracts numerical answers from natural language responses
+  - Included in `run_all_benchmarks()` aggregate score
+  - Added to Dashboard UI for visual evaluation
 - **3 New Providers** - Now supporting 8 LLM providers:
   - **Groq** - Ultra-fast inference (100+ tokens/sec) with Llama, Mixtral
   - **Together.ai** - Access to 100+ open models
@@ -18,10 +33,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - docker-compose.yml for easy deployment
   - Run benchmarks with `docker run llm-benchmark quick`
   - Launch dashboard with `docker compose up dashboard`
-- **GSM8K Benchmark** - Grade school math reasoning (8,500 problems)
-  - Tests mathematical reasoning capabilities
-  - Extracts numerical answers from natural language responses
-  - Included in `run_all_benchmarks()` aggregate score
 - **Parallel Execution** - 5-10x speedup with `--workers` option
   - `llm-eval benchmark --workers 4` for 4x parallel speedup
   - Works with all providers that support concurrent requests
@@ -34,6 +45,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated `--benchmarks` option to include gsm8k
 - README updated with Docker examples, new providers, and GSM8K benchmark
 - Now 10 benchmarks totaling 108,000+ questions
+- Academic documentation updated with power analysis and reproducibility guides
+
+### Fixed
+
+- Type annotations for strict mypy compliance
+- Dashboard GSM8K integration with API endpoints
 
 ## [2.2.2] - 2025-12-02
 
