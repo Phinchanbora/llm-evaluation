@@ -18,12 +18,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - docker-compose.yml for easy deployment
   - Run benchmarks with `docker run llm-benchmark quick`
   - Launch dashboard with `docker compose up dashboard`
+- **GSM8K Benchmark** - Grade school math reasoning (8,500 problems)
+  - Tests mathematical reasoning capabilities
+  - Extracts numerical answers from natural language responses
+  - Included in `run_all_benchmarks()` aggregate score
 
 ### Changed
 
 - Updated CLI to support new providers (`--provider groq|together|fireworks`)
 - Updated `llm-eval providers` command to show all 8 providers
-- README updated with Docker examples and new providers
+- Updated `--benchmarks` option to include gsm8k
+- README updated with Docker examples, new providers, and GSM8K benchmark
+- Now 10 benchmarks totaling 108,000+ questions
 
 ## [2.2.2] - 2025-12-02
 

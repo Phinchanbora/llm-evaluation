@@ -315,3 +315,118 @@ class TestDatasetsAvailability:
         runner = BenchmarkRunner(provider, use_full_datasets=False)
         result = runner.run_mmlu_sample()
         assert result is not None
+
+
+class TestGSM8KBenchmark:
+    """Test GSM8K math reasoning benchmark"""
+
+    @pytest.fixture
+    def mock_provider(self):
+        """Create a mock provider that returns correct math answers"""
+        provider = Mock()
+        provider.model = "test-model"
+        provider.config = GenerationConfig()
+        # Return "18" which is the correct answer for the first GSM8K demo problem
+        provider.generate.return_value = GenerationResult(
+            text="Let me solve this step by step.\nJanet has 16 eggs, eats 3, uses 4 for muffins.\n16 - 3 - 4 = 9 eggs left.\n9 * $2 = $18\nThe answer is 18",
+            response_time=0.5,
+            tokens_used=50,
+            model="test-model",
+            metadata={},
+        )
+        return provider
+
+    def test_run_gsm8k_demo(self, mock_provider):
+        """Test GSM8K benchmark in demo mode"""
+        runner = BenchmarkRunner(mock_provider, use_full_datasets=False)
+
+        result = runner.run_gsm8k_sample()
+
+        assert isinstance(result, dict)
+        assert "gsm8k_accuracy" in result
+        assert "problems_tested" in result
+        assert "correct" in result
+        assert result["mode"] == "demo"
+
+    def test_gsm8k_accuracy_bounds(self, mock_provider):
+        """Test GSM8K accuracy is between 0 and 1"""
+        runner = BenchmarkRunner(mock_provider, use_full_datasets=False)
+        result = runner.run_gsm8k_sample()
+
+        assert 0 <= result["gsm8k_accuracy"] <= 1
+
+    def test_gsm8k_problem_count_positive(self, mock_provider):
+        """Test GSM8K problem count is positive"""
+        runner = BenchmarkRunner(mock_provider, use_full_datasets=False)
+        result = runner.run_gsm8k_sample()
+
+        assert result["problems_tested"] > 0
+
+    def test_gsm8k_extracts_number_correctly(self, mock_provider):
+        """Test number extraction from various response formats"""
+        runner = BenchmarkRunner(mock_provider, use_full_datasets=False)
+
+        # Test various formats
+        test_cases = [
+            ("The answer is 42", 42),
+            ("#### 123", 123),
+            ("= 99", 99),
+            ("Final answer: 50", 50),
+            ("So she makes $18 dollars.", 18),
+            ("The result is 3.5", 3.5),
+            ("1,234 items", 1234),
+        ]
+
+        for response, expected in test_cases:
+            result = runner._extract_number_from_response(response)
+            assert result == expected, f"Failed for '{response}': got {result}, expected {expected}"
+
+    def test_gsm8k_handles_no_number(self, mock_provider):
+        """Test graceful handling when no number in response"""
+        runner = BenchmarkRunner(mock_provider, use_full_datasets=False)
+
+        result = runner._extract_number_from_response("I don't know the answer")
+        assert result is None
+
+    def test_gsm8k_correct_answers(self):
+        """Test GSM8K with correct answers"""
+        provider = Mock()
+        provider.model = "test-model"
+        provider.config = GenerationConfig()
+
+        # Simulate returning correct answers for both demo problems
+        # Problem 1: Janet sells eggs at $2 each, answer is 18
+        # Problem 2: Robe takes 3 bolts total
+        answers = iter(["The answer is 18", "The answer is 3"])
+        provider.generate.side_effect = lambda _: GenerationResult(
+            text=next(answers),
+            response_time=0.1,
+            tokens_used=10,
+            model="test-model",
+            metadata={},
+        )
+
+        runner = BenchmarkRunner(provider, use_full_datasets=False)
+        result = runner.run_gsm8k_sample()
+
+        assert result["correct"] == 2
+        assert result["gsm8k_accuracy"] == 1.0
+
+    def test_gsm8k_wrong_answers(self):
+        """Test GSM8K with wrong answers"""
+        provider = Mock()
+        provider.model = "test-model"
+        provider.config = GenerationConfig()
+        provider.generate.return_value = GenerationResult(
+            text="The answer is 999",  # Wrong answer
+            response_time=0.1,
+            tokens_used=10,
+            model="test-model",
+            metadata={},
+        )
+
+        runner = BenchmarkRunner(provider, use_full_datasets=False)
+        result = runner.run_gsm8k_sample()
+
+        assert result["correct"] == 0
+        assert result["gsm8k_accuracy"] == 0.0

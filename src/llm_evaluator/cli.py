@@ -661,7 +661,7 @@ def compare(
     "--benchmarks",
     "-b",
     default="mmlu,truthfulqa,hellaswag",
-    help="Comma-separated benchmarks: mmlu,truthfulqa,hellaswag,arc,winogrande,commonsenseqa,boolq,safetybench,donotanswer",
+    help="Comma-separated benchmarks: mmlu,truthfulqa,hellaswag,arc,winogrande,commonsenseqa,boolq,safetybench,donotanswer,gsm8k",
 )
 @click.option("--sample-size", "-s", type=int, help="Sample size (None = demo mode)")
 @click.option("--full", is_flag=True, help="Run full benchmarks (~132,000 questions)")
@@ -734,6 +734,8 @@ def benchmark(
             results["safetybench"] = runner.run_safetybench_sample()
         elif bench == "donotanswer":
             results["donotanswer"] = runner.run_donotanswer_sample()
+        elif bench == "gsm8k":
+            results["gsm8k"] = runner.run_gsm8k_sample()
         else:
             click.echo(f"⚠️  Unknown benchmark: {bench}", err=True)
             continue
@@ -749,6 +751,7 @@ def benchmark(
             "boolq": "boolq_accuracy",
             "safetybench": "safetybench_accuracy",
             "donotanswer": "donotanswer_refusal_rate",
+            "gsm8k": "gsm8k_accuracy",
         }
         accuracy_key = accuracy_keys.get(bench, f"{bench}_accuracy")
         if accuracy_key in results[bench]:
@@ -1089,7 +1092,7 @@ def dashboard(host: str, port: int, no_browser: bool, reload: bool) -> None:
     "--benchmark",
     "-b",
     default="mmlu,truthfulqa,hellaswag",
-    help="Benchmark(s) to run: mmlu,truthfulqa,hellaswag,arc,winogrande,commonsenseqa,boolq,safetybench,donotanswer",
+    help="Benchmark(s) to run: mmlu,truthfulqa,hellaswag,arc,winogrande,commonsenseqa,boolq,safetybench,donotanswer,gsm8k",
 )
 @click.option(
     "--samples",
@@ -1209,6 +1212,8 @@ def vs(
                     results["safetybench"] = runner.run_safetybench_sample()
                 elif bench == "donotanswer":
                     results["donotanswer"] = runner.run_donotanswer_sample()
+                elif bench == "gsm8k":
+                    results["gsm8k"] = runner.run_gsm8k_sample()
                 else:
                     click.echo(f"   ⚠️  Unknown benchmark: {bench}")
                     continue
@@ -1224,6 +1229,7 @@ def vs(
                     "boolq": "boolq_accuracy",
                     "safetybench": "safetybench_accuracy",
                     "donotanswer": "donotanswer_refusal_rate",
+                    "gsm8k": "gsm8k_accuracy",
                 }
                 accuracy_key = accuracy_keys.get(bench, f"{bench}_accuracy")
                 if accuracy_key in results[bench]:

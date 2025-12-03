@@ -119,6 +119,18 @@ def load_donotanswer_dataset() -> Any:
     return load_dataset("LibrAI/do-not-answer")
 
 
+# ==================== MATH REASONING BENCHMARKS ====================
+
+
+@lru_cache(maxsize=1)
+def load_gsm8k_dataset() -> Any:
+    """Load and cache GSM8K dataset (8,500 grade school math problems)"""
+    if not DATASETS_AVAILABLE:
+        raise ImportError("datasets library required. Install with: pip install datasets")
+    logger.info("Loading GSM8K dataset from HuggingFace...")
+    return load_dataset("gsm8k", "main")
+
+
 # Deprecated aliases for backward compatibility
 _load_mmlu_dataset = load_mmlu_dataset
 _load_truthfulqa_dataset = load_truthfulqa_dataset
@@ -1577,6 +1589,182 @@ class BenchmarkRunner:
             logger.error(f"Do-Not-Answer full benchmark failed: {e}")
             raise
 
+    # ==================== GSM8K (Math Reasoning) ====================
+
+    def run_gsm8k_sample(self) -> Dict[str, Union[float, int, str]]:
+        """
+        Run GSM8K benchmark (grade school math problems)
+
+        Modes:
+        1. Demo mode: 2 hardcoded math problems
+        2. Full mode: 8,500 real math problems
+        3. Sample mode: Random N problems
+        """
+        if self.use_full_datasets:
+            return self._run_gsm8k_full()
+        else:
+            return self._run_gsm8k_demo()
+
+    def _extract_number_from_response(self, response: str) -> Optional[float]:
+        """Extract the final numerical answer from a response"""
+        # Look for patterns like "#### 42" (GSM8K format)
+        import re
+
+        # Try GSM8K format first: "#### <number>"
+        gsm8k_pattern = r"####\s*(-?[\d,]+(?:\.\d+)?)"
+        match = re.search(gsm8k_pattern, response)
+        if match:
+            num_str = match.group(1).replace(",", "")
+            if num_str and num_str not in ("", "-"):
+                return float(num_str)
+
+        # Try common answer patterns
+        answer_patterns = [
+            r"(?:the\s+)?answer\s+is\s+(-?[\d,]+(?:\.\d+)?)",
+            r"(?:final\s+)?answer:\s*(-?[\d,]+(?:\.\d+)?)",
+            r"=\s*(-?[\d,]+(?:\.\d+)?)\s*$",
+            r"(-?[\d,]+(?:\.\d+)?)\s*(?:dollars?|euros?|cents?|items?|people|students|hours?|minutes?|days?|years?|months?|weeks?)?\.?\s*$",
+        ]
+
+        for pattern in answer_patterns:
+            match = re.search(pattern, response.lower())
+            if match:
+                num_str = match.group(1).replace(",", "")
+                if num_str and num_str not in ("", "-"):
+                    return float(num_str)
+
+        # Last resort: find the last valid number in the response
+        numbers = re.findall(r"-?\d+(?:,\d{3})*(?:\.\d+)?", response)
+        if numbers:
+            num_str = numbers[-1].replace(",", "")
+            if num_str and num_str not in ("", "-"):
+                return float(num_str)
+
+        return None
+
+    def _run_gsm8k_demo(self) -> Dict[str, Union[float, int, str]]:
+        """Demo mode: 2 hardcoded GSM8K math problems"""
+        logger.info("Running GSM8K DEMO mode (2 problems)")
+
+        gsm8k_problems: list[dict[str, Any]] = [
+            {
+                "question": "Janet's ducks lay 16 eggs per day. She eats three for breakfast every morning and bakes muffins for her friends every day with four. She sells the remainder at the farmers' market daily for $2 per fresh duck egg. How much in dollars does she make every day at the farmers' market?",
+                "answer": 18,  # 16 - 3 - 4 = 9 eggs, 9 * 2 = 18
+            },
+            {
+                "question": "A robe takes 2 bolts of blue fiber and half that much white fiber. How many bolts in total does it take?",
+                "answer": 3,  # 2 blue + 1 white = 3
+            },
+        ]
+
+        correct = 0
+        try:
+            for problem in gsm8k_problems:
+                prompt = f"Solve this math problem step by step, then give your final answer as a number.\n\nProblem: {problem['question']}\n\nShow your work and end with: The answer is [your number]"
+
+                result = self.provider.generate(prompt)
+                extracted = self._extract_number_from_response(result.text)
+
+                expected: int = problem["answer"]
+                is_correct = extracted is not None and abs(extracted - expected) < 0.01
+
+                if is_correct:
+                    correct += 1
+
+            accuracy = correct / len(gsm8k_problems)
+            logger.info(f"GSM8K DEMO: {correct}/{len(gsm8k_problems)} ({accuracy:.1%})")
+            return {
+                "gsm8k_accuracy": accuracy,
+                "problems_tested": len(gsm8k_problems),
+                "correct": correct,
+                "mode": "demo",
+            }
+        except ProviderError as e:
+            logger.error(f"GSM8K benchmark failed: {e}")
+            raise
+
+    def _run_gsm8k_full(self) -> Dict[str, Any]:
+        """Full mode: Complete GSM8K dataset (8,500 math problems)"""
+        logger.info("Running GSM8K FULL mode (loading HuggingFace dataset...)")
+
+        try:
+            import re
+
+            dataset = load_gsm8k_dataset()
+            test_data = dataset["test"]
+            total_problems = len(test_data)
+
+            if self.sample_size:
+                indices = random.sample(
+                    range(total_problems), min(self.sample_size, total_problems)
+                )
+                problems_to_test = [test_data[i] for i in indices]
+                logger.info(f"Sampling {len(problems_to_test)} from {total_problems}")
+            else:
+                problems_to_test = test_data
+                logger.info(f"Testing all {total_problems} problems")
+
+            correct = 0
+            start_time = time.time()
+            scenarios = []
+
+            pbar = tqdm(problems_to_test, desc="🔢 GSM8K Progress", unit="p", ncols=100)
+
+            for i, item in enumerate(pbar):
+                question = item["question"]
+                answer_text = item["answer"]
+
+                # Extract the numerical answer from the dataset (format: "... #### <number>")
+                expected_match = re.search(r"####\s*([\d,]+(?:\.\d+)?)", answer_text)
+                if expected_match:
+                    expected = float(expected_match.group(1).replace(",", ""))
+                else:
+                    # Skip if we can't parse the expected answer
+                    continue
+
+                prompt = f"Solve this math problem step by step, then give your final answer as a number.\n\nProblem: {question}\n\nShow your work and end with: The answer is [your number]"
+
+                result = self.provider.generate(prompt)
+                response = result.text.strip()
+                extracted = self._extract_number_from_response(response)
+
+                is_correct = extracted is not None and abs(extracted - expected) < 0.01
+
+                if is_correct:
+                    correct += 1
+
+                scenarios.append(
+                    {
+                        "id": i,
+                        "question": question,
+                        "expected_answer": expected,
+                        "model_answer": extracted,
+                        "model_response": response[:500],
+                        "is_correct": is_correct,
+                    }
+                )
+                pbar.set_postfix_str(f"{(correct/(i+1))*100:.1f}%")
+
+            pbar.close()
+            accuracy = correct / len(scenarios) if scenarios else 0
+            elapsed_time = time.time() - start_time
+
+            logger.info(
+                f"GSM8K FULL: {correct}/{len(scenarios)} ({accuracy:.1%}) in {elapsed_time:.1f}s"
+            )
+            return {
+                "gsm8k_accuracy": accuracy,
+                "problems_tested": len(scenarios),
+                "correct": correct,
+                "total_available": total_problems,
+                "elapsed_time": elapsed_time,
+                "mode": "full" if not self.sample_size else f"sample_{self.sample_size}",
+                "scenarios": scenarios,
+            }
+        except Exception as e:
+            logger.error(f"GSM8K full benchmark failed: {e}")
+            raise
+
     def run_all_benchmarks(self) -> Dict[str, Any]:
         """
         Run all available benchmarks
@@ -1610,6 +1798,9 @@ class BenchmarkRunner:
             results["safetybench"] = self.run_safetybench_sample()
             results["donotanswer"] = self.run_donotanswer_sample()
 
+            # Math reasoning benchmarks
+            results["gsm8k"] = self.run_gsm8k_sample()
+
             # Calculate aggregate score (knowledge benchmarks)
             knowledge_scores = [
                 float(results["mmlu"].get("mmlu_accuracy", 0) or 0),
@@ -1622,6 +1813,9 @@ class BenchmarkRunner:
             ]
             knowledge_aggregate = sum(knowledge_scores) / len(knowledge_scores)
 
+            # Math reasoning score
+            math_score = float(results["gsm8k"].get("gsm8k_accuracy", 0) or 0)
+
             # Calculate security score
             safety_scores = [
                 float(results["safetybench"].get("safetybench_accuracy", 0) or 0),
@@ -1629,17 +1823,18 @@ class BenchmarkRunner:
             ]
             safety_aggregate = sum(safety_scores) / len(safety_scores)
 
-            # Overall aggregate
-            aggregate = (knowledge_aggregate * 0.8) + (safety_aggregate * 0.2)
+            # Overall aggregate (knowledge 70%, math 10%, safety 20%)
+            aggregate = (knowledge_aggregate * 0.7) + (math_score * 0.1) + (safety_aggregate * 0.2)
 
             results["aggregate_benchmark_score"] = {
                 "score": aggregate,
                 "knowledge_score": knowledge_aggregate,
+                "math_score": math_score,
                 "safety_score": safety_aggregate,
             }
 
             print(
-                f"✅ Benchmarks complete. Knowledge: {knowledge_aggregate:.1%}, Safety: {safety_aggregate:.1%}, Overall: {aggregate:.1%}"
+                f"✅ Benchmarks complete. Knowledge: {knowledge_aggregate:.1%}, Math: {math_score:.1%}, Safety: {safety_aggregate:.1%}, Overall: {aggregate:.1%}"
             )
 
             logger.info(f"All benchmarks completed: {aggregate:.1%} aggregate score")

@@ -10,8 +10,8 @@
 </p>
 
 <p align="center">
-  <b>🎯 Benchmark LLMs with 9 benchmarks & 100,000+ real questions</b><br>
-  <sub>MMLU • TruthfulQA • HellaSwag • ARC • WinoGrande • CommonsenseQA • BoolQ • SafetyBench • Do-Not-Answer</sub>
+  <b>🎯 Benchmark LLMs with 10 benchmarks & 108,000+ real questions</b><br>
+  <sub>MMLU • TruthfulQA • HellaSwag • ARC • WinoGrande • CommonsenseQA • BoolQ • SafetyBench • Do-Not-Answer • GSM8K</sub>
 </p>
 
 <p align="center">
@@ -212,8 +212,8 @@ results = evaluator.evaluate_all()
 
 | Feature | Description |
 |---------|-------------|
-| 📊 **9 Benchmarks** | MMLU, TruthfulQA, HellaSwag, ARC, WinoGrande, CommonsenseQA, BoolQ, SafetyBench, Do-Not-Answer |
-| 🔢 **100,000+ Questions** | Real academic datasets from HuggingFace |
+| 📊 **10 Benchmarks** | MMLU, TruthfulQA, HellaSwag, ARC, WinoGrande, CommonsenseQA, BoolQ, SafetyBench, Do-Not-Answer, GSM8K |
+| 🔢 **108,000+ Questions** | Real academic datasets from HuggingFace |
 | 🔌 **8 Providers** | Ollama, OpenAI, Anthropic, DeepSeek, Groq, Together.ai, Fireworks, HuggingFace |
 | 🐳 **Docker Support** | `docker run llm-benchmark quick` |
 | 🌐 **Web Dashboard** | Beautiful UI with real-time progress, charts, and history |
@@ -222,6 +222,7 @@ results = evaluator.evaluate_all()
 | 📈 **Academic Rigor** | 95% CI, McNemar tests, baseline comparisons |
 | 📄 **Paper Exports** | LaTeX tables, BibTeX citations, CSV, JSON |
 | 🛡️ **Safety Testing** | SafetyBench + Do-Not-Answer for security evaluation |
+| 🔢 **Math Reasoning** | GSM8K (8,500 grade school math problems) |
 | 🎨 **Beautiful CLI** | Progress bars, colored output, ETA tracking |
 
 ---
@@ -310,6 +311,12 @@ llm-eval providers
 | **CommonsenseQA** | 12,247 | Commonsense knowledge questions |
 | **BoolQ** | 15,942 | Yes/no reading comprehension questions |
 
+### 🔢 Math Reasoning (1 benchmark)
+
+| Benchmark | Questions | Description |
+|-----------|-----------|-------------|
+| **GSM8K** | 8,500 | Grade school math word problems requiring multi-step reasoning |
+
 ### 🛡️ Safety & Security (2 benchmarks)
 
 | Benchmark | Questions | Description |
@@ -317,7 +324,7 @@ llm-eval providers
 | **SafetyBench** | 11,000 | Safety evaluation across multiple risk categories |
 | **Do-Not-Answer** | 939 | Harmful prompt detection and refusal testing |
 
-**Total: 9 benchmarks, 100,000+ questions**
+**Total: 10 benchmarks, 108,000+ questions**
 
 ---
 
