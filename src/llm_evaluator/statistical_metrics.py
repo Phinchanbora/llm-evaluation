@@ -12,7 +12,7 @@ References:
 """
 
 import math
-from typing import Dict, List, Tuple, Union
+from typing import Any, Dict, List, Tuple, Union, cast
 
 import numpy as np
 from scipy import stats
@@ -590,7 +590,7 @@ def power_analysis_sample_size(
     alpha: float = 0.05,
     power: float = 0.80,
     test_type: str = "two-sided",
-) -> Dict[str, Union[int, float, str, Dict[str, Union[float, int, str]]]]:
+) -> Dict[str, object]:
     """
     Calculate required sample size for detecting a difference in accuracy.
 
@@ -725,6 +725,6 @@ def minimum_sample_size_table() -> Dict[str, Dict[str, int]]:
         for diff in differences:
             diff_key = f"diff_{int(diff * 100)}pct"
             result = power_analysis_sample_size(expected_difference=diff, power=pow_val)
-            results[pow_key][diff_key] = result["total_n"]  # Total samples, not per group
+            results[pow_key][diff_key] = cast(int, result["total_n"])
 
     return results

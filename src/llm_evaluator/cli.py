@@ -9,7 +9,7 @@ import os
 import sys
 import time
 from pathlib import Path
-from typing import Any, Optional, Tuple
+from typing import Any, Optional, Tuple, cast
 
 import click
 
@@ -72,10 +72,7 @@ except ImportError:
     HAS_FIREWORKS = False
 
 from llm_evaluator.providers.cached_provider import CachedProvider
-from llm_evaluator.statistical_metrics import (
-    power_analysis_sample_size,
-    minimum_sample_size_table,
-)
+from llm_evaluator.statistical_metrics import minimum_sample_size_table, power_analysis_sample_size
 
 # Version
 __version__ = "2.3.0"
@@ -1782,7 +1779,9 @@ def power(
         table = minimum_sample_size_table()
 
         # Header
-        click.echo(f"{'Power':<12} {'2% diff':<12} {'5% diff':<12} {'10% diff':<12} {'15% diff':<12}")
+        click.echo(
+            f"{'Power':<12} {'2% diff':<12} {'5% diff':<12} {'10% diff':<12} {'15% diff':<12}"
+        )
         click.echo("─" * 60)
 
         power_labels = {
@@ -1830,33 +1829,35 @@ def power(
     click.echo(f"  Effect size (Cohen's h): {result['effect_size_h']:.3f}")
 
     # Interpretation
-    click.echo(f"\n📝 Interpretation:")
+    click.echo("\n📝 Interpretation:")
     click.echo("─" * 40)
     click.echo(f"  {result['interpretation']}")
 
     # Benchmark-specific recommendations from power analysis
     recs = result["recommendations"]
-    n_needed = result["n_per_group"]
+    n_needed = cast(int, result["n_per_group"])
 
     click.echo("\n📚 Benchmark Recommendations:")
     click.echo("─" * 60)
     click.echo(f"  {'Benchmark':<15} {'Available':<12} {'Recommended':<12} {'Status'}")
     click.echo("  " + "─" * 56)
 
-    for bench_name, bench_info in recs.items():
-        available = bench_info["available"]
-        recommended = bench_info["recommended"]
+    if isinstance(recs, dict):
+        for bench_name, bench_info in recs.items():
+            if isinstance(bench_info, dict):
+                available = int(bench_info.get("available", 0))
+                recommended = int(bench_info.get("recommended", 0))
 
-        if available >= n_needed:
-            status = click.style("✅ Sufficient", fg="green")
-        elif available >= n_needed * 0.5:
-            status = click.style("⚠️ Marginal", fg="yellow")
-        else:
-            status = click.style("❌ Too small", fg="red")
+                if available >= n_needed:
+                    status = click.style("✅ Sufficient", fg="green")
+                elif available >= n_needed * 0.5:
+                    status = click.style("⚠️ Marginal", fg="yellow")
+                else:
+                    status = click.style("❌ Too small", fg="red")
 
-        click.echo(
-            f"  {bench_name.upper():<15} {available:>10,}  {recommended:>10,}  {status}"
-        )
+                click.echo(
+                    f"  {bench_name.upper():<15} {available:>10,}  {recommended:>10,}  {status}"
+                )
 
     click.echo("\n💡 Tips:")
     click.echo("─" * 40)

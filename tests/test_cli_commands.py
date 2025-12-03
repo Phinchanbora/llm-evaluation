@@ -7,11 +7,7 @@ from unittest.mock import Mock, patch
 
 from click.testing import CliRunner
 
-from llm_evaluator.cli import (
-    cli,
-    create_provider,
-    detect_provider_from_env,
-)
+from llm_evaluator.cli import cli, create_provider, detect_provider_from_env
 
 
 class TestCLIBenchmarkCommands:

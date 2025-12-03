@@ -307,6 +307,14 @@ def create_app(outputs_dir: Optional[Path] = None) -> "FastAPI":
                 category="Security",
                 questions_count=939,
             ),
+            # Math benchmark
+            Benchmark(
+                id="gsm8k",
+                name="GSM8K",
+                description="Grade School Math 8K - 8.5K math word problems requiring multi-step reasoning",
+                category="Math",
+                questions_count=8500,
+            ),
         ]
 
     @app.get("/api/presets")
@@ -348,7 +356,7 @@ def create_app(outputs_dir: Optional[Path] = None) -> "FastAPI":
             Preset(
                 id="full",
                 name="Full Suite",
-                description="All 9 benchmarks - comprehensive evaluation",
+                description="All 10 benchmarks - comprehensive evaluation",
                 sample_size=50,
                 benchmarks=[
                     "mmlu",
@@ -360,8 +368,17 @@ def create_app(outputs_dir: Optional[Path] = None) -> "FastAPI":
                     "boolq",
                     "safetybench",
                     "donotanswer",
+                    "gsm8k",
                 ],
                 category="Complete",
+            ),
+            Preset(
+                id="math",
+                name="Math Reasoning",
+                description="Mathematical reasoning with GSM8K",
+                sample_size=30,
+                benchmarks=["gsm8k"],
+                category="Math",
             ),
         ]
 
