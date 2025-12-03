@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.0] - 2025-12-02
+
+### Added
+
+- **3 New Providers** - Now supporting 8 LLM providers:
+  - **Groq** - Ultra-fast inference (100+ tokens/sec) with Llama, Mixtral
+  - **Together.ai** - Access to 100+ open models
+  - **Fireworks AI** - Optimized open model inference
+- **Docker Support**
+  - Multi-stage Dockerfile for minimal image size
+  - docker-compose.yml for easy deployment
+  - Run benchmarks with `docker run llm-benchmark quick`
+  - Launch dashboard with `docker compose up dashboard`
+
+### Changed
+
+- Updated CLI to support new providers (`--provider groq|together|fireworks`)
+- Updated `llm-eval providers` command to show all 8 providers
+- README updated with Docker examples and new providers
+
 ## [2.2.2] - 2025-12-02
 
 ### Fixed
