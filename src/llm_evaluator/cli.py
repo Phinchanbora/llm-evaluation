@@ -50,6 +50,27 @@ try:
 except ImportError:
     HAS_DEEPSEEK = False
 
+try:
+    from llm_evaluator.providers.groq_provider import GroqProvider
+
+    HAS_GROQ = True
+except ImportError:
+    HAS_GROQ = False
+
+try:
+    from llm_evaluator.providers.together_provider import TogetherProvider
+
+    HAS_TOGETHER = True
+except ImportError:
+    HAS_TOGETHER = False
+
+try:
+    from llm_evaluator.providers.fireworks_provider import FireworksProvider
+
+    HAS_FIREWORKS = True
+except ImportError:
+    HAS_FIREWORKS = False
+
 from llm_evaluator.providers.cached_provider import CachedProvider
 
 # Version
@@ -241,6 +262,21 @@ def create_provider(
             echo_error("DeepSeek provider not installed. Run: pip install openai")
             sys.exit(1)
         base_provider = DeepSeekProvider(model=model)
+    elif provider_type == "groq":
+        if not HAS_GROQ:
+            echo_error("Groq provider requires openai package. Run: pip install openai")
+            sys.exit(1)
+        base_provider = GroqProvider(model=model, api_key=api_key)
+    elif provider_type == "together":
+        if not HAS_TOGETHER:
+            echo_error("Together provider requires openai package. Run: pip install openai")
+            sys.exit(1)
+        base_provider = TogetherProvider(model=model, api_key=api_key)
+    elif provider_type == "fireworks":
+        if not HAS_FIREWORKS:
+            echo_error("Fireworks provider requires openai package. Run: pip install openai")
+            sys.exit(1)
+        base_provider = FireworksProvider(model=model, api_key=api_key)
     elif provider_type == "auto":
         # Auto-detect from environment
         detected_provider, detected_model = detect_provider_from_env()
@@ -423,14 +459,26 @@ def quick(model: Optional[str], sample_size: int, output: Optional[str]) -> None
     "--provider",
     "-p",
     default="ollama",
-    type=click.Choice(["ollama", "openai", "anthropic", "huggingface", "deepseek", "auto"]),
+    type=click.Choice(
+        [
+            "ollama",
+            "openai",
+            "anthropic",
+            "huggingface",
+            "deepseek",
+            "groq",
+            "together",
+            "fireworks",
+            "auto",
+        ]
+    ),
     help="Provider type",
 )
 @click.option(
     "--base-url",
     "-u",
     default=None,
-    help="Custom base URL for OpenAI-compatible APIs (vLLM, LM Studio, Together.ai, Azure)",
+    help="Custom base URL for OpenAI-compatible APIs (vLLM, LM Studio, Azure)",
 )
 @click.option("--api-key", "-k", default=None, help="API key (uses env var if not provided)")
 @click.option("--cache/--no-cache", default=True, help="Enable caching")
@@ -493,14 +541,25 @@ def run(
     "--provider",
     "-p",
     default="ollama",
-    type=click.Choice(["ollama", "openai", "anthropic", "huggingface"]),
+    type=click.Choice(
+        [
+            "ollama",
+            "openai",
+            "anthropic",
+            "huggingface",
+            "deepseek",
+            "groq",
+            "together",
+            "fireworks",
+        ]
+    ),
     help="Provider type (same for all models)",
 )
 @click.option(
     "--base-url",
     "-u",
     default=None,
-    help="Custom base URL for OpenAI-compatible APIs (vLLM, LM Studio, Together.ai, Azure)",
+    help="Custom base URL for OpenAI-compatible APIs (vLLM, LM Studio, Azure)",
 )
 @click.option("--api-key", "-k", default=None, help="API key (uses env var if not provided)")
 @click.option("--cache/--no-cache", default=True, help="Enable caching")
@@ -577,14 +636,25 @@ def compare(
     "--provider",
     "-p",
     default="ollama",
-    type=click.Choice(["ollama", "openai", "anthropic", "huggingface"]),
+    type=click.Choice(
+        [
+            "ollama",
+            "openai",
+            "anthropic",
+            "huggingface",
+            "deepseek",
+            "groq",
+            "together",
+            "fireworks",
+        ]
+    ),
     help="Provider type",
 )
 @click.option(
     "--base-url",
     "-u",
     default=None,
-    help="Custom base URL for OpenAI-compatible APIs (vLLM, LM Studio, Together.ai, Azure)",
+    help="Custom base URL for OpenAI-compatible APIs (vLLM, LM Studio, Azure)",
 )
 @click.option("--api-key", "-k", default=None, help="API key (uses env var if not provided)")
 @click.option(
@@ -730,6 +800,9 @@ def providers() -> None:
         ("openai", HAS_OPENAI, "GPT-3.5, GPT-4, GPT-4o (pip install openai)"),
         ("anthropic", HAS_ANTHROPIC, "Claude 3/3.5 (pip install anthropic)"),
         ("deepseek", HAS_DEEPSEEK, "DeepSeek-V3, DeepSeek-R1 (pip install openai)"),
+        ("groq", HAS_GROQ, "Ultra-fast Llama, Mixtral (pip install openai)"),
+        ("together", HAS_TOGETHER, "100+ open models (pip install openai)"),
+        ("fireworks", HAS_FIREWORKS, "Optimized open models (pip install openai)"),
         ("huggingface", HAS_HUGGINGFACE, "Inference API (pip install huggingface-hub)"),
     ]
 
@@ -764,6 +837,30 @@ def providers() -> None:
             ),
         ),
         (
+            "GROQ_API_KEY",
+            (
+                os.environ.get("GROQ_API_KEY", "")[:8] + "..."
+                if os.environ.get("GROQ_API_KEY")
+                else "Not set"
+            ),
+        ),
+        (
+            "TOGETHER_API_KEY",
+            (
+                os.environ.get("TOGETHER_API_KEY", "")[:8] + "..."
+                if os.environ.get("TOGETHER_API_KEY")
+                else "Not set"
+            ),
+        ),
+        (
+            "FIREWORKS_API_KEY",
+            (
+                os.environ.get("FIREWORKS_API_KEY", "")[:8] + "..."
+                if os.environ.get("FIREWORKS_API_KEY")
+                else "Not set"
+            ),
+        ),
+        (
             "HF_TOKEN",
             os.environ.get("HF_TOKEN", "")[:8] + "..." if os.environ.get("HF_TOKEN") else "Not set",
         ),
@@ -782,7 +879,19 @@ def providers() -> None:
     "--provider",
     "-p",
     default="ollama",
-    type=click.Choice(["ollama", "openai", "anthropic", "huggingface", "deepseek", "auto"]),
+    type=click.Choice(
+        [
+            "ollama",
+            "openai",
+            "anthropic",
+            "huggingface",
+            "deepseek",
+            "groq",
+            "together",
+            "fireworks",
+            "auto",
+        ]
+    ),
     help="Provider type",
 )
 @click.option("--sample-size", "-s", type=int, default=100, help="Sample size for benchmarks")

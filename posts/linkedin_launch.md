@@ -15,6 +15,7 @@
 • Funciona con Ollama, OpenAI, Claude, y más
 
 **Un comando:**
+
 ```
 pip install llm-benchmark-toolkit
 llm-eval dashboard
@@ -31,7 +32,7 @@ El proyecto es 100% open-source. Feedback bienvenido.
 
 🔗 GitHub: github.com/NahuelGiudizi/llm-evaluation
 
-#OpenSource #AI #LLM #MachineLearning #Python
+# OpenSource #AI #LLM #MachineLearning #Python
 
 ---
 
@@ -45,6 +46,7 @@ Después de meses trabajando con LLMs, me cansé de:
 Así que construí **llm-benchmark-toolkit**:
 
 📊 **132,619 preguntas** de benchmarks reales:
+
 - MMLU (conocimiento)
 - TruthfulQA (veracidad)
 - HellaSwag (razonamiento)

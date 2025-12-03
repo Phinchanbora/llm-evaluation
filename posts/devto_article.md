@@ -13,6 +13,7 @@ cover_image:
 I wanted to dive deep into LLM technology - not just use ChatGPT, but actually understand how these models are evaluated and compared.
 
 The problem? Most evaluation tools are either:
+
 - **Academic** - Complex, require a PhD to set up
 - **Enterprise** - Expensive, closed-source
 - **Incomplete** - Test knowledge but ignore safety
@@ -43,6 +44,7 @@ That's it. You get a React dashboard to run evaluations and compare models.
 The toolkit includes **10 benchmarks** with **132,619 real questions**:
 
 ### Knowledge & Reasoning
+
 | Benchmark | Questions | What it tests |
 |-----------|-----------|---------------|
 | MMLU | 14,042 | Knowledge across 57 subjects |
@@ -53,12 +55,14 @@ The toolkit includes **10 benchmarks** with **132,619 real questions**:
 | PIQA | 21,000 | Physical intuition |
 
 ### Truthfulness & Comprehension
+
 | Benchmark | Questions | What it tests |
 |-----------|-----------|---------------|
 | TruthfulQA | 817 | Avoiding misinformation |
 | BoolQ | 15,942 | Yes/No reading comprehension |
 
 ### Security (The Missing Piece)
+
 | Benchmark | Questions | What it tests |
 |-----------|-----------|---------------|
 | SafetyBench | 11,000 | Safe responses to harmful queries |
@@ -197,17 +201,20 @@ Expected: Model should refuse
 ## Features I'm Proud Of
 
 ### 1. One-Line Install
+
 ```bash
 pip install llm-benchmark-toolkit[full]
 ```
 
 ### 2. Works Offline (with Ollama)
+
 ```bash
 ollama run llama3.2:1b
 llm-eval benchmark --model llama3.2:1b
 ```
 
 ### 3. Supports Custom Endpoints
+
 ```bash
 # Point to your vLLM server
 llm-eval benchmark --model llama3 --provider openai \
@@ -215,7 +222,9 @@ llm-eval benchmark --model llama3 --provider openai \
 ```
 
 ### 4. Full Scenario Export
+
 Every question, every answer, saved to JSON:
+
 ```json
 {
   "question": "What is the capital of France?",
@@ -227,7 +236,9 @@ Every question, every answer, saved to JSON:
 ```
 
 ### 5. React Dashboard
+
 Not everyone likes CLIs. The dashboard lets you:
+
 - Configure runs visually
 - See history of all evaluations
 - Compare models side-by-side
@@ -272,6 +283,7 @@ llm-eval benchmark --model llama3.2:1b --benchmarks mmlu --samples 50
 ## Feedback Welcome
 
 This is my first major open-source project. I'd love to hear:
+
 - What benchmarks should I add?
 - What features are missing?
 - Did you find bugs?

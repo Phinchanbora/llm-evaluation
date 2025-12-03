@@ -18,6 +18,9 @@ class ProviderType(Enum):
     ANTHROPIC = "anthropic"
     HUGGINGFACE = "huggingface"
     DEEPSEEK = "deepseek"
+    GROQ = "groq"
+    TOGETHER = "together"
+    FIREWORKS = "fireworks"
 
 
 @dataclass
