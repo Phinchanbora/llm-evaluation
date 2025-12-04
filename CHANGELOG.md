@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.1] - 2025-12-03
+
+### Fixed
+
+- **Dashboard UI Fixes**:
+  - Fixed GSM8K showing 0% across all dashboard views (RunDetail, ModelComparison, RunHistory)
+  - Fixed Do-Not-Answer showing 0% (added support for `donotanswer_accuracy` field in demo mode)
+  - Fixed missing benchmark names in RunDetail chart (CommonsenseQA, BoolQ, SafetyBench, Do-Not-Answer)
+  - Fixed intrusive auto-scroll in `/progress` route (now only activates when user is near bottom)
+  - Fixed Tailwind CSS build errors caused by `box-shadow` in `@apply` directives
+
 ## [2.3.0] - 2025-12-02
 
 ### Added
