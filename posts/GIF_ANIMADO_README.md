@@ -19,6 +19,7 @@ Crear un GIF de 10-15 segundos que muestre el flujo completo de evaluación y vi
 ```bash
 $ pip install llm-benchmark-toolkit
 ✓ Successfully installed llm-benchmark-toolkit-0.6.0
+python -m llm_evaluator.dashboard
 ```
 
 **Elementos:**

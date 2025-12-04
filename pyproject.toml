@@ -152,6 +152,10 @@ omit = [
     "*anthropic_provider*",
     "*deepseek_provider*",
     "*huggingface_provider*",
+    "*gemini_provider*",
+    "*groq_provider*",
+    "*together_provider*",
+    "*fireworks_provider*",
 ]
 
 [tool.coverage.report]
@@ -172,6 +176,10 @@ omit = [
     "*anthropic_provider*",
     "*deepseek_provider*",
     "*huggingface_provider*",
+    "*gemini_provider*",
+    "*groq_provider*",
+    "*together_provider*",
+    "*fireworks_provider*",
 ]
 
 [tool.black]
