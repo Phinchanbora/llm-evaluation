@@ -791,6 +791,14 @@ def benchmark(
             results["donotanswer"] = runner.run_donotanswer_sample()
         elif bench == "gsm8k":
             results["gsm8k"] = runner.run_gsm8k_sample()
+        elif bench == "redteam":
+            from llm_evaluator.security.red_team import RedTeamBenchmark
+            red_team_bench = RedTeamBenchmark(provider=llm_provider, sample_size=sample_size)
+            results["redteam"] = red_team_bench.run()
+        elif bench == "prompt_injection":
+            from llm_evaluator.security.prompt_injection import PromptInjectionBenchmark
+            prompt_injection_bench = PromptInjectionBenchmark(provider=llm_provider, sample_size=sample_size)
+            results["prompt_injection"] = prompt_injection_bench.run()
         else:
             click.echo(f"⚠️  Unknown benchmark: {bench}", err=True)
             continue
@@ -807,6 +815,8 @@ def benchmark(
             "safetybench": "safetybench_accuracy",
             "donotanswer": "donotanswer_refusal_rate",
             "gsm8k": "gsm8k_accuracy",
+            "redteam": "refusal_rate",
+            "prompt_injection": "refusal_rate",
         }
         accuracy_key = accuracy_keys.get(bench, f"{bench}_accuracy")
         if accuracy_key in results[bench]:
