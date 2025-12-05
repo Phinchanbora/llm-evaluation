@@ -395,14 +395,14 @@ def create_app(outputs_dir: Optional[Path] = None) -> "FastAPI":
                 name="Red Team",
                 description="Jailbreak resistance - DAN prompts, role-playing attacks, instruction bypass",
                 category="Security",
-                questions_count=15,
+                questions_count=11,
             ),
             Benchmark(
                 id="prompt_injection",
                 name="Prompt Injection",
                 description="Prompt injection resistance - direct override, extraction, command injection",
                 category="Security",
-                questions_count=20,
+                questions_count=15,
             ),
             # Math benchmark
             Benchmark(
