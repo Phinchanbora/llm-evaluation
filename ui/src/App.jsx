@@ -49,6 +49,13 @@ function App() {
     localStorage.setItem('darkMode', darkMode.toString())
   }, [darkMode])
 
+  // Listen for API Keys modal open events
+  useEffect(() => {
+    const handleOpenApiKeys = () => setShowApiKeys(true)
+    window.addEventListener('openApiKeys', handleOpenApiKeys)
+    return () => window.removeEventListener('openApiKeys', handleOpenApiKeys)
+  }, [])
+
   // Fetch counts for badges
   useEffect(() => {
     const fetchCounts = async () => {
@@ -189,14 +196,6 @@ function App() {
         {/* Footer */}
         {sidebarOpen && (
           <div className="p-4 border-t border-border-default animate-fade-in space-y-3">
-            <button
-              onClick={() => setShowApiKeys(true)}
-              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-secondary hover:text-primary hover:bg-surface-hover rounded-lg transition-colors"
-            >
-              <Key className="w-4 h-4" />
-              <span>API Keys</span>
-            </button>
-            
             <a
               href="https://github.com/NahuelGiudizi/llm-evaluation"
               target="_blank"

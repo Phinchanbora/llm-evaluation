@@ -203,6 +203,16 @@ function RunManager({ onRunStart }) {
     }
   }
 
+  // Listen for API keys updates and reload models
+  useEffect(() => {
+    const handleApiKeysUpdate = () => {
+      console.log('API keys updated, reloading providers...')
+      loadData()
+    }
+    window.addEventListener('apiKeysUpdated', handleApiKeysUpdate)
+    return () => window.removeEventListener('apiKeysUpdated', handleApiKeysUpdate)
+  }, [])
+
   function handlePresetChange(presetId) {
     setSelectedPreset(presetId)
     const preset = presets.find(p => p.id === presetId)
@@ -454,6 +464,19 @@ function RunManager({ onRunStart }) {
               </p>
             </div>
           )}
+
+          {/* API Keys Management Button */}
+          <div className="md:col-span-2">
+            <button
+              type="button"
+              onClick={() => window.dispatchEvent(new CustomEvent('openApiKeys'))}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm text-secondary hover:text-primary bg-surface hover:bg-surface-hover border border-default rounded-lg transition-colors"
+            >
+              <Key className="w-4 h-4" />
+              <span>Manage API Keys</span>
+              <span className="ml-auto text-xs text-tertiary">Configure provider API keys</span>
+            </button>
+          </div>
 
           {/* API Key for cloud providers */}
           {(selectedProvider === 'openai' || selectedProvider === 'anthropic' || selectedProvider === 'deepseek') && (

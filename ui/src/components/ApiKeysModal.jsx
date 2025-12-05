@@ -47,6 +47,8 @@ function ApiKeysModal({ isOpen, onClose }) {
       if (res.ok) {
         await loadKeys()
         setKeys(prev => ({ ...prev, [provider]: '' }))
+        // Notify other components that API keys changed
+        window.dispatchEvent(new CustomEvent('apiKeysUpdated'))
         setTimeout(() => setSaving(null), 1500)
       }
     } catch (e) {
@@ -60,6 +62,8 @@ function ApiKeysModal({ isOpen, onClose }) {
       const res = await fetch(`/api/keys/${provider}`, { method: 'DELETE' })
       if (res.ok) {
         await loadKeys()
+        // Notify other components that API keys changed
+        window.dispatchEvent(new CustomEvent('apiKeysUpdated'))
       }
     } catch (e) {
       console.error('Failed to delete API key:', e)
