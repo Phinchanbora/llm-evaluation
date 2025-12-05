@@ -190,8 +190,10 @@ function RunHistory() {
         return <XCircle className="w-5 h-5 text-red-400" />
       case 'running':
         return <Loader2 className="w-5 h-5 text-primary-400 animate-spin" />
+      case 'queued':
+        return <Clock className="w-5 h-5 text-yellow-400" />
       default:
-        return <Clock className="w-5 h-5 text-slate-400" />
+        return <Clock className="w-5 h-5 text-tertiary" />
     }
   }
 
@@ -207,8 +209,8 @@ function RunHistory() {
     <div className="max-w-6xl mx-auto">
       <div className="mb-8 flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-white mb-2">Run History</h1>
-          <p className="text-slate-400">View all past evaluation runs</p>
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-primary mb-2">Run History</h1>
+          <p className="text-secondary dark:text-tertiary">View all past evaluation runs</p>
         </div>
         <div className="flex items-center gap-3">
           {selectedRuns.size > 0 && (
@@ -222,7 +224,7 @@ function RunHistory() {
           )}
           <button
             onClick={loadRuns}
-            className="px-4 py-2 rounded-lg border border-slate-600 text-slate-300 hover:bg-slate-800 flex items-center gap-2"
+            className="px-4 py-2 rounded-lg border border-default text-secondary hover:bg-surface flex items-center gap-2"
           >
             <RefreshCw className="w-4 h-4" />
             Refresh
@@ -237,8 +239,8 @@ function RunHistory() {
             key={status}
             onClick={() => setFilter(status)}
             className={`px-4 py-2 rounded-lg text-sm capitalize transition-colors ${filter === status
-              ? 'bg-primary-500 text-white'
-              : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+              ? 'bg-interactive text-text-inverse'
+              : 'bg-surface text-tertiary hover:bg-surface-hover'
               }`}
           >
             {status}
@@ -248,9 +250,9 @@ function RunHistory() {
 
       {filteredRuns.length === 0 ? (
         <div className="text-center py-20">
-          <History className="w-16 h-16 text-slate-600 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-white mb-2">No Runs Found</h2>
-          <p className="text-slate-400">
+          <History className="w-16 h-16 text-secondary mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-primary mb-2">No Runs Found</h2>
+          <p className="text-tertiary">
             {filter === 'all'
               ? 'Start your first evaluation to see it here'
               : `No ${filter} runs found`}
@@ -262,7 +264,7 @@ function RunHistory() {
           <div className="mb-4 flex items-center gap-4 px-2">
             <button
               onClick={toggleSelectAll}
-              className="text-slate-400 hover:text-white transition-colors flex items-center gap-2"
+              className="text-tertiary hover:text-primary transition-colors flex items-center gap-2"
             >
               {allSelected ? (
                 <CheckSquare className="w-5 h-5 text-primary-400" />
@@ -277,7 +279,7 @@ function RunHistory() {
                   : 'Select all'}
               </span>
             </button>
-            <span className="text-sm text-slate-500">
+            <span className="text-sm text-tertiary">
               {filteredRuns.length} runs
             </span>
           </div>
@@ -302,9 +304,9 @@ function RunHistory() {
               return (
                 <div
                   key={run.run_id}
-                  className={`bg-slate-800 rounded-xl border transition-all ${isSelected
-                      ? 'border-primary-500/50 bg-slate-800/80'
-                      : 'border-slate-700 hover:border-slate-600'
+                  className={`bg-surface rounded-xl border transition-all ${isSelected
+                    ? 'border-primary-500/50 bg-surface-hover'
+                    : 'border-default hover:border-interactive'
                     }`}
                 >
                   {/* Main Row */}
@@ -312,7 +314,7 @@ function RunHistory() {
                     {/* Checkbox */}
                     <button
                       onClick={(e) => toggleSelectRun(run.run_id, e)}
-                      className="text-slate-400 hover:text-white transition-colors flex-shrink-0"
+                      className="text-tertiary hover:text-primary transition-colors flex-shrink-0"
                     >
                       {isSelected ? (
                         <CheckSquare className="w-5 h-5 text-primary-400" />
@@ -329,15 +331,15 @@ function RunHistory() {
                       onClick={() => navigate(`/run/${run.run_id}`)}
                     >
                       <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="font-semibold text-white">{run.model}</h3>
-                        <span className="text-xs text-slate-400 bg-slate-700 px-2 py-0.5 rounded">
+                        <h3 className="font-semibold text-primary">{run.model}</h3>
+                        <span className="text-xs text-tertiary bg-surface-active px-2 py-0.5 rounded">
                           {run.provider}
                         </span>
-                        <span className="text-xs text-slate-500 font-mono">
+                        <span className="text-xs text-tertiary font-mono">
                           #{runIdShort}
                         </span>
                       </div>
-                      <div className="text-sm text-slate-400 mt-1">
+                      <div className="text-sm text-secondary mt-1">
                         {new Date(run.started_at).toLocaleString()}
                       </div>
                     </div>
@@ -348,7 +350,7 @@ function RunHistory() {
                         {run.sample_size || '?'} samples
                       </div>
                       {run.preset && (
-                        <div className="text-xs text-slate-500 capitalize">
+                        <div className="text-xs text-tertiary capitalize">
                           ({run.preset})
                         </div>
                       )}
@@ -361,11 +363,11 @@ function RunHistory() {
                         onClick={() => navigate(`/run/${run.run_id}`)}
                       >
                         <div className={`text-2xl font-bold ${avgScore >= 0.7 ? 'text-green-400' :
-                            avgScore >= 0.4 ? 'text-yellow-400' : 'text-red-400'
+                          avgScore >= 0.4 ? 'text-yellow-400' : 'text-red-400'
                           }`}>
                           {(avgScore * 100).toFixed(1)}%
                         </div>
-                        <div className="text-xs text-slate-500">avg score</div>
+                        <div className="text-xs text-tertiary">avg score</div>
                       </div>
                     )}
 
@@ -373,14 +375,14 @@ function RunHistory() {
                     <div className="flex items-center gap-1 flex-shrink-0">
                       <button
                         onClick={() => navigate(`/run/${run.run_id}`)}
-                        className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-700 transition-colors"
+                        className="p-2 rounded-lg text-tertiary hover:text-primary hover:bg-surface-active transition-colors"
                         title="View details"
                       >
                         <Eye className="w-4 h-4" />
                       </button>
                       <button
                         onClick={(e) => handleDeleteClick(run.run_id, e)}
-                        className="p-2 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                        className="p-2 rounded-lg text-tertiary hover:text-red-400 hover:bg-red-500/10 transition-colors"
                         title="Delete run"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -399,15 +401,15 @@ function RunHistory() {
                           .filter(([name]) => name.toLowerCase() !== 'average')
                           .map(([name, data]) => {
                             const score = extractScore(name, data)
-                            const scoreColor = score === null ? 'text-slate-500' :
+                            const scoreColor = score === null ? 'text-tertiary' :
                               score >= 0.7 ? 'text-green-400' :
                                 score >= 0.4 ? 'text-yellow-400' : 'text-red-400'
                             return (
                               <span
                                 key={name}
-                                className="inline-flex items-center gap-1 text-xs bg-slate-700/50 px-2 py-1 rounded"
+                                className="inline-flex items-center gap-1 text-xs bg-surface-active/50 px-2 py-1 rounded"
                               >
-                                <span className="text-slate-400">{formatBenchmarkName(name)}:</span>
+                                <span className="text-tertiary">{formatBenchmarkName(name)}:</span>
                                 <span className={`font-medium ${scoreColor}`}>
                                   {score !== null ? `${(score * 100).toFixed(0)}%` : 'N/A'}
                                 </span>

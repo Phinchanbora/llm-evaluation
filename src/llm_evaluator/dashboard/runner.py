@@ -50,6 +50,50 @@ class EvaluationRunner:
         self._queue_cancelled: bool = False
         self._queue_subscribers: list[asyncio.Queue[QueueStatus]] = []
 
+        # Run queue for sequential execution
+        self._run_queue: list[dict[str, Any]] = []
+        self._current_run_id: Optional[str] = None
+        self._queue_worker_thread: Optional[threading.Thread] = None
+        self._queue_running: bool = False
+        self._start_queue_worker()
+
+    def _start_queue_worker(self) -> None:
+        """Start the background queue worker thread"""
+        self._queue_running = True
+        self._queue_worker_thread = threading.Thread(target=self._queue_worker, daemon=True)
+        self._queue_worker_thread.start()
+
+    def _queue_worker(self) -> None:
+        """Background worker that processes the run queue sequentially"""
+        import time
+
+        while self._queue_running:
+            run_data = None
+            with self._lock:
+                if self._run_queue:
+                    run_data = self._run_queue.pop(0)
+
+            if run_data:
+                with self._lock:
+                    self._current_run_id = run_data["run_id"]
+
+                # Execute the run
+                self._run_evaluation(
+                    run_id=run_data["run_id"],
+                    model=run_data["model"],
+                    provider=run_data["provider"],
+                    benchmarks=run_data["benchmarks"],
+                    sample_size=run_data["sample_size"],
+                    base_url=run_data.get("base_url"),
+                    api_key=run_data.get("api_key"),
+                )
+
+                with self._lock:
+                    self._current_run_id = None
+            else:
+                # Sleep briefly if queue is empty
+                time.sleep(0.1)
+
     def start_run(
         self,
         model: str,
@@ -61,11 +105,15 @@ class EvaluationRunner:
         base_url: Optional[str] = None,
         api_key: Optional[str] = None,
     ) -> str:
-        """Start a new evaluation run in the background"""
+        """Start a new evaluation run (adds to queue for sequential execution)"""
         run_id = f"run_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:6]}"
         output_file = self.outputs_dir / f"{run_id}.json"
 
+        # Determine initial status
         with self._lock:
+            is_queued = self._current_run_id is not None or len(self._run_queue) > 0
+            initial_status = RunStatus.QUEUED if is_queued else RunStatus.PENDING
+
             self._runs[run_id] = {
                 "run_id": run_id,
                 "model": model,
@@ -73,7 +121,7 @@ class EvaluationRunner:
                 "benchmarks": benchmarks,
                 "preset": preset,
                 "sample_size": sample_size,
-                "status": RunStatus.PENDING,
+                "status": initial_status,
                 "started_at": datetime.now(),
                 "completed_at": None,
                 "results": {},
@@ -88,20 +136,31 @@ class EvaluationRunner:
 
             self._progress[run_id] = ProgressEvent(
                 run_id=run_id,
-                status=RunStatus.PENDING,
+                status=initial_status,
                 progress=0,
                 questions_total=sample_size * len(benchmarks),
             )
 
             self._subscribers[run_id] = []
 
-        # Start evaluation in background thread
-        thread = threading.Thread(
-            target=self._run_evaluation,
-            args=(run_id, model, provider, benchmarks, sample_size, base_url, api_key),
-            daemon=True,
-        )
-        thread.start()
+            # Add to queue
+            self._run_queue.append(
+                {
+                    "run_id": run_id,
+                    "model": model,
+                    "provider": provider,
+                    "benchmarks": benchmarks,
+                    "sample_size": sample_size,
+                    "base_url": base_url,
+                    "api_key": api_key,
+                }
+            )
+
+            if is_queued:
+                queue_position = len(self._run_queue)
+                self._add_log(run_id, f"Run queued at position {queue_position}")
+            else:
+                self._add_log(run_id, "Run will start immediately")
 
         return run_id
 
@@ -571,7 +630,7 @@ class EvaluationRunner:
                                 "inference_settings": data.get("inference_settings", {}),
                                 "system_info": data.get("system_info", {}),
                                 "artifacts": [json_file.name],
-                                "logs": [],
+                                "logs": data.get("logs", []),
                                 "file_path": str(json_file.resolve()),
                                 "filename": json_file.name,
                             }
@@ -594,7 +653,7 @@ class EvaluationRunner:
                                 "results": data,
                                 "system_info": data.get("system_info", {}),
                                 "artifacts": [json_file.name],
-                                "logs": [],
+                                "logs": data.get("logs", []),
                                 "file_path": str(json_file.resolve()),
                                 "filename": json_file.name,
                             }
@@ -658,14 +717,14 @@ class EvaluationRunner:
 
         # Start queue execution in background
         thread = threading.Thread(
-            target=self._run_queue,
+            target=self._execute_queue,
             daemon=True,
         )
         thread.start()
 
         return queue_id
 
-    def _run_queue(self) -> None:
+    def _execute_queue(self) -> None:
         """Execute queue items sequentially"""
         for i, item in enumerate(self._queue_items):
             if self._queue_cancelled:

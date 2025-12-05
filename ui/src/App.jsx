@@ -12,7 +12,10 @@ import {
   ChevronRight,
   Github,
   ExternalLink,
-  Sparkles
+  Sparkles,
+  Sun,
+  Moon,
+  Key
 } from 'lucide-react'
 
 import RunManager from './components/RunManager'
@@ -20,6 +23,7 @@ import ProgressViewer from './components/ProgressViewer'
 import ModelComparison from './components/ModelComparison'
 import RunHistory from './components/RunHistory'
 import RunDetail from './components/RunDetail'
+import ApiKeysModal from './components/ApiKeysModal'
 
 const API_BASE = '/api'
 
@@ -28,7 +32,22 @@ function App() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [runningCount, setRunningCount] = useState(0)
   const [historyCount, setHistoryCount] = useState(0)
+  const [showApiKeys, setShowApiKeys] = useState(false)
+  const [darkMode, setDarkMode] = useState(() => {
+    const saved = localStorage.getItem('darkMode')
+    return saved === null ? true : saved === 'true'
+  })
   const location = useLocation()
+
+  // Apply dark mode class to document
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add('dark')
+    } else {
+      document.documentElement.classList.remove('dark')
+    }
+    localStorage.setItem('darkMode', darkMode.toString())
+  }, [darkMode])
 
   // Fetch counts for badges
   useEffect(() => {
@@ -80,30 +99,39 @@ function App() {
   ]
 
   return (
-    <div className="min-h-screen bg-surface-900 flex">
+    <div className="min-h-screen bg-background flex transition-colors duration-300">
       {/* Sidebar */}
       <aside
         className={`
           ${sidebarOpen ? 'w-72' : 'w-20'} 
-          bg-surface-800/50 backdrop-blur-sm
-          border-r border-surface-700/50
+          bg-surface border-r border-border-default
           transition-all duration-300 
           flex flex-col
           relative
         `}
       >
         {/* Logo Header */}
-        <div className="p-4 border-b border-surface-700/50">
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 bg-amber-500 rounded-xl flex items-center justify-center shadow-lg shadow-amber-500/25">
-              <Zap className="w-6 h-6 text-white" />
-            </div>
-            {sidebarOpen && (
-              <div className="animate-fade-in">
-                <h1 className="text-lg font-bold text-white tracking-tight">LLM Bench</h1>
-                <p className="text-xs text-slate-500 font-medium">Dashboard v2.3</p>
+        <div className="p-4 border-b border-border-default">
+          <div className="flex items-center gap-3 justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl flex items-center justify-center shadow-lg shadow-amber-500/25">
+                <Zap className="w-6 h-6 text-white" />
               </div>
-            )}
+              {sidebarOpen && (
+                <div className="animate-fade-in">
+                  <h1 className="text-lg font-bold text-primary tracking-tight">LLM Bench</h1>
+                  <p className="text-xs text-tertiary font-medium">Dashboard v2.3</p>
+                </div>
+              )}
+            </div>
+            {/* Dark/Light Mode Toggle */}
+            <button
+              onClick={() => setDarkMode(!darkMode)}
+              className="p-2 rounded-lg bg-surface-hover hover:bg-surface-active text-secondary hover:text-primary transition-all"
+              title={darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+            >
+              {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+            </button>
           </div>
         </div>
 
@@ -122,8 +150,8 @@ function App() {
                   group flex items-center gap-3 px-3 py-3 rounded-xl
                   transition-all duration-200
                   ${isActive
-                    ? 'bg-primary-500/15 text-primary-400 shadow-lg shadow-primary-500/10'
-                    : 'text-slate-400 hover:bg-surface-700/50 hover:text-white'
+                    ? 'bg-interactive-bg text-interactive shadow-sm'
+                    : 'text-secondary hover:bg-surface-hover hover:text-primary'
                   }
                 `}
               >
@@ -131,13 +159,13 @@ function App() {
                   relative flex items-center justify-center w-9 h-9 rounded-lg
                   transition-all duration-200
                   ${isActive
-                    ? 'bg-primary-500/20'
-                    : 'bg-surface-700/50 group-hover:bg-surface-600/50'
+                    ? 'bg-interactive/20'
+                    : 'bg-surface-active group-hover:bg-surface-active'
                   }
                 `}>
                   <Icon className="w-5 h-5 flex-shrink-0" />
                   {badge === 'running' && (
-                    <span className="absolute -top-1 -right-1 w-3 h-3 bg-primary-500 rounded-full animate-pulse shadow-lg shadow-primary-500/50" />
+                    <span className="absolute -top-1 -right-1 w-3 h-3 bg-interactive rounded-full animate-pulse shadow-lg shadow-interactive/50" />
                   )}
                 </div>
                 {sidebarOpen && (
@@ -145,12 +173,12 @@ function App() {
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium">{label}</span>
                       {badge && badge !== 'running' && (
-                        <span className="px-2 py-0.5 text-xs font-medium bg-surface-700 text-slate-300 rounded-full">
+                        <span className="px-2 py-0.5 text-xs font-medium bg-surface-active text-secondary rounded-full">
                           {badge}
                         </span>
                       )}
                     </div>
-                    <p className="text-xs text-slate-500 truncate mt-0.5">{description}</p>
+                    <p className="text-xs text-tertiary truncate mt-0.5">{description}</p>
                   </div>
                 )}
               </NavLink>
@@ -160,18 +188,27 @@ function App() {
 
         {/* Footer */}
         {sidebarOpen && (
-          <div className="p-4 border-t border-surface-700/50 animate-fade-in">
+          <div className="p-4 border-t border-border-default animate-fade-in space-y-3">
+            <button
+              onClick={() => setShowApiKeys(true)}
+              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-secondary hover:text-primary hover:bg-surface-hover rounded-lg transition-colors"
+            >
+              <Key className="w-4 h-4" />
+              <span>API Keys</span>
+            </button>
+            
             <a
               href="https://github.com/NahuelGiudizi/llm-evaluation"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-2 text-xs text-slate-500 hover:text-slate-300 transition-colors"
+              className="flex items-center gap-2 text-xs text-tertiary hover:text-secondary transition-colors"
             >
               <Github className="w-4 h-4" />
               <span>View on GitHub</span>
               <ExternalLink className="w-3 h-3" />
             </a>
-            <div className="mt-3 flex items-center gap-2 text-xs text-slate-600">
+            
+            <div className="flex items-center gap-2 text-xs text-secondary">
               <Sparkles className="w-3 h-3" />
               <span>llm-benchmark-toolkit</span>
             </div>
@@ -183,9 +220,9 @@ function App() {
           onClick={() => setSidebarOpen(!sidebarOpen)}
           className="
             absolute -right-3 top-20
-            w-6 h-6 bg-surface-700 border border-surface-600
+            w-6 h-6 bg-surface border border-border-default
             rounded-full flex items-center justify-center
-            text-slate-400 hover:text-white hover:bg-surface-600
+            text-tertiary hover:text-primary hover:bg-surface-hover
             transition-all duration-200
             shadow-lg
           "
@@ -199,7 +236,7 @@ function App() {
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 overflow-auto">
+      <main className="flex-1 overflow-auto bg-background">
         <div className="p-6 max-w-7xl mx-auto">
           <Routes>
             <Route path="/" element={<RunManager onRunStart={setActiveRun} />} />
@@ -210,6 +247,9 @@ function App() {
           </Routes>
         </div>
       </main>
+
+      {/* API Keys Modal */}
+      <ApiKeysModal isOpen={showApiKeys} onClose={() => setShowApiKeys(false)} />
     </div>
   )
 }

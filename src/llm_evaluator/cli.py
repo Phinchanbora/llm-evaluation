@@ -82,7 +82,7 @@ from llm_evaluator.providers.cached_provider import CachedProvider
 from llm_evaluator.statistical_metrics import minimum_sample_size_table, power_analysis_sample_size
 
 # Version
-__version__ = "2.3.0"
+__version__ = "2.3.3"
 
 
 def detect_provider_from_env() -> Tuple[Optional[str], Optional[str]]:
@@ -810,7 +810,11 @@ def benchmark(
         }
         accuracy_key = accuracy_keys.get(bench, f"{bench}_accuracy")
         if accuracy_key in results[bench]:
-            click.echo(f"   Accuracy: {results[bench][accuracy_key]:.1%}")
+            accuracy_value = results[bench][accuracy_key]
+            if accuracy_value is None:
+                click.echo("   Accuracy: N/A (labels not available - see benchmark notes)")
+            else:
+                click.echo(f"   Accuracy: {accuracy_value:.1%}")
 
     # Save results
     Path(output).write_text(json.dumps(results, indent=2))

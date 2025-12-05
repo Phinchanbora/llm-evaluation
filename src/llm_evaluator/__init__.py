@@ -43,12 +43,12 @@ Documentation: docs/
 Repository: https://github.com/NahuelGiudizi/llm-evaluation
 """
 
-__version__ = "2.3.3"
+__version__ = "2.4.0"
 __author__ = "Nahuel Giudizi"
 __license__ = "MIT"
 
 from .academic_baselines import ACADEMIC_BASELINES, compare_to_baselines, get_baselines
-from .benchmarks import BenchmarkRunner
+from .benchmarks.runner import BenchmarkRunner
 from .error_analysis import ErrorAnalyzer, expected_calibration_error
 from .evaluator import EvaluationResults, ModelEvaluator
 from .export import export_to_latex, generate_bibtex, generate_reproducibility_manifest

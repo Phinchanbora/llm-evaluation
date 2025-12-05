@@ -53,7 +53,7 @@ function InferenceSettingsEditor({ settings, onChange }) {
         <div className="mt-2">
             <button
                 onClick={() => setExpanded(!expanded)}
-                className="flex items-center gap-1 text-xs text-slate-400 hover:text-slate-300 transition-colors"
+                className="flex items-center gap-1 text-xs text-tertiary hover:text-secondary transition-colors"
             >
                 <Settings className="w-3 h-3" />
                 <span>Inference: T={settings.temperature}, P={settings.top_p}, K={settings.top_k}</span>
@@ -61,9 +61,9 @@ function InferenceSettingsEditor({ settings, onChange }) {
             </button>
 
             {expanded && (
-                <div className="mt-2 p-3 bg-slate-800 rounded-lg grid grid-cols-5 gap-2">
+                <div className="mt-2 p-3 bg-surface rounded-lg grid grid-cols-5 gap-2">
                     <div>
-                        <label className="block text-[10px] text-slate-500 mb-0.5">Temp</label>
+                        <label className="block text-[10px] text-tertiary mb-0.5">Temp</label>
                         <input
                             type="number"
                             step="0.1"
@@ -71,11 +71,11 @@ function InferenceSettingsEditor({ settings, onChange }) {
                             max="2"
                             value={settings.temperature}
                             onChange={(e) => onChange({ ...settings, temperature: parseFloat(e.target.value) })}
-                            className="w-full bg-slate-900 border border-slate-600 rounded px-2 py-1 text-white text-xs focus:outline-none focus:ring-1 focus:ring-primary-500"
+                            className="w-full bg-background border border-default rounded px-2 py-1 text-primary text-xs focus:outline-none focus:ring-1 focus:ring-primary-500"
                         />
                     </div>
                     <div>
-                        <label className="block text-[10px] text-slate-500 mb-0.5">Top P</label>
+                        <label className="block text-[10px] text-tertiary mb-0.5">Top P</label>
                         <input
                             type="number"
                             step="0.1"
@@ -83,39 +83,39 @@ function InferenceSettingsEditor({ settings, onChange }) {
                             max="1"
                             value={settings.top_p}
                             onChange={(e) => onChange({ ...settings, top_p: parseFloat(e.target.value) })}
-                            className="w-full bg-slate-900 border border-slate-600 rounded px-2 py-1 text-white text-xs focus:outline-none focus:ring-1 focus:ring-primary-500"
+                            className="w-full bg-background border border-default rounded px-2 py-1 text-primary text-xs focus:outline-none focus:ring-1 focus:ring-primary-500"
                         />
                     </div>
                     <div>
-                        <label className="block text-[10px] text-slate-500 mb-0.5">Top K</label>
+                        <label className="block text-[10px] text-tertiary mb-0.5">Top K</label>
                         <input
                             type="number"
                             min="-1"
                             max="100"
                             value={settings.top_k}
                             onChange={(e) => onChange({ ...settings, top_k: parseInt(e.target.value) })}
-                            className="w-full bg-slate-900 border border-slate-600 rounded px-2 py-1 text-white text-xs focus:outline-none focus:ring-1 focus:ring-primary-500"
+                            className="w-full bg-background border border-default rounded px-2 py-1 text-primary text-xs focus:outline-none focus:ring-1 focus:ring-primary-500"
                         />
                     </div>
                     <div>
-                        <label className="block text-[10px] text-slate-500 mb-0.5">Max Tok</label>
+                        <label className="block text-[10px] text-tertiary mb-0.5">Max Tok</label>
                         <input
                             type="number"
                             min="1"
                             max="32768"
                             value={settings.max_tokens}
                             onChange={(e) => onChange({ ...settings, max_tokens: parseInt(e.target.value) })}
-                            className="w-full bg-slate-900 border border-slate-600 rounded px-2 py-1 text-white text-xs focus:outline-none focus:ring-1 focus:ring-primary-500"
+                            className="w-full bg-background border border-default rounded px-2 py-1 text-primary text-xs focus:outline-none focus:ring-1 focus:ring-primary-500"
                         />
                     </div>
                     <div>
-                        <label className="block text-[10px] text-slate-500 mb-0.5">Seed</label>
+                        <label className="block text-[10px] text-tertiary mb-0.5">Seed</label>
                         <input
                             type="number"
                             min="0"
                             value={settings.seed}
                             onChange={(e) => onChange({ ...settings, seed: parseInt(e.target.value) })}
-                            className="w-full bg-slate-900 border border-slate-600 rounded px-2 py-1 text-white text-xs focus:outline-none focus:ring-1 focus:ring-primary-500"
+                            className="w-full bg-background border border-default rounded px-2 py-1 text-primary text-xs focus:outline-none focus:ring-1 focus:ring-primary-500"
                         />
                     </div>
                 </div>
@@ -303,7 +303,7 @@ function QueueBuilder({ queue, onQueueChange, onStartQueue, onRunningChange }) {
                 return <XCircle className="w-4 h-4 text-red-400" />
             case 'pending':
             default:
-                return <Pause className="w-4 h-4 text-slate-400" />
+                return <Pause className="w-4 h-4 text-tertiary" />
         }
     }
 
@@ -311,9 +311,9 @@ function QueueBuilder({ queue, onQueueChange, onStartQueue, onRunningChange }) {
         // Show running queue status
         const completed = queueStatus.items?.filter(i => i.status === 'completed').length || 0
         return (
-            <div className="bg-slate-800 rounded-xl border border-primary-500/50 p-6 mb-6">
+            <div className="bg-surface rounded-xl border border-primary-500/50 p-6 mb-6">
                 <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+                    <h2 className="text-lg font-semibold text-primary flex items-center gap-2">
                         <Loader2 className="w-5 h-5 text-primary-400 animate-spin" />
                         Queue Running ({completed}/{queueStatus.total})
                     </h2>
@@ -334,17 +334,17 @@ function QueueBuilder({ queue, onQueueChange, onStartQueue, onRunningChange }) {
                                 ? 'bg-primary-500/10 border border-primary-500/30'
                                 : item.status === 'completed'
                                     ? 'bg-green-500/10'
-                                    : 'bg-slate-700/50'
+                                    : 'bg-surface-active/50'
                                 }`}
                         >
                             {getStatusIcon(item.status)}
                             <div className="flex-1">
-                                <div className="font-medium text-white">{item.model}</div>
-                                <div className="text-xs text-slate-400">
+                                <div className="font-medium text-primary">{item.model}</div>
+                                <div className="text-xs text-tertiary">
                                     {formatBenchmarks(item.benchmarks)} • {item.sample_size} samples
                                 </div>
                                 {item.inference_settings && (
-                                    <div className="text-[10px] text-slate-500 mt-0.5 font-mono">
+                                    <div className="text-[10px] text-tertiary mt-0.5 font-mono">
                                         ⚙ T={item.inference_settings.temperature ?? 0}, P={item.inference_settings.top_p ?? 1}, K={item.inference_settings.top_k ?? -1}, Seed={item.inference_settings.seed ?? 42}
                                     </div>
                                 )}
@@ -355,7 +355,7 @@ function QueueBuilder({ queue, onQueueChange, onStartQueue, onRunningChange }) {
                                 </div>
                             )}
                             {item.duration_seconds && (
-                                <div className="text-sm text-slate-400">
+                                <div className="text-sm text-tertiary">
                                     {Math.floor(item.duration_seconds / 60)}m {Math.floor(item.duration_seconds % 60)}s
                                 </div>
                             )}
@@ -364,7 +364,7 @@ function QueueBuilder({ queue, onQueueChange, onStartQueue, onRunningChange }) {
                 </div>
 
                 {queueStatus.eta_seconds && (
-                    <div className="mt-4 text-sm text-slate-400 flex items-center gap-2">
+                    <div className="mt-4 text-sm text-tertiary flex items-center gap-2">
                         <Clock className="w-4 h-4" />
                         ETA: ~{Math.ceil(queueStatus.eta_seconds / 60)} minutes remaining
                     </div>
@@ -378,23 +378,23 @@ function QueueBuilder({ queue, onQueueChange, onStartQueue, onRunningChange }) {
     }
 
     return (
-        <div className="bg-slate-800 rounded-xl border border-slate-700 p-6 mb-6">
+        <div className="bg-surface rounded-xl border border-default p-6 mb-6">
             <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+                <h2 className="text-lg font-semibold text-primary flex items-center gap-2">
                     <ListOrdered className="w-5 h-5 text-primary-400" />
                     Queue ({queue.length} runs)
                 </h2>
                 <div className="flex items-center gap-2">
                     <button
                         onClick={clearQueue}
-                        className="px-3 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-700 transition-colors text-sm"
+                        className="px-3 py-1.5 rounded-lg text-tertiary hover:text-primary hover:bg-surface-active transition-colors text-sm"
                     >
                         Clear
                     </button>
                     <button
                         onClick={handleStartQueue}
                         disabled={starting || queue.length === 0}
-                        className="px-4 py-2 rounded-lg bg-gradient-to-r from-primary-500 to-purple-500 text-white font-medium hover:from-primary-600 hover:to-purple-600 disabled:opacity-50 flex items-center gap-2 transition-all"
+                        className="px-4 py-2 rounded-lg bg-gradient-to-r from-primary-500 to-purple-500 text-primary font-medium hover:from-primary-600 hover:to-purple-600 disabled:opacity-50 flex items-center gap-2 transition-all"
                     >
                         {starting ? (
                             <Loader2 className="w-4 h-4 animate-spin" />
@@ -410,19 +410,19 @@ function QueueBuilder({ queue, onQueueChange, onStartQueue, onRunningChange }) {
                 {queue.map((item, index) => (
                     <div
                         key={index}
-                        className="p-3 bg-slate-700/50 rounded-lg"
+                        className="p-3 bg-surface-active/50 rounded-lg"
                     >
                         <div className="flex items-center gap-3">
-                            <span className="w-6 h-6 rounded-full bg-slate-600 flex items-center justify-center text-sm font-medium text-white">
+                            <span className="w-6 h-6 rounded-full bg-slate-600 flex items-center justify-center text-sm font-medium text-primary">
                                 {index + 1}
                             </span>
                             <div className="flex-1">
-                                <div className="font-medium text-white">{item.model}</div>
-                                <div className="text-xs text-slate-400">
+                                <div className="font-medium text-primary">{item.model}</div>
+                                <div className="text-xs text-tertiary">
                                     {formatBenchmarks(item.benchmarks)} • {item.sample_size || 'all'} samples
                                 </div>
                             </div>
-                            <div className="text-sm text-slate-400 flex items-center gap-1">
+                            <div className="text-sm text-tertiary flex items-center gap-1">
                                 <Clock className="w-3 h-3" />
                                 ~{estimateTime(item)}min
                             </div>
@@ -430,27 +430,27 @@ function QueueBuilder({ queue, onQueueChange, onStartQueue, onRunningChange }) {
                                 <button
                                     onClick={() => duplicateItem(index)}
                                     title="Duplicate"
-                                    className="p-1.5 rounded text-slate-400 hover:text-primary-400 hover:bg-primary-500/10 transition-colors"
+                                    className="p-1.5 rounded text-tertiary hover:text-primary-400 hover:bg-primary-500/10 transition-colors"
                                 >
                                     <Copy className="w-4 h-4" />
                                 </button>
                                 <button
                                     onClick={() => moveUp(index)}
                                     disabled={index === 0}
-                                    className="p-1.5 rounded text-slate-400 hover:text-white hover:bg-slate-600 disabled:opacity-30 transition-colors"
+                                    className="p-1.5 rounded text-tertiary hover:text-primary hover:bg-surface-hover disabled:opacity-30 transition-colors"
                                 >
                                     <ChevronUp className="w-4 h-4" />
                                 </button>
                                 <button
                                     onClick={() => moveDown(index)}
                                     disabled={index === queue.length - 1}
-                                    className="p-1.5 rounded text-slate-400 hover:text-white hover:bg-slate-600 disabled:opacity-30 transition-colors"
+                                    className="p-1.5 rounded text-tertiary hover:text-primary hover:bg-surface-hover disabled:opacity-30 transition-colors"
                                 >
                                     <ChevronDown className="w-4 h-4" />
                                 </button>
                                 <button
                                     onClick={() => removeFromQueue(index)}
-                                    className="p-1.5 rounded text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                                    className="p-1.5 rounded text-tertiary hover:text-red-400 hover:bg-red-500/10 transition-colors"
                                 >
                                     <Trash2 className="w-4 h-4" />
                                 </button>
@@ -466,8 +466,8 @@ function QueueBuilder({ queue, onQueueChange, onStartQueue, onRunningChange }) {
                 ))}
             </div>
 
-            <div className="mt-4 pt-4 border-t border-slate-700 flex items-center justify-between text-sm">
-                <div className="text-slate-400 flex items-center gap-2">
+            <div className="mt-4 pt-4 border-t border-default flex items-center justify-between text-sm">
+                <div className="text-tertiary flex items-center gap-2">
                     <Clock className="w-4 h-4" />
                     Total estimated: ~{totalEstimatedMinutes} minutes
                 </div>

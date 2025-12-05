@@ -42,8 +42,8 @@ function ParamTooltip({ children, tooltip }) {
         {children}
       </div>
       {show && (
-        <div className="absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-2 w-72 p-3 bg-slate-900 border border-slate-600 rounded-lg shadow-xl text-xs">
-          <div className="text-slate-200 leading-relaxed whitespace-pre-line">{tooltip}</div>
+        <div className="absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-2 w-72 p-3 bg-surface border border-default rounded-lg shadow-xl text-xs">
+          <div className="text-secondary leading-relaxed whitespace-pre-line">{tooltip}</div>
           <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1">
             <div className="border-4 border-transparent border-t-slate-600"></div>
           </div>
@@ -310,12 +310,12 @@ function RunManager({ onRunStart }) {
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-2">
-          <div className="w-10 h-10 bg-amber-500 rounded-xl flex items-center justify-center">
+          <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl flex items-center justify-center shadow-lg shadow-amber-500/25">
             <Play className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-white">Run Evaluation</h1>
-            <p className="text-sm text-slate-400">Configure and benchmark your LLM models</p>
+            <h1 className="text-2xl font-bold text-primary">Run Evaluation</h1>
+            <p className="text-sm text-secondary">Configure and benchmark your LLM models</p>
           </div>
         </div>
       </div>
@@ -332,7 +332,7 @@ function RunManager({ onRunStart }) {
 
       {/* Quick Presets */}
       <div className="mb-8">
-        <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+        <h2 className="text-lg font-semibold text-slate-900 dark:text-primary mb-4 flex items-center gap-2">
           <Zap className="w-5 h-5 text-yellow-400" />
           Evaluation Presets
         </h2>
@@ -349,7 +349,7 @@ function RunManager({ onRunStart }) {
               preset.category === 'Knowledge' ? 'text-blue-400' :
                 preset.category === 'Reasoning' ? 'text-purple-400' :
                   preset.category === 'Safety' ? 'text-green-400' :
-                    preset.category === 'Complete' ? 'text-primary-400' : 'text-slate-400'
+                    preset.category === 'Complete' ? 'text-primary-400' : 'text-tertiary'
 
             return (
               <button
@@ -357,29 +357,28 @@ function RunManager({ onRunStart }) {
                 onClick={() => handlePresetChange(preset.id)}
                 className={`p-4 rounded-lg border text-left transition-all card-hover ${selectedPreset === preset.id
                   ? 'bg-primary-500/20 border-primary-500/50'
-                  : 'bg-slate-800 border-slate-700 hover:border-slate-600'
+                  : 'bg-surface border-default hover:border-interactive'
                   }`}
               >
                 <div className="flex items-center gap-2 mb-2">
                   <PresetIcon className={`w-5 h-5 ${iconColor}`} />
-                  <h3 className="font-semibold text-white">{preset.name}</h3>
-                  <span className="ml-auto text-xs text-slate-500 bg-slate-700 px-2 py-0.5 rounded">
+                  <h3 className="font-semibold text-primary">{preset.name}</h3>
+                  <span className="ml-auto text-xs text-tertiary bg-surface-active px-2 py-0.5 rounded">
                     {preset.questions_per_dataset || 'All'} samples
                   </span>
                 </div>
-                <p className="text-sm text-slate-400 mb-3">{preset.description}</p>
+                <p className="text-sm text-tertiary mb-3">{preset.description}</p>
                 <div className="flex gap-1.5 flex-wrap">
                   {preset.benchmarks.map(b => (
-                    <span key={b} className="px-2 py-0.5 bg-slate-700/50 rounded text-xs text-slate-300 capitalize">
-                      {b === 'mmlu' ? 'MMLU' :
-                        b === 'truthfulqa' ? 'TruthfulQA' :
-                          b === 'hellaswag' ? 'HellaSwag' :
-                            b === 'arc' ? 'ARC' :
-                              b === 'winogrande' ? 'WinoGrande' :
-                                b === 'commonsenseqa' ? 'CommonsenseQA' :
-                                  b === 'boolq' ? 'BoolQ' :
-                                    b === 'safetybench' ? 'SafetyBench' :
-                                      b === 'donotanswer' ? 'Do-Not-Answer' : b}
+                    <span key={b} className="px-2 py-0.5 bg-surface-hover rounded text-xs text-secondary capitalize">{b === 'mmlu' ? 'MMLU' :
+                      b === 'truthfulqa' ? 'TruthfulQA' :
+                        b === 'hellaswag' ? 'HellaSwag' :
+                          b === 'arc' ? 'ARC' :
+                            b === 'winogrande' ? 'WinoGrande' :
+                              b === 'commonsenseqa' ? 'CommonsenseQA' :
+                                b === 'boolq' ? 'BoolQ' :
+                                  b === 'safetybench' ? 'SafetyBench' :
+                                    b === 'donotanswer' ? 'Do-Not-Answer' : b}
                     </span>
                   ))}
                 </div>
@@ -390,16 +389,16 @@ function RunManager({ onRunStart }) {
       </div>
 
       {/* Configuration */}
-      <div className="bg-slate-800 rounded-xl border border-slate-700 p-6 mb-6">
-        <h2 className="text-lg font-semibold text-white mb-6 flex items-center gap-2">
-          <Settings className="w-5 h-5 text-slate-400" />
+      <div className="bg-surface rounded-xl border border-default p-6 mb-6">
+        <h2 className="text-lg font-semibold text-primary mb-6 flex items-center gap-2">
+          <Settings className="w-5 h-5 text-tertiary" />
           Configuration
         </h2>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Provider */}
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
+            <label className="block text-sm font-medium text-secondary mb-2">
               <Server className="w-4 h-4 inline mr-2" />
               Provider
             </label>
@@ -410,7 +409,7 @@ function RunManager({ onRunStart }) {
                 const providerModels = models.find(m => m.provider === e.target.value)?.models || []
                 setSelectedModel(providerModels[0] || '')
               }}
-              className="w-full bg-slate-900 border border-slate-600 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full bg-background border border-default rounded-lg px-4 py-2.5 text-primary focus:outline-none focus:ring-2 focus:ring-interactive"
             >
               {models.map(m => (
                 <option key={m.provider} value={m.provider}>{m.provider}</option>
@@ -420,14 +419,14 @@ function RunManager({ onRunStart }) {
 
           {/* Model */}
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
+            <label className="block text-sm font-medium text-secondary mb-2">
               <Database className="w-4 h-4 inline mr-2" />
               Model
             </label>
             <select
               value={selectedModel}
               onChange={(e) => setSelectedModel(e.target.value)}
-              className="w-full bg-slate-900 border border-slate-600 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full bg-background border border-default rounded-lg px-4 py-2.5 text-primary focus:outline-none focus:ring-2 focus:ring-interactive"
             >
               {selectedProviderModels.map(model => (
                 <option key={model} value={model}>{model}</option>
@@ -438,19 +437,19 @@ function RunManager({ onRunStart }) {
           {/* Base URL for custom providers */}
           {(selectedProvider === 'openai' || selectedProvider === 'ollama') && (
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-slate-300 mb-2">
+              <label className="block text-sm font-medium text-secondary dark:text-secondary mb-2">
                 <Server className="w-4 h-4 inline mr-2" />
                 Custom Base URL
-                <span className="ml-2 text-xs text-slate-500">(optional)</span>
+                <span className="ml-2 text-xs text-tertiary">(optional)</span>
               </label>
               <input
                 type="text"
                 value={baseUrl}
                 onChange={(e) => setBaseUrl(e.target.value)}
                 placeholder={selectedProvider === 'ollama' ? 'http://localhost:11434' : 'https://api.openai.com/v1'}
-                className="w-full bg-slate-900 border border-slate-600 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-primary-500 placeholder-slate-500"
+                className="w-full bg-surface dark:bg-background border border-default dark:border-default rounded-lg px-4 py-2.5 text-slate-900 dark:text-primary focus:outline-none focus:ring-2 focus:ring-primary-500 placeholder-slate-400 dark:placeholder-slate-500"
               />
-              <p className="mt-1 text-xs text-slate-500">
+              <p className="mt-1 text-xs text-tertiary">
                 For OpenAI-compatible APIs: vLLM, LM Studio, Together.ai, Azure OpenAI, etc.
               </p>
             </div>
@@ -459,10 +458,10 @@ function RunManager({ onRunStart }) {
           {/* API Key for cloud providers */}
           {(selectedProvider === 'openai' || selectedProvider === 'anthropic' || selectedProvider === 'deepseek') && (
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-slate-300 mb-2">
+              <label className="block text-sm font-medium text-secondary dark:text-secondary mb-2">
                 <Key className="w-4 h-4 inline mr-2" />
                 API Key
-                <span className="ml-2 text-xs text-slate-500">(or set via environment variable)</span>
+                <span className="ml-2 text-xs text-tertiary">(or set via environment variable)</span>
               </label>
               <div className="relative">
                 <input
@@ -474,17 +473,17 @@ function RunManager({ onRunStart }) {
                       selectedProvider === 'anthropic' ? 'sk-ant-... or leave empty to use ANTHROPIC_API_KEY env var' :
                         'Leave empty to use DEEPSEEK_API_KEY env var'
                   }
-                  className="w-full bg-slate-900 border border-slate-600 rounded-lg px-4 py-2.5 pr-12 text-white focus:outline-none focus:ring-2 focus:ring-primary-500 placeholder-slate-500"
+                  className="w-full bg-surface dark:bg-background border border-default dark:border-default rounded-lg px-4 py-2.5 pr-12 text-slate-900 dark:text-primary focus:outline-none focus:ring-2 focus:ring-primary-500 placeholder-slate-400 dark:placeholder-slate-500"
                 />
                 <button
                   type="button"
                   onClick={() => setShowApiKey(!showApiKey)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-tertiary hover:text-primary transition-colors"
                 >
                   {showApiKey ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
-              <p className="mt-1 text-xs text-slate-500">
+              <p className="mt-1 text-xs text-tertiary">
                 {selectedProvider === 'openai' && '💡 Tip: Set OPENAI_API_KEY environment variable before starting the dashboard'}
                 {selectedProvider === 'anthropic' && '💡 Tip: Set ANTHROPIC_API_KEY environment variable before starting the dashboard'}
                 {selectedProvider === 'deepseek' && '💡 Tip: Set DEEPSEEK_API_KEY environment variable before starting the dashboard'}
@@ -494,7 +493,7 @@ function RunManager({ onRunStart }) {
 
           {/* Questions per dataset */}
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-slate-300 mb-2">
+            <label className="block text-sm font-medium text-secondary mb-2">
               Questions per Dataset
             </label>
             <div className="flex gap-4 items-start">
@@ -506,18 +505,18 @@ function RunManager({ onRunStart }) {
                   value={questionsPerDataset}
                   onChange={(e) => setQuestionsPerDataset(parseInt(e.target.value) || 10)}
                   disabled={useAllSamples}
-                  className={`w-full bg-slate-900 border border-slate-600 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-primary-500 ${useAllSamples ? 'opacity-50 cursor-not-allowed' : ''
+                  className={`w-full bg-background border border-default rounded-lg px-4 py-2.5 text-primary focus:outline-none focus:ring-2 focus:ring-primary-500 ${useAllSamples ? 'opacity-50 cursor-not-allowed' : ''
                     }`}
                 />
               </div>
-              <label className="flex items-center gap-2 bg-slate-900 border border-slate-600 rounded-lg px-4 py-2.5 cursor-pointer hover:border-slate-500 transition-colors">
+              <label className="flex items-center gap-2 bg-surface dark:bg-background border border-default dark:border-default rounded-lg px-4 py-2.5 cursor-pointer hover:border-slate-400 dark:hover:border-slate-500 transition-colors">
                 <input
                   type="checkbox"
                   checked={useAllSamples}
                   onChange={(e) => setUseAllSamples(e.target.checked)}
-                  className="w-4 h-4 rounded border-slate-600 bg-slate-900 text-primary-500 focus:ring-primary-500"
+                  className="w-4 h-4 rounded border-default dark:border-default bg-surface dark:bg-background text-primary-500 focus:ring-primary-500"
                 />
-                <span className="text-sm text-slate-300 whitespace-nowrap">Use all available</span>
+                <span className="text-sm text-secondary dark:text-secondary whitespace-nowrap">Use all available</span>
               </label>
             </div>
             {useAllSamples && (
@@ -534,7 +533,7 @@ function RunManager({ onRunStart }) {
 
         {/* Benchmarks */}
         <div className="mt-6">
-          <label className="block text-sm font-medium text-slate-300 mb-4 flex items-center gap-2">
+          <label className="block text-sm font-medium text-secondary dark:text-secondary mb-4 flex items-center gap-2">
             <BookOpen className="w-4 h-4" />
             Select Benchmarks
           </label>
@@ -543,8 +542,8 @@ function RunManager({ onRunStart }) {
           <div className="mb-6">
             <div className="flex items-center gap-2 mb-3">
               <Brain className="w-4 h-4 text-primary-400" />
-              <span className="text-sm font-medium text-slate-400">Knowledge & Reasoning</span>
-              <span className="text-xs text-slate-500">
+              <span className="text-sm font-medium text-secondary dark:text-tertiary">Knowledge & Reasoning</span>
+              <span className="text-xs text-tertiary">
                 ({benchmarks.filter(b => !['safetybench', 'donotanswer'].includes(b.id)).length} benchmarks)
               </span>
             </div>
@@ -586,30 +585,30 @@ function RunManager({ onRunStart }) {
                       p-4 rounded-xl border-2 text-left transition-all
                       ${isSelected
                         ? 'border-primary-500 bg-primary-500/10 shadow-lg shadow-primary-500/10'
-                        : 'border-slate-700 hover:border-slate-500 bg-slate-800/50'
+                        : 'border-default hover:border-slate-500 bg-surface/50'
                       }
                     `}
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-2">
                         <span className="text-lg">{icons[benchmark.id] || '📋'}</span>
-                        <span className="font-medium text-white">{benchmark.name}</span>
+                        <span className="font-medium text-primary">{benchmark.name}</span>
                       </div>
                       <div className={`
                         w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all
                         ${isSelected
                           ? 'border-primary-500 bg-primary-500'
-                          : 'border-slate-600'
+                          : 'border-default'
                         }
                       `}>
-                        {isSelected && <CheckCircle className="w-3 h-3 text-white" />}
+                        {isSelected && <CheckCircle className="w-3 h-3 text-primary" />}
                       </div>
                     </div>
-                    <p className="text-xs text-slate-400 mt-1.5">
+                    <p className="text-xs text-tertiary mt-1.5">
                       {descriptions[benchmark.id] || benchmark.description}
                     </p>
                     <div className="flex items-center gap-2 mt-2">
-                      <span className="text-xs text-slate-500 font-mono flex items-center gap-1">
+                      <span className="text-xs text-tertiary font-mono flex items-center gap-1">
                         <Hash className="w-3 h-3" />
                         {benchmark.questions_count >= 1000
                           ? `${(benchmark.questions_count / 1000).toFixed(1)}K`
@@ -626,8 +625,8 @@ function RunManager({ onRunStart }) {
           <div>
             <div className="flex items-center gap-2 mb-3">
               <Shield className="w-4 h-4 text-emerald-400" />
-              <span className="text-sm font-medium text-slate-400">Safety & Security</span>
-              <span className="text-xs text-slate-500">
+              <span className="text-sm font-medium text-tertiary">Safety & Security</span>
+              <span className="text-xs text-tertiary">
                 ({benchmarks.filter(b => ['safetybench', 'donotanswer'].includes(b.id)).length} benchmarks)
               </span>
             </div>
@@ -657,30 +656,30 @@ function RunManager({ onRunStart }) {
                       p-4 rounded-xl border-2 text-left transition-all
                       ${isSelected
                         ? 'border-emerald-500 bg-emerald-500/10 shadow-lg shadow-emerald-500/10'
-                        : 'border-slate-700 hover:border-slate-500 bg-slate-800/50'
+                        : 'border-default hover:border-slate-500 bg-surface/50'
                       }
                     `}
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-2">
                         <span className="text-lg">{icons[benchmark.id] || '📋'}</span>
-                        <span className="font-medium text-white">{benchmark.name}</span>
+                        <span className="font-medium text-primary">{benchmark.name}</span>
                       </div>
                       <div className={`
                         w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all
                         ${isSelected
                           ? 'border-emerald-500 bg-emerald-500'
-                          : 'border-slate-600'
+                          : 'border-default'
                         }
                       `}>
-                        {isSelected && <CheckCircle className="w-3 h-3 text-white" />}
+                        {isSelected && <CheckCircle className="w-3 h-3 text-primary" />}
                       </div>
                     </div>
-                    <p className="text-xs text-slate-400 mt-1.5">
+                    <p className="text-xs text-tertiary mt-1.5">
                       {descriptions[benchmark.id] || benchmark.description}
                     </p>
                     <div className="flex items-center gap-2 mt-2">
-                      <span className="text-xs text-slate-500 font-mono flex items-center gap-1">
+                      <span className="text-xs text-tertiary font-mono flex items-center gap-1">
                         <Hash className="w-3 h-3" />
                         {benchmark.questions_count >= 1000
                           ? `${(benchmark.questions_count / 1000).toFixed(1)}K`
@@ -697,13 +696,13 @@ function RunManager({ onRunStart }) {
           <div className="mt-4 flex gap-2">
             <button
               onClick={() => setSelectedBenchmarks(benchmarks.map(b => b.id))}
-              className="text-xs px-3 py-1.5 rounded-lg bg-slate-700 text-slate-300 hover:bg-slate-600 transition-colors"
+              className="text-xs px-3 py-1.5 rounded-lg bg-surface-active text-secondary hover:bg-surface-hover transition-colors"
             >
               Select All
             </button>
             <button
               onClick={() => setSelectedBenchmarks([])}
-              className="text-xs px-3 py-1.5 rounded-lg bg-slate-700 text-slate-300 hover:bg-slate-600 transition-colors"
+              className="text-xs px-3 py-1.5 rounded-lg bg-surface-active text-secondary hover:bg-surface-hover transition-colors"
             >
               Clear All
             </button>
@@ -725,106 +724,106 @@ function RunManager({ onRunStart }) {
 
       {/* Model Info Panel */}
       {modelInfo && (
-        <div className="bg-slate-800 rounded-xl border border-slate-700 p-6 mb-6">
-          <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-            <Info className="w-5 h-5 text-blue-400" />
+        <div className="bg-surface rounded-xl border border-default p-6 mb-6">
+          <h2 className="text-lg font-semibold text-primary mb-4 flex items-center gap-2">
+            <Info className="w-5 h-5 text-info" />
             Model Information
-            {loadingModelInfo && <Loader2 className="w-4 h-4 animate-spin text-slate-400" />}
+            {loadingModelInfo && <Loader2 className="w-4 h-4 animate-spin text-tertiary" />}
           </h2>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {modelInfo.architecture?.parameter_count && (
-              <div className="bg-slate-900 rounded-lg p-3">
-                <div className="text-xs text-slate-400 mb-1">Parameters</div>
-                <div className="text-lg font-semibold text-white">{modelInfo.architecture.parameter_count}</div>
+              <div className="bg-surface-active rounded-lg p-3">
+                <div className="text-xs text-tertiary mb-1">Parameters</div>
+                <div className="text-lg font-semibold text-primary">{modelInfo.architecture.parameter_count}</div>
               </div>
             )}
             {modelInfo.context?.context_length && (
-              <div className="bg-slate-900 rounded-lg p-3">
-                <div className="text-xs text-slate-400 mb-1">Context Window</div>
-                <div className="text-lg font-semibold text-white">{modelInfo.context.context_length.toLocaleString()}</div>
+              <div className="bg-surface-active rounded-lg p-3">
+                <div className="text-xs text-tertiary mb-1">Context Window</div>
+                <div className="text-lg font-semibold text-primary">{modelInfo.context.context_length.toLocaleString()}</div>
               </div>
             )}
             {modelInfo.architecture?.quantization && (
-              <div className="bg-slate-900 rounded-lg p-3">
-                <div className="text-xs text-slate-400 mb-1">Quantization</div>
-                <div className="text-lg font-semibold text-white">{modelInfo.architecture.quantization}</div>
+              <div className="bg-surface-active rounded-lg p-3">
+                <div className="text-xs text-tertiary mb-1">Quantization</div>
+                <div className="text-lg font-semibold text-primary">{modelInfo.architecture.quantization}</div>
               </div>
             )}
             {modelInfo.architecture?.family && (
-              <div className="bg-slate-900 rounded-lg p-3">
-                <div className="text-xs text-slate-400 mb-1">Family</div>
-                <div className="text-lg font-semibold text-white">{modelInfo.architecture.family}</div>
+              <div className="bg-surface-active rounded-lg p-3">
+                <div className="text-xs text-tertiary mb-1">Family</div>
+                <div className="text-lg font-semibold text-primary">{modelInfo.architecture.family}</div>
               </div>
             )}
             {modelInfo.architecture?.format && (
-              <div className="bg-slate-900 rounded-lg p-3">
-                <div className="text-xs text-slate-400 mb-1">Format</div>
-                <div className="text-lg font-semibold text-white">{modelInfo.architecture.format}</div>
+              <div className="bg-surface-active rounded-lg p-3">
+                <div className="text-xs text-tertiary mb-1">Format</div>
+                <div className="text-lg font-semibold text-primary">{modelInfo.architecture.format}</div>
               </div>
             )}
             {modelInfo.architecture?.embedding_length && (
-              <div className="bg-slate-900 rounded-lg p-3">
-                <div className="text-xs text-slate-400 mb-1">Embedding Dim</div>
-                <div className="text-lg font-semibold text-white">{modelInfo.architecture.embedding_length.toLocaleString()}</div>
+              <div className="bg-surface-active rounded-lg p-3">
+                <div className="text-xs text-tertiary mb-1">Embedding Dim</div>
+                <div className="text-lg font-semibold text-primary">{modelInfo.architecture.embedding_length.toLocaleString()}</div>
               </div>
             )}
             {modelInfo.architecture?.attention_heads && (
-              <div className="bg-slate-900 rounded-lg p-3">
-                <div className="text-xs text-slate-400 mb-1">Attention Heads</div>
-                <div className="text-lg font-semibold text-white">{modelInfo.architecture.attention_heads}</div>
+              <div className="bg-surface-active rounded-lg p-3">
+                <div className="text-xs text-tertiary mb-1">Attention Heads</div>
+                <div className="text-lg font-semibold text-primary">{modelInfo.architecture.attention_heads}</div>
               </div>
             )}
             {modelInfo.architecture?.layers && (
-              <div className="bg-slate-900 rounded-lg p-3">
-                <div className="text-xs text-slate-400 mb-1">Layers</div>
-                <div className="text-lg font-semibold text-white">{modelInfo.architecture.layers}</div>
+              <div className="bg-surface-active rounded-lg p-3">
+                <div className="text-xs text-tertiary mb-1">Layers</div>
+                <div className="text-lg font-semibold text-primary">{modelInfo.architecture.layers}</div>
               </div>
             )}
             {modelInfo.architecture?.vocab_size && (
-              <div className="bg-slate-900 rounded-lg p-3">
-                <div className="text-xs text-slate-400 mb-1">Vocab Size</div>
-                <div className="text-lg font-semibold text-white">{modelInfo.architecture.vocab_size.toLocaleString()}</div>
+              <div className="bg-surface-active rounded-lg p-3">
+                <div className="text-xs text-tertiary mb-1">Vocab Size</div>
+                <div className="text-lg font-semibold text-primary">{modelInfo.architecture.vocab_size.toLocaleString()}</div>
               </div>
             )}
           </div>
 
           {/* Show message if no architecture info available */}
           {!modelInfo.architecture && !modelInfo.error && (
-            <p className="text-slate-400 text-sm">No detailed model information available</p>
+            <p className="text-tertiary text-sm">No detailed model information available</p>
           )}
           {modelInfo.error && (
-            <p className="text-red-400 text-sm">Could not load model info: {modelInfo.error}</p>
+            <p className="text-error text-sm">Could not load model info: {modelInfo.error}</p>
           )}
         </div>
       )}
 
       {/* Advanced Settings (Inference Parameters) */}
-      <div className="bg-slate-800 rounded-xl border border-slate-700 mb-6">
+      <div className="bg-surface rounded-xl border border-default mb-6">
         <button
           onClick={() => setShowAdvanced(!showAdvanced)}
-          className="w-full p-4 flex items-center justify-between text-left hover:bg-slate-700/50 rounded-xl transition-colors"
+          className="w-full p-4 flex items-center justify-between text-left hover:bg-surface-hover rounded-xl transition-colors"
         >
           <div className="flex items-center gap-2">
-            <Sliders className="w-5 h-5 text-orange-400" />
-            <span className="font-semibold text-white">Inference Parameters</span>
-            <span className="text-xs text-slate-400">(for reproducibility)</span>
+            <Sliders className="w-5 h-5 text-accent" />
+            <span className="font-semibold text-primary">Inference Parameters</span>
+            <span className="text-xs text-tertiary">(for reproducibility)</span>
           </div>
           {showAdvanced ? (
-            <ChevronUp className="w-5 h-5 text-slate-400" />
+            <ChevronUp className="w-5 h-5 text-tertiary" />
           ) : (
-            <ChevronDown className="w-5 h-5 text-slate-400" />
+            <ChevronDown className="w-5 h-5 text-tertiary" />
           )}
         </button>
 
         {showAdvanced && (
-          <div className="p-6 pt-2 border-t border-slate-700">
+          <div className="p-6 pt-2 border-t border-default">
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
               <div>
-                <label className="flex items-center gap-1.5 text-xs text-slate-400 mb-1">
+                <label className="flex items-center gap-1.5 text-xs text-tertiary mb-1">
                   Temperature
                   <ParamTooltip tooltip={PARAM_TOOLTIPS.temperature}>
-                    <Info className="w-3.5 h-3.5 text-slate-500 hover:text-primary-400 transition-colors" />
+                    <Info className="w-3.5 h-3.5 text-tertiary hover:text-interactive transition-colors" />
                   </ParamTooltip>
                 </label>
                 <input
@@ -834,16 +833,16 @@ function RunManager({ onRunStart }) {
                   max="2"
                   value={inferenceSettings.temperature}
                   onChange={(e) => setInferenceSettings({ ...inferenceSettings, temperature: parseFloat(e.target.value) })}
-                  className="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="w-full bg-background border border-default rounded-lg px-3 py-2 text-primary text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
-                <div className="text-xs text-slate-500 mt-1">0 = deterministic</div>
+                <div className="text-xs text-tertiary mt-1">0 = deterministic</div>
               </div>
 
               <div>
-                <label className="flex items-center gap-1.5 text-xs text-slate-400 mb-1">
+                <label className="flex items-center gap-1.5 text-xs text-tertiary mb-1">
                   Top P
                   <ParamTooltip tooltip={PARAM_TOOLTIPS.top_p}>
-                    <Info className="w-3.5 h-3.5 text-slate-500 hover:text-primary-400 transition-colors" />
+                    <Info className="w-3.5 h-3.5 text-tertiary hover:text-primary-400 transition-colors" />
                   </ParamTooltip>
                 </label>
                 <input
@@ -853,16 +852,16 @@ function RunManager({ onRunStart }) {
                   max="1"
                   value={inferenceSettings.top_p}
                   onChange={(e) => setInferenceSettings({ ...inferenceSettings, top_p: parseFloat(e.target.value) })}
-                  className="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="w-full bg-background border border-default rounded-lg px-3 py-2 text-primary text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
-                <div className="text-xs text-slate-500 mt-1">Nucleus sampling</div>
+                <div className="text-xs text-tertiary mt-1">Nucleus sampling</div>
               </div>
 
               <div>
-                <label className="flex items-center gap-1.5 text-xs text-slate-400 mb-1">
+                <label className="flex items-center gap-1.5 text-xs text-tertiary mb-1">
                   Top K
                   <ParamTooltip tooltip={PARAM_TOOLTIPS.top_k}>
-                    <Info className="w-3.5 h-3.5 text-slate-500 hover:text-primary-400 transition-colors" />
+                    <Info className="w-3.5 h-3.5 text-tertiary hover:text-primary-400 transition-colors" />
                   </ParamTooltip>
                 </label>
                 <input
@@ -871,16 +870,16 @@ function RunManager({ onRunStart }) {
                   max="100"
                   value={inferenceSettings.top_k}
                   onChange={(e) => setInferenceSettings({ ...inferenceSettings, top_k: parseInt(e.target.value) })}
-                  className="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="w-full bg-background border border-default rounded-lg px-3 py-2 text-primary text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
-                <div className="text-xs text-slate-500 mt-1">-1 = disabled</div>
+                <div className="text-xs text-tertiary mt-1">-1 = disabled</div>
               </div>
 
               <div>
-                <label className="flex items-center gap-1.5 text-xs text-slate-400 mb-1">
+                <label className="flex items-center gap-1.5 text-xs text-tertiary mb-1">
                   Max Tokens
                   <ParamTooltip tooltip={PARAM_TOOLTIPS.max_tokens}>
-                    <Info className="w-3.5 h-3.5 text-slate-500 hover:text-primary-400 transition-colors" />
+                    <Info className="w-3.5 h-3.5 text-tertiary hover:text-primary-400 transition-colors" />
                   </ParamTooltip>
                 </label>
                 <input
@@ -889,16 +888,16 @@ function RunManager({ onRunStart }) {
                   max="32768"
                   value={inferenceSettings.max_tokens}
                   onChange={(e) => setInferenceSettings({ ...inferenceSettings, max_tokens: parseInt(e.target.value) })}
-                  className="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="w-full bg-background border border-default rounded-lg px-3 py-2 text-primary text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
-                <div className="text-xs text-slate-500 mt-1">Response limit</div>
+                <div className="text-xs text-tertiary mt-1">Response limit</div>
               </div>
 
               <div>
-                <label className="flex items-center gap-1.5 text-xs text-slate-400 mb-1">
+                <label className="flex items-center gap-1.5 text-xs text-tertiary mb-1">
                   Seed
                   <ParamTooltip tooltip={PARAM_TOOLTIPS.seed}>
-                    <Info className="w-3.5 h-3.5 text-slate-500 hover:text-primary-400 transition-colors" />
+                    <Info className="w-3.5 h-3.5 text-tertiary hover:text-primary-400 transition-colors" />
                   </ParamTooltip>
                 </label>
                 <input
@@ -906,9 +905,9 @@ function RunManager({ onRunStart }) {
                   min="0"
                   value={inferenceSettings.seed}
                   onChange={(e) => setInferenceSettings({ ...inferenceSettings, seed: parseInt(e.target.value) })}
-                  className="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="w-full bg-background border border-default rounded-lg px-3 py-2 text-primary text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
-                <div className="text-xs text-slate-500 mt-1">Reproducibility</div>
+                <div className="text-xs text-tertiary mt-1">Reproducibility</div>
               </div>
             </div>
           </div>
@@ -925,7 +924,7 @@ function RunManager({ onRunStart }) {
 
       {/* Action Buttons */}
       <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-8 pt-6 border-t border-surface-700">
-        <div className="text-sm text-slate-400">
+        <div className="text-sm text-tertiary">
           {selectedBenchmarks.length > 0 ? (
             <span className="flex items-center gap-2">
               <CheckCircle className="w-4 h-4 text-primary-400" />
@@ -933,14 +932,14 @@ function RunManager({ onRunStart }) {
               {!useAllSamples && ` • ${questionsPerDataset} samples each`}
             </span>
           ) : (
-            <span className="text-slate-500">Select at least one benchmark to continue</span>
+            <span className="text-tertiary">Select at least one benchmark to continue</span>
           )}
         </div>
 
         <div className="flex gap-3">
           <button
             onClick={loadData}
-            className="btn-secondary"
+            className="btn btn-secondary"
           >
             <RefreshCw className="w-4 h-4" />
             Refresh
@@ -948,7 +947,7 @@ function RunManager({ onRunStart }) {
           <button
             onClick={handleAddToQueue}
             disabled={!selectedModel || selectedBenchmarks.length === 0}
-            className="btn-ghost border border-primary-500/30 text-primary-400 hover:bg-primary-500/10 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="btn btn-ghost border-2 border-interactive text-interactive hover:bg-interactive-bg"
           >
             <Plus className="w-5 h-5" />
             Add to Queue
@@ -957,7 +956,7 @@ function RunManager({ onRunStart }) {
             <button
               onClick={handleStartRun}
               disabled={starting || !selectedModel || selectedBenchmarks.length === 0}
-              className="btn-accent px-6 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="btn btn-accent px-6"
             >
               {starting ? (
                 <>

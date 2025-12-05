@@ -131,8 +131,14 @@ function ProgressViewer({ activeRun }) {
 
   // Auto-scroll queue logs only if user is near bottom
   useEffect(() => {
-    if (autoScrollQueueLogs) {
-      queueLogsEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    if (autoScrollQueueLogs && queueLogsEndRef.current) {
+      // Use a small delay to avoid jarring scroll during user interaction
+      const timeoutId = setTimeout(() => {
+        if (autoScrollQueueLogs) { // Check again after delay
+          queueLogsEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+        }
+      }, 100)
+      return () => clearTimeout(timeoutId)
     }
   }, [currentQueueRun?.logs, autoScrollQueueLogs])
 
@@ -193,34 +199,64 @@ function ProgressViewer({ activeRun }) {
   }, [activeRun])
 
   useEffect(() => {
-    if (autoScrollLogs) {
-      logsEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    if (autoScrollLogs && logsEndRef.current) {
+      // Use a small delay to avoid jarring scroll during user interaction
+      const timeoutId = setTimeout(() => {
+        if (autoScrollLogs) { // Check again after delay
+          logsEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+        }
+      }, 100)
+      return () => clearTimeout(timeoutId)
     }
   }, [run?.logs, autoScrollLogs])
 
   // Detect manual scroll and disable auto-scroll if user scrolls up
   useEffect(() => {
-    const handleLogsScroll = (e) => {
-      const container = e.target
-      const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100
-      setAutoScrollLogs(isNearBottom)
+    const handleLogsScroll = () => {
+      if (!logsContainerRef.current) return
+      const container = logsContainerRef.current
+      // Check if user is near the bottom (within 150px)
+      const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 150
+      // Only update if state actually changed to avoid unnecessary re-renders
+      setAutoScrollLogs(prev => {
+        if (prev !== isNearBottom) {
+          return isNearBottom
+        }
+        return prev
+      })
     }
 
-    const handleQueueLogsScroll = (e) => {
-      const container = e.target
-      const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100
-      setAutoScrollQueueLogs(isNearBottom)
+    const handleQueueLogsScroll = () => {
+      if (!queueLogsContainerRef.current) return
+      const container = queueLogsContainerRef.current
+      // Check if user is near the bottom (within 150px)
+      const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 150
+      // Only update if state actually changed
+      setAutoScrollQueueLogs(prev => {
+        if (prev !== isNearBottom) {
+          return isNearBottom
+        }
+        return prev
+      })
     }
 
     const logsContainer = logsContainerRef.current
     const queueLogsContainer = queueLogsContainerRef.current
 
-    logsContainer?.addEventListener('scroll', handleLogsScroll)
-    queueLogsContainer?.addEventListener('scroll', handleQueueLogsScroll)
+    if (logsContainer) {
+      logsContainer.addEventListener('scroll', handleLogsScroll, { passive: true })
+    }
+    if (queueLogsContainer) {
+      queueLogsContainer.addEventListener('scroll', handleQueueLogsScroll, { passive: true })
+    }
 
     return () => {
-      logsContainer?.removeEventListener('scroll', handleLogsScroll)
-      queueLogsContainer?.removeEventListener('scroll', handleQueueLogsScroll)
+      if (logsContainer) {
+        logsContainer.removeEventListener('scroll', handleLogsScroll)
+      }
+      if (queueLogsContainer) {
+        queueLogsContainer.removeEventListener('scroll', handleQueueLogsScroll)
+      }
     }
   }, [])
 
@@ -322,7 +358,7 @@ function ProgressViewer({ activeRun }) {
         return <XCircle className="w-4 h-4 text-red-400" />
       case 'pending':
       default:
-        return <Clock className="w-4 h-4 text-slate-400" />
+        return <Clock className="w-4 h-4 text-tertiary" />
     }
   }
 
@@ -365,8 +401,8 @@ function ProgressViewer({ activeRun }) {
     return (
       <div className="max-w-4xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-white mb-2">Queue Progress</h1>
-          <p className="text-slate-400">Running {completed}/{queueStatus.total} evaluations • {completedSamples + currentRunProgress}/{totalSamples} samples</p>
+          <h1 className="text-3xl font-bold text-primary mb-2">Queue Progress</h1>
+          <p className="text-tertiary">Running {completed}/{queueStatus.total} evaluations • {completedSamples + currentRunProgress}/{totalSamples} samples</p>
         </div>
 
         {/* Queue Status Card */}
@@ -377,12 +413,12 @@ function ProgressViewer({ activeRun }) {
                 <ListOrdered className="w-6 h-6 text-primary-400" />
               </div>
               <div>
-                <h3 className="font-semibold text-white flex items-center gap-2">
+                <h3 className="font-semibold text-primary flex items-center gap-2">
                   <Loader2 className="w-4 h-4 text-primary-400 animate-spin" />
                   Queue Running
                 </h3>
                 {currentItem && (
-                  <p className="text-sm text-slate-400">
+                  <p className="text-sm text-tertiary">
                     Currently: {currentItem.model} ({currentItem.provider}) - {formatBenchmarks(currentItem.benchmarks)}
                   </p>
                 )}
@@ -410,11 +446,11 @@ function ProgressViewer({ activeRun }) {
 
         {/* Progress Bar - Total samples progress */}
         <div className="mb-6">
-          <div className="flex justify-between text-xs text-slate-400 mb-1">
+          <div className="flex justify-between text-xs text-tertiary mb-1">
             <span>{Math.round(totalProgress)}% complete</span>
             <span>{completedSamples + currentRunProgress} / {totalSamples} samples</span>
           </div>
-          <div className="h-4 bg-slate-700 rounded-full overflow-hidden">
+          <div className="h-4 bg-surface-active rounded-full overflow-hidden">
             <div
               className="h-full bg-gradient-to-r from-primary-500 to-purple-500 transition-all duration-500"
               style={{ width: `${totalProgress}%` }}
@@ -423,10 +459,10 @@ function ProgressViewer({ activeRun }) {
         </div>
 
         {/* Queue Items */}
-        <div className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
-          <div className="px-4 py-3 border-b border-slate-700">
-            <h3 className="font-medium text-white flex items-center gap-2">
-              <ListOrdered className="w-4 h-4 text-slate-400" />
+        <div className="bg-surface rounded-xl border border-default overflow-hidden">
+          <div className="px-4 py-3 border-b border-default">
+            <h3 className="font-medium text-primary flex items-center gap-2">
+              <ListOrdered className="w-4 h-4 text-tertiary" />
               Queue Items
             </h3>
           </div>
@@ -439,15 +475,15 @@ function ProgressViewer({ activeRun }) {
               >
                 {getQueueItemIcon(item.status)}
                 <div className="flex-1">
-                  <div className="font-medium text-white">
+                  <div className="font-medium text-primary">
                     {item.model}
-                    <span className="text-slate-400 font-normal ml-2">({item.provider})</span>
+                    <span className="text-tertiary font-normal ml-2">({item.provider})</span>
                   </div>
-                  <div className="text-sm text-slate-400">
+                  <div className="text-sm text-tertiary">
                     {formatBenchmarks(item.benchmarks)} • {item.sample_size} samples
                   </div>
                   {item.inference_settings && (
-                    <div className="text-xs text-slate-500 mt-1 font-mono">
+                    <div className="text-xs text-tertiary mt-1 font-mono">
                       ⚙ {formatInferenceSettings(item.inference_settings)}
                     </div>
                   )}
@@ -458,7 +494,7 @@ function ProgressViewer({ activeRun }) {
                   </div>
                 )}
                 {item.duration_seconds && (
-                  <div className="text-sm text-slate-400">
+                  <div className="text-sm text-tertiary">
                     {Math.floor(item.duration_seconds / 60)}m {Math.floor(item.duration_seconds % 60)}s
                   </div>
                 )}
@@ -468,7 +504,7 @@ function ProgressViewer({ activeRun }) {
         </div>
 
         {queueStatus.eta_seconds && (
-          <div className="mt-4 text-sm text-slate-400 flex items-center gap-2">
+          <div className="mt-4 text-sm text-tertiary flex items-center gap-2">
             <Clock className="w-4 h-4" />
             ETA: ~{Math.ceil(queueStatus.eta_seconds / 60)} minutes remaining
           </div>
@@ -476,20 +512,34 @@ function ProgressViewer({ activeRun }) {
 
         {/* Live Logs for current running item */}
         {currentQueueRun && (
-          <div className="mt-6 bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
-            <div className="px-4 py-3 border-b border-slate-700 flex items-center justify-between">
+          <div className="mt-6 bg-surface rounded-xl border border-default overflow-hidden">
+            <div className="px-4 py-3 border-b border-default flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Terminal className="w-4 h-4 text-slate-400" />
-                <h3 className="font-medium text-white">Live Logs</h3>
-                <span className="text-xs text-slate-500">
+                <Terminal className="w-4 h-4 text-tertiary" />
+                <h3 className="font-medium text-primary">Live Logs</h3>
+                <span className="text-xs text-tertiary">
                   ({currentQueueRun.logs?.length || 0} entries)
                 </span>
               </div>
-              <span className="text-xs text-primary-400 animate-pulse">● Live</span>
+              <div className="flex items-center gap-3">
+                {!autoScrollQueueLogs && (
+                  <button
+                    onClick={() => {
+                      setAutoScrollQueueLogs(true)
+                      queueLogsEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+                    }}
+                    className="text-xs px-2 py-1 rounded bg-surface-active text-tertiary hover:bg-surface-hover hover:text-primary transition-colors flex items-center gap-1"
+                    title="Resume auto-scroll to bottom"
+                  >
+                    ↓ Scroll to bottom
+                  </button>
+                )}
+                <span className="text-xs text-primary-400 animate-pulse">● Live</span>
+              </div>
             </div>
             <div className="p-4 h-64 overflow-auto font-mono text-xs" ref={queueLogsContainerRef}>
               {(!currentQueueRun.logs || currentQueueRun.logs.length === 0) ? (
-                <p className="text-slate-500">Waiting for logs...</p>
+                <p className="text-tertiary">Waiting for logs...</p>
               ) : (
                 currentQueueRun.logs.slice(-100).map((log, i) => {
                   const message = typeof log === 'object' ? log.message : log
@@ -499,7 +549,7 @@ function ProgressViewer({ activeRun }) {
                       className={`leading-relaxed py-0.5 ${message?.includes('Progress:') ? 'text-primary-300' :
                         message?.includes('Accuracy:') || message?.includes('Score:') ? 'text-green-300' :
                           message?.includes('Error') || message?.includes('failed') ? 'text-red-300' :
-                            'text-slate-400'
+                            'text-tertiary'
                         }`}
                     >
                       {message || ''}
@@ -522,9 +572,9 @@ function ProgressViewer({ activeRun }) {
     return (
       <div className="max-w-4xl mx-auto">
         <div className="text-center py-20">
-          <Activity className="w-16 h-16 text-slate-600 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-white mb-2">No Active Run</h2>
-          <p className="text-slate-400 mb-6">
+          <Activity className="w-16 h-16 text-secondary mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-primary mb-2">No Active Run</h2>
+          <p className="text-tertiary mb-6">
             {isRunFinished
               ? 'The last evaluation has finished. Start a new one or view results in History.'
               : 'Start a new evaluation to see progress here'
@@ -533,14 +583,14 @@ function ProgressViewer({ activeRun }) {
           <div className="flex gap-4 justify-center">
             <button
               onClick={() => navigate('/')}
-              className="px-6 py-3 rounded-lg bg-primary-500 text-white hover:bg-primary-600 transition-colors"
+              className="btn btn-accent px-6"
             >
               Start New Run
             </button>
             {isRunFinished && (
               <button
                 onClick={() => navigate(`/run/${activeRun}`)}
-                className="px-6 py-3 rounded-lg bg-slate-700 text-white hover:bg-slate-600 transition-colors"
+                className="btn btn-secondary px-6"
               >
                 View Last Results
               </button>
@@ -556,11 +606,11 @@ function ProgressViewer({ activeRun }) {
       <div className="mb-8">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-white mb-2">Evaluation Progress</h1>
-            <p className="text-slate-400">Run ID: {activeRun}</p>
+            <h1 className="text-3xl font-bold text-primary mb-2">Evaluation Progress</h1>
+            <p className="text-tertiary">Run ID: {activeRun}</p>
           </div>
           {status === 'running' && (
-            <div className="flex items-center gap-2 text-slate-400">
+            <div className="flex items-center gap-2 text-tertiary">
               <RefreshCw className="w-4 h-4 animate-spin" />
               <span className="text-sm">Auto-updating...</span>
             </div>
@@ -572,16 +622,16 @@ function ProgressViewer({ activeRun }) {
       <div className={`mb-6 p-6 rounded-xl border ${status === 'running' ? 'bg-primary-500/10 border-primary-500/30' :
         status === 'complete' ? 'bg-green-500/10 border-green-500/30' :
           status === 'error' ? 'bg-red-500/10 border-red-500/30' :
-            status === 'cancelled' ? 'bg-slate-700/50 border-slate-600' :
-              'bg-slate-800 border-slate-700'
+            status === 'cancelled' ? 'bg-surface-active/50 border-default' :
+              'bg-surface border-default'
         }`}>
         <div className="flex items-center gap-4">
           {status === 'connecting' && (
             <>
-              <Loader2 className="w-8 h-8 text-slate-400 animate-spin" />
+              <Loader2 className="w-8 h-8 text-tertiary animate-spin" />
               <div>
-                <h3 className="font-semibold text-white">Connecting...</h3>
-                <p className="text-sm text-slate-400">Fetching evaluation status...</p>
+                <h3 className="font-semibold text-primary">Connecting...</h3>
+                <p className="text-sm text-tertiary">Fetching evaluation status...</p>
               </div>
             </>
           )}
@@ -591,22 +641,22 @@ function ProgressViewer({ activeRun }) {
                 <Activity className="w-5 h-5 text-primary-400" />
               </div>
               <div className="flex-1">
-                <h3 className="font-semibold text-white">Running - {run?.model || 'Loading...'}</h3>
-                <p className="text-sm text-slate-400">
+                <h3 className="font-semibold text-primary">Running - {run?.model || 'Loading...'}</h3>
+                <p className="text-sm text-tertiary">
                   {progressInfo.benchmark ? `Running ${progressInfo.benchmark}...` : 'Initializing...'}
                   {progressInfo.accuracy !== null && ` (Current Accuracy: ${progressInfo.accuracy}%)`}
                 </p>
               </div>
               <div className="text-right mr-4">
                 <div className="text-2xl font-bold text-primary-400">{progressInfo.percent}%</div>
-                <div className="text-sm text-slate-400">
+                <div className="text-sm text-tertiary">
                   {logs.length} log entries
                 </div>
               </div>
               <button
                 onClick={handleCancel}
                 disabled={cancelling}
-                className="px-4 py-2 rounded-lg bg-slate-700 border border-slate-600 text-slate-300 hover:bg-slate-600 hover:text-white transition-colors flex items-center gap-2 disabled:opacity-50"
+                className="px-4 py-2 rounded-lg bg-surface-active border border-default text-secondary hover:bg-surface-hover hover:text-primary transition-colors flex items-center gap-2 disabled:opacity-50"
               >
                 {cancelling ? (
                   <>
@@ -626,12 +676,12 @@ function ProgressViewer({ activeRun }) {
             <>
               <CheckCircle className="w-8 h-8 text-green-400" />
               <div className="flex-1">
-                <h3 className="font-semibold text-white">Complete - {run?.model}</h3>
-                <p className="text-sm text-slate-400">Evaluation finished successfully</p>
+                <h3 className="font-semibold text-primary">Complete - {run?.model}</h3>
+                <p className="text-sm text-tertiary">Evaluation finished successfully</p>
               </div>
               <button
                 onClick={() => navigate(`/run/${activeRun}`)}
-                className="px-4 py-2 rounded-lg bg-green-500 text-white hover:bg-green-600 transition-colors"
+                className="px-4 py-2 rounded-lg bg-green-500 text-primary hover:bg-green-600 transition-colors"
               >
                 View Results
               </button>
@@ -639,14 +689,14 @@ function ProgressViewer({ activeRun }) {
           )}
           {status === 'cancelled' && (
             <>
-              <Square className="w-8 h-8 text-slate-400" />
+              <Square className="w-8 h-8 text-tertiary" />
               <div className="flex-1">
-                <h3 className="font-semibold text-white">Stopped - {run?.model}</h3>
-                <p className="text-sm text-slate-400">Evaluation was stopped</p>
+                <h3 className="font-semibold text-primary">Stopped - {run?.model}</h3>
+                <p className="text-sm text-tertiary">Evaluation was stopped</p>
               </div>
               <button
                 onClick={() => navigate('/')}
-                className="px-4 py-2 rounded-lg bg-slate-600 text-white hover:bg-slate-500 transition-colors"
+                className="btn btn-accent"
               >
                 Start New Run
               </button>
@@ -656,12 +706,12 @@ function ProgressViewer({ activeRun }) {
             <>
               <XCircle className="w-8 h-8 text-red-400" />
               <div className="flex-1">
-                <h3 className="font-semibold text-white">Error</h3>
+                <h3 className="font-semibold text-primary">Error</h3>
                 <p className="text-sm text-red-400">{error}</p>
               </div>
               <button
                 onClick={() => navigate(`/run/${activeRun}`)}
-                className="px-4 py-2 rounded-lg bg-slate-600 text-white hover:bg-slate-500 transition-colors"
+                className="btn btn-secondary"
               >
                 View Details
               </button>
@@ -673,7 +723,7 @@ function ProgressViewer({ activeRun }) {
       {/* Progress Bar */}
       {(status === 'running' || status === 'complete') && (
         <div className="mb-6">
-          <div className="h-4 bg-slate-700 rounded-full overflow-hidden">
+          <div className="h-4 bg-surface-active rounded-full overflow-hidden">
             <div
               className="h-full bg-gradient-to-r from-primary-500 to-purple-500 transition-all duration-500"
               style={{ width: `${status === 'complete' ? 100 : progressInfo.percent}%` }}
@@ -690,7 +740,7 @@ function ProgressViewer({ activeRun }) {
               key={b}
               className={`px-3 py-1 rounded-lg text-sm ${normalizeBenchmark(progressInfo.benchmark) === normalizeBenchmark(b)
                 ? 'bg-primary-500/30 text-primary-300 border border-primary-500/50'
-                : 'bg-slate-700 text-slate-300'
+                : 'bg-surface-active text-secondary'
                 }`}
             >
               {b.toUpperCase()}
@@ -700,20 +750,34 @@ function ProgressViewer({ activeRun }) {
       )}
 
       {/* Logs */}
-      <div className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
-        <div className="px-4 py-3 border-b border-slate-700 flex items-center justify-between">
+      <div className="bg-surface rounded-xl border border-default overflow-hidden">
+        <div className="px-4 py-3 border-b border-default flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Terminal className="w-4 h-4 text-slate-400" />
-            <h3 className="font-medium text-white">Logs</h3>
-            <span className="text-xs text-slate-500">({logs.length} entries)</span>
+            <Terminal className="w-4 h-4 text-tertiary" />
+            <h3 className="font-medium text-primary">Logs</h3>
+            <span className="text-xs text-tertiary">({logs.length} entries)</span>
           </div>
-          {status === 'running' && (
-            <span className="text-xs text-primary-400 animate-pulse">● Live</span>
-          )}
+          <div className="flex items-center gap-3">
+            {!autoScrollLogs && status === 'running' && (
+              <button
+                onClick={() => {
+                  setAutoScrollLogs(true)
+                  logsEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+                }}
+                className="text-xs px-2 py-1 rounded bg-surface-active text-tertiary hover:bg-surface-hover hover:text-primary transition-colors flex items-center gap-1"
+                title="Resume auto-scroll to bottom"
+              >
+                ↓ Scroll to bottom
+              </button>
+            )}
+            {status === 'running' && (
+              <span className="text-xs text-primary-400 animate-pulse">● Live</span>
+            )}
+          </div>
         </div>
         <div className="p-4 h-80 overflow-auto font-mono text-xs" ref={logsContainerRef}>
           {logs.length === 0 ? (
-            <p className="text-slate-500">Waiting for logs...</p>
+            <p className="text-tertiary">Waiting for logs...</p>
           ) : (
             logs.slice(-100).map((log, i) => (
               <div
@@ -721,7 +785,7 @@ function ProgressViewer({ activeRun }) {
                 className={`leading-relaxed py-0.5 ${log?.includes('Progress:') ? 'text-primary-300' :
                   log?.includes('Accuracy:') || log?.includes('Score:') ? 'text-green-300' :
                     log?.includes('Error') || log?.includes('failed') ? 'text-red-300' :
-                      'text-slate-400'
+                      'text-tertiary'
                   }`}
               >
                 {log || ''}

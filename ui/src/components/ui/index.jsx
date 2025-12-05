@@ -4,7 +4,7 @@
  */
 
 import { forwardRef } from 'react'
-import { Loader2, Check, AlertCircle, Info, CheckCircle, XCircle, AlertTriangle } from 'lucide-react'
+import { Loader2, Check, AlertCircle, Info, CheckCircle, XCircle, AlertTriangle, Clock } from 'lucide-react'
 
 // ============================================
 // BUTTON COMPONENT
@@ -103,7 +103,7 @@ export function CardHeader({ children, className = '' }) {
 export function CardTitle({ children, icon: Icon, className = '' }) {
   return (
     <h3 className={`section-title ${className}`}>
-      {Icon && <Icon className="w-5 h-5 text-slate-400" />}
+      {Icon && <Icon className="w-5 h-5 text-tertiary" />}
       {children}
     </h3>
   )
@@ -146,10 +146,10 @@ export function Badge({
     <span className={`${variants[variant]} ${sizes[size]} ${className}`}>
       {dot && (
         <span className={`w-1.5 h-1.5 rounded-full ${variant === 'success' ? 'bg-success-400' :
-            variant === 'error' ? 'bg-error-400' :
-              variant === 'warning' ? 'bg-warning-400' :
-                variant === 'primary' ? 'bg-primary-400' :
-                  'bg-slate-400'
+          variant === 'error' ? 'bg-error-400' :
+            variant === 'warning' ? 'bg-warning-400' :
+              variant === 'primary' ? 'bg-primary-400' :
+                'bg-slate-400'
           }`} />
       )}
       {children}
@@ -188,8 +188,8 @@ export function ProgressBar({
     <div className={className}>
       {showLabel && (
         <div className="flex justify-between mb-1.5 text-sm">
-          <span className="text-slate-400">Progress</span>
-          <span className="text-white font-mono">{percentage.toFixed(0)}%</span>
+          <span className="text-tertiary">Progress</span>
+          <span className="text-primary font-mono">{percentage.toFixed(0)}%</span>
         </div>
       )}
       <div className={`progress-bar ${sizes[size]}`}>
@@ -239,7 +239,7 @@ export function ScoreDisplay({
 
   return (
     <div className={`card p-4 ${className}`}>
-      {label && <div className="text-sm text-slate-400 mb-1">{label}</div>}
+      {label && <div className="text-sm text-tertiary mb-1">{label}</div>}
       <div className="flex items-baseline gap-2">
         <span className={`${sizes[size]} font-bold font-mono ${getScoreClass(score)}`}>
           {percentage}%
@@ -277,7 +277,8 @@ export function StatusIndicator({
     error: { dot: 'status-dot-error', icon: XCircle, color: 'text-error-400', text: 'Failed' },
     warning: { dot: 'status-dot-warning', icon: AlertTriangle, color: 'text-warning-400', text: 'Warning' },
     running: { dot: 'status-dot-running', icon: Loader2, color: 'text-primary-400', text: 'Running' },
-    pending: { dot: 'status-dot bg-slate-500', icon: null, color: 'text-slate-400', text: 'Pending' },
+    queued: { dot: 'status-dot bg-yellow-500', icon: Clock, color: 'text-yellow-400', text: 'Queued' },
+    pending: { dot: 'status-dot bg-slate-500', icon: null, color: 'text-tertiary', text: 'Pending' },
   }
 
   const { dot, icon: Icon, color, text } = config[status] || config.pending
@@ -445,7 +446,7 @@ export function BenchmarkCard({
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-2">
           <span className="text-lg">{icons[benchmark.id] || '📋'}</span>
-          <span className="font-medium text-white">{benchmark.name}</span>
+          <span className="font-medium text-primary">{benchmark.name}</span>
         </div>
         <div className={`
           w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all
@@ -454,21 +455,21 @@ export function BenchmarkCard({
             : 'border-surface-600'
           }
         `}>
-          {selected && <Check className="w-3 h-3 text-white" />}
+          {selected && <Check className="w-3 h-3 text-primary" />}
         </div>
       </div>
-      <p className="text-xs text-slate-400 mt-1.5">
+      <p className="text-xs text-tertiary mt-1.5">
         {descriptions[benchmark.id] || benchmark.description || 'Benchmark evaluation'}
       </p>
       <div className="flex items-center justify-between mt-2">
-        <span className="text-xs text-slate-500 font-mono">
+        <span className="text-xs text-tertiary font-mono">
           {benchmark.question_count?.toLocaleString() || '?'} questions
         </span>
         {showStats && score !== undefined && (
           <span className={`text-xs font-mono font-medium ${score >= 0.8 ? 'text-success-400' :
-              score >= 0.6 ? 'text-primary-400' :
-                score >= 0.4 ? 'text-accent-400' :
-                  'text-error-400'
+            score >= 0.6 ? 'text-primary-400' :
+              score >= 0.4 ? 'text-accent-400' :
+                'text-error-400'
             }`}>
             {(score * 100).toFixed(1)}%
           </span>

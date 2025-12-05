@@ -12,6 +12,7 @@ from pydantic import BaseModel
 class RunStatus(str, Enum):
     """Status of an evaluation run"""
 
+    QUEUED = "queued"
     PENDING = "pending"
     RUNNING = "running"
     COMPLETED = "completed"

@@ -126,6 +126,9 @@ def create_app(outputs_dir: Optional[Path] = None) -> "FastAPI":
     # Initialize runner
     runner = EvaluationRunner(outputs_path)
 
+    # Session storage for API keys (in-memory only)
+    session_api_keys: Dict[str, str] = {}
+
     # =========================================================================
     # API Endpoints
     # =========================================================================
@@ -133,6 +136,86 @@ def create_app(outputs_dir: Optional[Path] = None) -> "FastAPI":
     @app.get("/api/health")
     async def health_check() -> Dict[str, str]:
         return {"status": "healthy", "version": "2.1.0"}
+
+    @app.get("/api/keys")
+    async def get_api_keys() -> Dict[str, Any]:
+        """Get configured API keys (masked for security)"""
+        keys_status = {}
+
+        # Check each provider
+        providers = {
+            "openai": ["OPENAI_API_KEY"],
+            "anthropic": ["ANTHROPIC_API_KEY"],
+            "gemini": ["GEMINI_API_KEY", "GOOGLE_API_KEY"],
+            "cohere": ["COHERE_API_KEY"],
+            "together": ["TOGETHER_API_KEY"],
+        }
+
+        for provider, env_vars in providers.items():
+            # Check session first, then environment
+            has_key = any(session_api_keys.get(var) or os.environ.get(var) for var in env_vars)
+            keys_status[provider] = {
+                "configured": has_key,
+                "source": (
+                    "session"
+                    if any(session_api_keys.get(var) for var in env_vars)
+                    else "env" if has_key else None
+                ),
+            }
+
+        return keys_status
+
+    @app.post("/api/keys")
+    async def set_api_key(data: Dict[str, str]) -> Dict[str, str]:
+        """Set an API key for the current session"""
+        provider = data.get("provider")
+        api_key = data.get("api_key", "").strip()
+
+        if not provider:
+            raise HTTPException(status_code=400, detail="Provider is required")
+
+        # Map provider to environment variable name
+        provider_env_map = {
+            "openai": "OPENAI_API_KEY",
+            "anthropic": "ANTHROPIC_API_KEY",
+            "gemini": "GEMINI_API_KEY",
+            "cohere": "COHERE_API_KEY",
+            "together": "TOGETHER_API_KEY",
+        }
+
+        env_var = provider_env_map.get(provider.lower())
+        if not env_var:
+            raise HTTPException(status_code=400, detail=f"Unknown provider: {provider}")
+
+        if api_key:
+            # Store in session and set in environment for this process
+            session_api_keys[env_var] = api_key
+            os.environ[env_var] = api_key
+            return {"status": "success", "message": f"{provider.title()} API key configured"}
+        else:
+            # Remove key
+            session_api_keys.pop(env_var, None)
+            os.environ.pop(env_var, None)
+            return {"status": "success", "message": f"{provider.title()} API key removed"}
+
+    @app.delete("/api/keys/{provider}")
+    async def delete_api_key(provider: str) -> Dict[str, str]:
+        """Remove an API key from the current session"""
+        provider_env_map = {
+            "openai": "OPENAI_API_KEY",
+            "anthropic": "ANTHROPIC_API_KEY",
+            "gemini": "GEMINI_API_KEY",
+            "cohere": "COHERE_API_KEY",
+            "together": "TOGETHER_API_KEY",
+        }
+
+        env_var = provider_env_map.get(provider.lower())
+        if not env_var:
+            raise HTTPException(status_code=400, detail=f"Unknown provider: {provider}")
+
+        session_api_keys.pop(env_var, None)
+        os.environ.pop(env_var, None)
+        return {"status": "success", "message": f"{provider.title()} API key removed"}
 
     @app.get("/api/models")
     async def get_models() -> Any:
@@ -296,9 +379,9 @@ def create_app(outputs_dir: Optional[Path] = None) -> "FastAPI":
             Benchmark(
                 id="safetybench",
                 name="SafetyBench",
-                description="Safety and ethics evaluation - 11K safety-related questions",
+                description="Safety and ethics evaluation - 35 dev questions with answers (7 categories)",
                 category="Security",
-                questions_count=11000,
+                questions_count=35,
             ),
             Benchmark(
                 id="donotanswer",
@@ -400,10 +483,18 @@ def create_app(outputs_dir: Optional[Path] = None) -> "FastAPI":
             api_key=request.api_key,
         )
 
+        # Get the actual status from the runner
+        run = runner.get_run(run_id)
+        status = run.get("status", RunStatus.PENDING) if run else RunStatus.PENDING
+
         return RunResponse(
             run_id=run_id,
-            status=RunStatus.PENDING,
-            message=f"Started evaluation of {request.model}",
+            status=status,
+            message=(
+                f"Started evaluation of {request.model}"
+                if status == RunStatus.PENDING
+                else f"Queued evaluation of {request.model}"
+            ),
         )
 
     @app.get("/api/runs")
@@ -462,6 +553,11 @@ def create_app(outputs_dir: Optional[Path] = None) -> "FastAPI":
             )
 
         return RunsResponse(runs=summaries, total=len(runs))
+
+    @app.get("/api/queue")
+    async def get_queue() -> dict[str, Any]:
+        """Get current queue status"""
+        return runner.get_queue_status()
 
     @app.get("/api/run/{run_id}")
     async def get_run(run_id: str) -> Any:

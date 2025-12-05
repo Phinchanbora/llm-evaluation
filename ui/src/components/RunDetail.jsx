@@ -116,11 +116,11 @@ function RunDetail() {
     return (
       <div className="text-center py-20">
         <XCircle className="w-16 h-16 text-red-400 mx-auto mb-4" />
-        <h2 className="text-2xl font-bold text-white mb-2">Run Not Found</h2>
-        <p className="text-slate-400 mb-6">The requested run could not be found</p>
+        <h2 className="text-2xl font-bold text-primary mb-2">Run Not Found</h2>
+        <p className="text-tertiary mb-6">The requested run could not be found</p>
         <button
           onClick={() => navigate('/history')}
-          className="px-6 py-3 rounded-lg bg-primary-500 text-white hover:bg-primary-600"
+          className="btn btn-primary"
         >
           Back to History
         </button>
@@ -216,6 +216,7 @@ function RunDetail() {
     if (s.includes('running')) return 'running'
     if (s.includes('failed') || s.includes('error')) return 'failed'
     if (s.includes('cancelled') || s.includes('canceled')) return 'cancelled'
+    if (s.includes('queued')) return 'queued'
     if (s.includes('pending')) return 'pending'
     return s
   }
@@ -229,7 +230,7 @@ function RunDetail() {
       <div className="mb-8">
         <button
           onClick={() => navigate('/history')}
-          className="flex items-center gap-2 text-slate-400 hover:text-white mb-4 transition-colors"
+          className="flex items-center gap-2 text-tertiary hover:text-primary mb-4 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
           Back to History
@@ -237,9 +238,9 @@ function RunDetail() {
 
         <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-white mb-2">{run.model}</h1>
-            <div className="flex items-center gap-4 text-slate-400">
-              <span className="px-2 py-1 bg-slate-700 rounded text-sm">{run.provider}</span>
+            <h1 className="text-3xl font-bold text-primary mb-2">{run.model}</h1>
+            <div className="flex items-center gap-4 text-tertiary">
+              <span className="px-2 py-1 bg-surface-active rounded text-sm">{run.provider}</span>
               <span>{new Date(run.started_at).toLocaleString()}</span>
               <span className={`flex items-center gap-1 ${status === 'completed' ? 'text-green-400' :
                 status === 'failed' ? 'text-red-400' : 'text-primary-400'
@@ -258,7 +259,7 @@ function RunDetail() {
               <div className="relative export-menu-container">
                 <button
                   onClick={() => setShowExportMenu(!showExportMenu)}
-                  className="flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-white transition-colors"
+                  className="flex items-center gap-2 px-4 py-2 bg-surface-active hover:bg-surface-hover rounded-lg text-primary transition-colors"
                 >
                   {exporting ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -270,45 +271,45 @@ function RunDetail() {
                 </button>
 
                 {showExportMenu && (
-                  <div className="absolute right-0 mt-2 w-56 bg-slate-800 border border-slate-700 rounded-lg shadow-xl z-50 overflow-hidden">
+                  <div className="absolute right-0 mt-2 w-56 bg-surface border border-default rounded-lg shadow-xl z-50 overflow-hidden">
                     <button
                       onClick={() => handleExport('json')}
-                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-700 transition-colors text-left"
+                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-surface-active transition-colors text-left"
                     >
                       <FileJson className="w-5 h-5 text-blue-400" />
                       <div>
-                        <div className="text-white font-medium">JSON</div>
-                        <div className="text-xs text-slate-400">Full results + manifest</div>
+                        <div className="text-primary font-medium">JSON</div>
+                        <div className="text-xs text-tertiary">Full results + manifest</div>
                       </div>
                     </button>
                     <button
                       onClick={() => handleExport('csv')}
-                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-700 transition-colors text-left"
+                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-surface-active transition-colors text-left"
                     >
                       <FileSpreadsheet className="w-5 h-5 text-green-400" />
                       <div>
-                        <div className="text-white font-medium">CSV</div>
-                        <div className="text-xs text-slate-400">Spreadsheet format</div>
+                        <div className="text-primary font-medium">CSV</div>
+                        <div className="text-xs text-tertiary">Spreadsheet format</div>
                       </div>
                     </button>
                     <button
                       onClick={() => handleExport('latex')}
-                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-700 transition-colors text-left"
+                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-surface-active transition-colors text-left"
                     >
                       <FileText className="w-5 h-5 text-amber-400" />
                       <div>
-                        <div className="text-white font-medium">LaTeX Table</div>
-                        <div className="text-xs text-slate-400">Ready for papers</div>
+                        <div className="text-primary font-medium">LaTeX Table</div>
+                        <div className="text-xs text-tertiary">Ready for papers</div>
                       </div>
                     </button>
                     <button
                       onClick={() => handleExport('bibtex')}
-                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-700 transition-colors text-left"
+                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-surface-active transition-colors text-left"
                     >
                       <Quote className="w-5 h-5 text-purple-400" />
                       <div>
-                        <div className="text-white font-medium">BibTeX</div>
-                        <div className="text-xs text-slate-400">Citations & references</div>
+                        <div className="text-primary font-medium">BibTeX</div>
+                        <div className="text-xs text-tertiary">Citations & references</div>
                       </div>
                     </button>
                   </div>
@@ -320,7 +321,7 @@ function RunDetail() {
                 <div className="text-4xl font-bold text-primary-400">
                   {avgScore.toFixed(1)}%
                 </div>
-                <div className="text-sm text-slate-400">Average Score</div>
+                <div className="text-sm text-tertiary">Average Score</div>
               </div>
             </div>
           )}
@@ -328,7 +329,7 @@ function RunDetail() {
       </div>
 
       {/* Tabs */}
-      <div className="mb-6 border-b border-slate-700">
+      <div className="mb-6 border-b border-default">
         <div className="flex gap-1">
           {['results', 'scenarios', 'logs', 'config', 'system'].map(tab => (
             <button
@@ -336,7 +337,7 @@ function RunDetail() {
               onClick={() => setActiveTab(tab)}
               className={`px-4 py-3 text-sm font-medium capitalize border-b-2 transition-colors flex items-center gap-2 ${activeTab === tab
                 ? 'border-primary-500 text-primary-400'
-                : 'border-transparent text-slate-400 hover:text-white'
+                : 'border-transparent text-tertiary hover:text-primary'
                 }`}
             >
               {tab === 'scenarios' && <BookOpen className="w-4 h-4" />}
@@ -351,16 +352,16 @@ function RunDetail() {
         <div className="space-y-6">
           {/* Chart */}
           {chartData.length > 0 && (
-            <div className="bg-slate-800 rounded-xl border border-slate-700 p-6">
-              <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                <BarChart3 className="w-5 h-5 text-slate-400" />
+            <div className="bg-surface rounded-xl border border-default p-6">
+              <h3 className="text-lg font-semibold text-primary mb-4 flex items-center gap-2">
+                <BarChart3 className="w-5 h-5 text-tertiary" />
                 Benchmark Scores
               </h3>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={chartData} layout="vertical">
+              <ResponsiveContainer width="100%" height={Math.max(300, chartData.length * 40)}>
+                <BarChart data={chartData} layout="vertical" margin={{ left: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
                   <XAxis type="number" domain={[0, 100]} tick={{ fill: '#94a3b8' }} />
-                  <YAxis dataKey="name" type="category" width={100} tick={{ fill: '#94a3b8' }} />
+                  <YAxis dataKey="name" type="category" width={150} tick={{ fill: '#94a3b8', fontSize: 12 }} />
                   <Tooltip
                     contentStyle={{
                       backgroundColor: '#1e293b',
@@ -387,30 +388,30 @@ function RunDetail() {
               return (
                 <div
                   key={name}
-                  className="bg-slate-800 rounded-xl border border-slate-700 p-4"
+                  className="bg-surface dark:bg-surface rounded-xl border border-subtle dark:border-default p-4"
                 >
-                  <h4 className="font-semibold text-white mb-3 text-lg">{formatBenchmarkName(name)}</h4>
+                  <h4 className="font-semibold text-slate-900 dark:text-primary mb-3 text-lg">{formatBenchmarkName(name)}</h4>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-slate-400">Score</span>
-                      <span className={`font-semibold ${score >= 0.7 ? 'text-green-400' :
-                        score >= 0.5 ? 'text-yellow-400' : 'text-red-400'
+                      <span className="text-secondary dark:text-tertiary">Score</span>
+                      <span className={`font-semibold ${score >= 0.7 ? 'text-green-600 dark:text-green-400' :
+                          score >= 0.5 ? 'text-yellow-600 dark:text-yellow-400' : 'text-red-600 dark:text-red-400'
                         }`}>
                         {(score * 100).toFixed(1)}%
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-slate-400">Correct</span>
-                      <span className="text-white">{data.correct || 0}</span>
+                      <span className="text-secondary dark:text-tertiary">Correct</span>
+                      <span className="text-slate-900 dark:text-primary">{data.correct || 0}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-slate-400">Total</span>
-                      <span className="text-white">{total}</span>
+                      <span className="text-secondary dark:text-tertiary">Total</span>
+                      <span className="text-slate-900 dark:text-primary">{total}</span>
                     </div>
                     {data.elapsed_time && (
                       <div className="flex justify-between">
-                        <span className="text-slate-400">Time</span>
-                        <span className="text-white">{data.elapsed_time.toFixed(2)}s</span>
+                        <span className="text-secondary dark:text-tertiary">Time</span>
+                        <span className="text-slate-900 dark:text-primary">{data.elapsed_time.toFixed(2)}s</span>
                       </div>
                     )}
                   </div>
@@ -423,11 +424,11 @@ function RunDetail() {
 
       {/* Scenarios Tab */}
       {activeTab === 'scenarios' && (
-        <div className="bg-slate-800 rounded-xl border border-slate-700 p-6">
+        <div className="bg-surface rounded-xl border border-default p-6">
           <div className="flex items-center gap-2 mb-4">
-            <BookOpen className="w-5 h-5 text-slate-400" />
-            <h3 className="text-lg font-semibold text-white">Evaluated Scenarios</h3>
-            <span className="text-sm text-slate-500">
+            <BookOpen className="w-5 h-5 text-tertiary" />
+            <h3 className="text-lg font-semibold text-primary">Evaluated Scenarios</h3>
+            <span className="text-sm text-tertiary">
               - View each question, model response, and correct answer
             </span>
           </div>
@@ -437,17 +438,17 @@ function RunDetail() {
 
       {/* Logs Tab */}
       {activeTab === 'logs' && (
-        <div className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
-          <div className="px-4 py-3 border-b border-slate-700 flex items-center gap-2">
-            <Terminal className="w-4 h-4 text-slate-400" />
-            <h3 className="font-medium text-white">Evaluation Logs</h3>
+        <div className="bg-surface rounded-xl border border-default overflow-hidden">
+          <div className="px-4 py-3 border-b border-default flex items-center gap-2">
+            <Terminal className="w-4 h-4 text-tertiary" />
+            <h3 className="font-medium text-primary">Evaluation Logs</h3>
           </div>
           <div className="p-4 max-h-96 overflow-auto font-mono text-sm">
             {logs.length === 0 ? (
-              <p className="text-slate-500">No logs available</p>
+              <p className="text-tertiary">No logs available</p>
             ) : (
               logs.map((log, i) => (
-                <div key={i} className="text-slate-300 leading-relaxed">
+                <div key={i} className="text-secondary leading-relaxed">
                   {log}
                 </div>
               ))
@@ -460,42 +461,42 @@ function RunDetail() {
       {activeTab === 'config' && (
         <div className="space-y-6">
           {/* Run Settings */}
-          <div className="bg-slate-800 rounded-xl border border-slate-700 p-6">
-            <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-              <FileJson className="w-5 h-5 text-slate-400" />
+          <div className="bg-surface rounded-xl border border-default p-6">
+            <h3 className="text-lg font-semibold text-primary mb-4 flex items-center gap-2">
+              <FileJson className="w-5 h-5 text-tertiary" />
               Run Configuration
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <div className="p-4 bg-slate-700/30 rounded-lg">
-                <div className="text-sm text-slate-400 mb-1">Model</div>
-                <div className="text-white font-medium">{run.model}</div>
+              <div className="p-4 bg-surface-active/30 rounded-lg">
+                <div className="text-sm text-tertiary mb-1">Model</div>
+                <div className="text-primary font-medium">{run.model}</div>
               </div>
-              <div className="p-4 bg-slate-700/30 rounded-lg">
-                <div className="text-sm text-slate-400 mb-1">Provider</div>
-                <div className="text-white font-medium capitalize">{run.provider}</div>
+              <div className="p-4 bg-surface-active/30 rounded-lg">
+                <div className="text-sm text-tertiary mb-1">Provider</div>
+                <div className="text-primary font-medium capitalize">{run.provider}</div>
               </div>
-              <div className="p-4 bg-slate-700/30 rounded-lg">
-                <div className="text-sm text-slate-400 mb-1">Preset</div>
-                <div className="text-white font-medium capitalize">{run.preset || 'custom'}</div>
+              <div className="p-4 bg-surface-active/30 rounded-lg">
+                <div className="text-sm text-tertiary mb-1">Preset</div>
+                <div className="text-primary font-medium capitalize">{run.preset || 'custom'}</div>
               </div>
-              <div className="p-4 bg-slate-700/30 rounded-lg">
-                <div className="text-sm text-slate-400 mb-1">Sample Size</div>
+              <div className="p-4 bg-surface-active/30 rounded-lg">
+                <div className="text-sm text-tertiary mb-1">Sample Size</div>
                 <div className="text-primary-400 font-bold text-xl">{run.sample_size || '?'}</div>
-                <div className="text-xs text-slate-500">questions per benchmark</div>
+                <div className="text-xs text-tertiary">questions per benchmark</div>
               </div>
-              <div className="p-4 bg-slate-700/30 rounded-lg">
-                <div className="text-sm text-slate-400 mb-1">Benchmarks</div>
+              <div className="p-4 bg-surface-active/30 rounded-lg">
+                <div className="text-sm text-tertiary mb-1">Benchmarks</div>
                 <div className="flex flex-wrap gap-1 mt-1">
                   {run.benchmarks?.map(b => (
-                    <span key={b} className="px-2 py-0.5 bg-slate-600 rounded text-xs text-white">
+                    <span key={b} className="px-2 py-0.5 bg-slate-600 rounded text-xs text-primary">
                       {formatBenchmarkName(b)}
                     </span>
                   ))}
                 </div>
               </div>
-              <div className="p-4 bg-slate-700/30 rounded-lg">
-                <div className="text-sm text-slate-400 mb-1">Duration</div>
-                <div className="text-white font-medium">
+              <div className="p-4 bg-surface-active/30 rounded-lg">
+                <div className="text-sm text-tertiary mb-1">Duration</div>
+                <div className="text-primary font-medium">
                   {run.duration_seconds
                     ? `${Math.floor(run.duration_seconds / 60)}m ${Math.round(run.duration_seconds % 60)}s`
                     : 'N/A'
@@ -503,15 +504,15 @@ function RunDetail() {
                 </div>
               </div>
               {totalInferenceTime && (
-                <div className="p-4 bg-slate-700/30 rounded-lg">
-                  <div className="text-sm text-slate-400 mb-1">Inference Time</div>
-                  <div className="text-white font-medium">
+                <div className="p-4 bg-surface-active/30 rounded-lg">
+                  <div className="text-sm text-tertiary mb-1">Inference Time</div>
+                  <div className="text-primary font-medium">
                     {totalInferenceTime >= 60
                       ? `${Math.floor(totalInferenceTime / 60)}m ${Math.round(totalInferenceTime % 60)}s`
                       : `${totalInferenceTime.toFixed(1)}s`
                     }
                   </div>
-                  <div className="text-xs text-slate-500 mt-1">
+                  <div className="text-xs text-tertiary mt-1">
                     (sum of benchmark times)
                   </div>
                 </div>
@@ -521,37 +522,37 @@ function RunDetail() {
 
           {/* Inference Settings */}
           {run.inference_settings && Object.keys(run.inference_settings).length > 0 && (
-            <div className="bg-slate-800 rounded-xl border border-slate-700 p-6">
-              <h3 className="text-lg font-semibold text-white mb-4">Inference Settings</h3>
+            <div className="bg-surface rounded-xl border border-default p-6">
+              <h3 className="text-lg font-semibold text-primary mb-4">Inference Settings</h3>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
                 {run.inference_settings.temperature !== undefined && (
-                  <div className="p-3 bg-slate-700/30 rounded-lg text-center">
-                    <div className="text-xs text-slate-400 mb-1">Temperature</div>
-                    <div className="text-white font-mono">{run.inference_settings.temperature}</div>
+                  <div className="p-3 bg-surface-active/30 rounded-lg text-center">
+                    <div className="text-xs text-tertiary mb-1">Temperature</div>
+                    <div className="text-primary font-mono">{run.inference_settings.temperature}</div>
                   </div>
                 )}
                 {run.inference_settings.top_p !== undefined && (
-                  <div className="p-3 bg-slate-700/30 rounded-lg text-center">
-                    <div className="text-xs text-slate-400 mb-1">Top P</div>
-                    <div className="text-white font-mono">{run.inference_settings.top_p}</div>
+                  <div className="p-3 bg-surface-active/30 rounded-lg text-center">
+                    <div className="text-xs text-tertiary mb-1">Top P</div>
+                    <div className="text-primary font-mono">{run.inference_settings.top_p}</div>
                   </div>
                 )}
                 {run.inference_settings.top_k !== undefined && (
-                  <div className="p-3 bg-slate-700/30 rounded-lg text-center">
-                    <div className="text-xs text-slate-400 mb-1">Top K</div>
-                    <div className="text-white font-mono">{run.inference_settings.top_k}</div>
+                  <div className="p-3 bg-surface-active/30 rounded-lg text-center">
+                    <div className="text-xs text-tertiary mb-1">Top K</div>
+                    <div className="text-primary font-mono">{run.inference_settings.top_k}</div>
                   </div>
                 )}
                 {run.inference_settings.max_tokens !== undefined && (
-                  <div className="p-3 bg-slate-700/30 rounded-lg text-center">
-                    <div className="text-xs text-slate-400 mb-1">Max Tokens</div>
-                    <div className="text-white font-mono">{run.inference_settings.max_tokens}</div>
+                  <div className="p-3 bg-surface-active/30 rounded-lg text-center">
+                    <div className="text-xs text-tertiary mb-1">Max Tokens</div>
+                    <div className="text-primary font-mono">{run.inference_settings.max_tokens}</div>
                   </div>
                 )}
                 {run.inference_settings.seed !== undefined && (
-                  <div className="p-3 bg-slate-700/30 rounded-lg text-center">
-                    <div className="text-xs text-slate-400 mb-1">Seed</div>
-                    <div className="text-white font-mono">{run.inference_settings.seed ?? 'random'}</div>
+                  <div className="p-3 bg-surface-active/30 rounded-lg text-center">
+                    <div className="text-xs text-tertiary mb-1">Seed</div>
+                    <div className="text-primary font-mono">{run.inference_settings.seed ?? 'random'}</div>
                   </div>
                 )}
               </div>
@@ -559,12 +560,12 @@ function RunDetail() {
           )}
 
           {/* Raw JSON */}
-          <div className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
-            <div className="px-4 py-3 border-b border-slate-700 flex items-center gap-2">
-              <FileJson className="w-4 h-4 text-slate-400" />
-              <h3 className="font-medium text-white">Raw Configuration</h3>
+          <div className="bg-surface rounded-xl border border-default overflow-hidden">
+            <div className="px-4 py-3 border-b border-default flex items-center gap-2">
+              <FileJson className="w-4 h-4 text-tertiary" />
+              <h3 className="font-medium text-primary">Raw Configuration</h3>
             </div>
-            <pre className="p-4 text-sm text-slate-300 overflow-auto max-h-64">
+            <pre className="p-4 text-sm text-secondary overflow-auto max-h-64">
               {JSON.stringify({
                 run_id: run.run_id,
                 provider: run.provider,
@@ -585,9 +586,9 @@ function RunDetail() {
       {/* System Tab */}
       {activeTab === 'system' && (
         <div className="space-y-6">
-          <div className="bg-slate-800 rounded-xl border border-slate-700 p-6">
-            <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-              <Monitor className="w-5 h-5 text-slate-400" />
+          <div className="bg-surface rounded-xl border border-default p-6">
+            <h3 className="text-lg font-semibold text-primary mb-4 flex items-center gap-2">
+              <Monitor className="w-5 h-5 text-tertiary" />
               System Information
             </h3>
 
@@ -595,30 +596,30 @@ function RunDetail() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Platform Info */}
                 <div className="space-y-3">
-                  <h4 className="text-sm font-medium text-slate-400 uppercase tracking-wide">Platform</h4>
+                  <h4 className="text-sm font-medium text-tertiary uppercase tracking-wide">Platform</h4>
                   <div className="space-y-2">
                     {run.system_info.platform && (
-                      <div className="flex justify-between py-2 border-b border-slate-700">
-                        <span className="text-slate-400">Operating System</span>
-                        <span className="text-white font-medium">{run.system_info.platform}</span>
+                      <div className="flex justify-between py-2 border-b border-default">
+                        <span className="text-tertiary">Operating System</span>
+                        <span className="text-primary font-medium">{run.system_info.platform}</span>
                       </div>
                     )}
                     {run.system_info.platform_version && (
-                      <div className="flex justify-between py-2 border-b border-slate-700">
-                        <span className="text-slate-400">OS Version</span>
-                        <span className="text-white font-medium text-sm">{run.system_info.platform_version}</span>
+                      <div className="flex justify-between py-2 border-b border-default">
+                        <span className="text-tertiary">OS Version</span>
+                        <span className="text-primary font-medium text-sm">{run.system_info.platform_version}</span>
                       </div>
                     )}
                     {run.system_info.python_version && (
-                      <div className="flex justify-between py-2 border-b border-slate-700">
-                        <span className="text-slate-400">Python Version</span>
-                        <span className="text-white font-medium">{run.system_info.python_version}</span>
+                      <div className="flex justify-between py-2 border-b border-default">
+                        <span className="text-tertiary">Python Version</span>
+                        <span className="text-primary font-medium">{run.system_info.python_version}</span>
                       </div>
                     )}
                     {run.system_info.machine && (
-                      <div className="flex justify-between py-2 border-b border-slate-700">
-                        <span className="text-slate-400">Architecture</span>
-                        <span className="text-white font-medium">{run.system_info.machine}</span>
+                      <div className="flex justify-between py-2 border-b border-default">
+                        <span className="text-tertiary">Architecture</span>
+                        <span className="text-primary font-medium">{run.system_info.machine}</span>
                       </div>
                     )}
                   </div>
@@ -626,36 +627,36 @@ function RunDetail() {
 
                 {/* Hardware Info */}
                 <div className="space-y-3">
-                  <h4 className="text-sm font-medium text-slate-400 uppercase tracking-wide flex items-center gap-2">
+                  <h4 className="text-sm font-medium text-tertiary uppercase tracking-wide flex items-center gap-2">
                     <Cpu className="w-4 h-4" />
                     Hardware
                   </h4>
                   <div className="space-y-2">
                     {run.system_info.processor && (
-                      <div className="flex justify-between py-2 border-b border-slate-700">
-                        <span className="text-slate-400">Processor</span>
-                        <span className="text-white font-medium text-sm">{run.system_info.processor}</span>
+                      <div className="flex justify-between py-2 border-b border-default">
+                        <span className="text-tertiary">Processor</span>
+                        <span className="text-primary font-medium text-sm">{run.system_info.processor}</span>
                       </div>
                     )}
                     {run.system_info.cpu_count && (
-                      <div className="flex justify-between py-2 border-b border-slate-700">
-                        <span className="text-slate-400">CPU Cores</span>
-                        <span className="text-white font-medium">
+                      <div className="flex justify-between py-2 border-b border-default">
+                        <span className="text-tertiary">CPU Cores</span>
+                        <span className="text-primary font-medium">
                           {run.system_info.cpu_count} physical
                           {run.system_info.cpu_count_logical && ` / ${run.system_info.cpu_count_logical} logical`}
                         </span>
                       </div>
                     )}
                     {run.system_info.ram_total_gb && (
-                      <div className="flex justify-between py-2 border-b border-slate-700">
-                        <span className="text-slate-400">RAM</span>
-                        <span className="text-white font-medium">{run.system_info.ram_total_gb} GB total</span>
+                      <div className="flex justify-between py-2 border-b border-default">
+                        <span className="text-tertiary">RAM</span>
+                        <span className="text-primary font-medium">{run.system_info.ram_total_gb} GB total</span>
                       </div>
                     )}
                     {run.system_info.gpu && (
-                      <div className="flex justify-between py-2 border-b border-slate-700">
-                        <span className="text-slate-400">GPU</span>
-                        <span className="text-white font-medium text-sm">{run.system_info.gpu}</span>
+                      <div className="flex justify-between py-2 border-b border-default">
+                        <span className="text-tertiary">GPU</span>
+                        <span className="text-primary font-medium text-sm">{run.system_info.gpu}</span>
                       </div>
                     )}
                   </div>
@@ -663,21 +664,21 @@ function RunDetail() {
               </div>
             ) : (
               <div className="text-center py-8">
-                <HardDrive className="w-12 h-12 text-slate-600 mx-auto mb-3" />
-                <p className="text-slate-400">No system information available for this run</p>
-                <p className="text-slate-500 text-sm mt-1">System info is captured for new runs only</p>
+                <HardDrive className="w-12 h-12 text-secondary mx-auto mb-3" />
+                <p className="text-tertiary">No system information available for this run</p>
+                <p className="text-tertiary text-sm mt-1">System info is captured for new runs only</p>
               </div>
             )}
           </div>
 
           {/* Raw System Info */}
           {run.system_info && Object.keys(run.system_info).length > 0 && (
-            <div className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
-              <div className="px-4 py-3 border-b border-slate-700 flex items-center gap-2">
-                <FileJson className="w-4 h-4 text-slate-400" />
-                <h3 className="font-medium text-white">Raw System Data</h3>
+            <div className="bg-surface rounded-xl border border-default overflow-hidden">
+              <div className="px-4 py-3 border-b border-default flex items-center gap-2">
+                <FileJson className="w-4 h-4 text-tertiary" />
+                <h3 className="font-medium text-primary">Raw System Data</h3>
               </div>
-              <pre className="p-4 text-sm text-slate-300 overflow-auto">
+              <pre className="p-4 text-sm text-secondary overflow-auto">
                 {JSON.stringify(run.system_info, null, 2)}
               </pre>
             </div>

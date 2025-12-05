@@ -5,6 +5,45 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.0] - 2025-12-05
+
+### Added
+
+- **API Keys Management UI**:
+  - Session-based API key configuration in dashboard (zero friction, never persisted to disk)
+  - Support for all 5 providers: OpenAI, Anthropic, Google Gemini, Cohere, Together AI
+  - Password field with show/hide toggle for security
+  - Status badges showing key source (Session/Environment)
+  - Accessible via new "API Keys" button in sidebar footer
+
+### Changed
+
+- **Complete Design System Overhaul**:
+  - Implemented semantic CSS custom properties for consistent theming
+  - 50+ color tokens with automatic light/dark mode adaptation
+  - Professional button system with 5 variants (primary, secondary, ghost, accent, danger)
+  - Fixed all hardcoded colors throughout the UI (200+ replacements)
+  - Scenario responses now clearly visible in both light and dark modes
+  - Status colors (success/error/warning) with proper contrast ratios
+
+### Fixed
+
+- **SafetyBench Compatibility**:
+  - Handle both 'options' and 'choices' keys in dataset items
+  - Support both numeric indices and letter answers (0-3 or A-D)
+  - Graceful fallback when no multiple choice options present
+- **Code Quality**:
+  - Applied isort for consistent import ordering (40 files)
+  - Applied black formatter for code style (48 files)
+  - Fixed ruff linting issues (removed 5 unused imports, 1 duplicate method)
+  - All 757 tests passing (99.87% success rate)
+  - 77% test coverage (exceeds 71% minimum requirement)
+
+### Removed
+
+- Cleaned up temporary files and cache directories
+- Removed redundant build scripts and test outputs
+
 ## [2.3.3] - 2025-12-03
 
 ### Fixed

@@ -134,7 +134,7 @@ class TestCLIVersion:
         """Test __version__ variable"""
         from llm_evaluator.cli import __version__
 
-        assert __version__ == "2.3.0"
+        assert __version__ == "2.3.3"
 
 
 class TestCLIAcademic:

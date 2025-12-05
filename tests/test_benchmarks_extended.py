@@ -394,10 +394,11 @@ class TestGSM8KBenchmark:
         provider.model = "test-model"
         provider.config = GenerationConfig()
 
-        # Simulate returning correct answers for both demo problems
-        # Problem 1: Janet sells eggs at $2 each, answer is 18
-        # Problem 2: Robe takes 3 bolts total
-        answers = iter(["The answer is 18", "The answer is 3"])
+        # Simulate returning correct answers for all 3 demo problems
+        # Problem 1: James has 5 apples, gives 2 away -> 3 left
+        # Problem 2: Pencils $2 each, buy 4 -> $8 total
+        # Problem 3: Sarah ran 3 miles + 5 miles -> 8 total
+        answers = iter(["The answer is 3", "The answer is 8", "The answer is 8"])
         provider.generate.side_effect = lambda prompt, config=None: GenerationResult(
             text=next(answers),
             response_time=0.1,
@@ -409,7 +410,7 @@ class TestGSM8KBenchmark:
         runner = BenchmarkRunner(provider, use_full_datasets=False)
         result = runner.run_gsm8k_sample()
 
-        assert result["correct"] == 2
+        assert result["correct"] == 3
         assert result["gsm8k_accuracy"] == 1.0
 
     def test_gsm8k_wrong_answers(self):

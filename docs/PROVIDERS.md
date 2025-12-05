@@ -296,6 +296,7 @@ llm-eval benchmark --model gemini-2.0-flash --provider gemini -b mmlu -s 5
 ```
 
 **For serious evaluation work:**
+
 - Upgrade to a paid plan for higher rate limits
 - Use Ollama (local, unlimited) or Groq (generous free tier) for testing
 
@@ -467,12 +468,15 @@ class MyProvider(LLMProvider):
 ## Provider Testing Status
 
 ### ✅ Fully Tested
+
 - **Ollama**: Extensively tested with Llama 3.2, Mistral, Phi3, and other models. All features verified with real-world usage.
 
 ### ⚠️ Partially Tested
+
 - **Gemini**: Tested with `gemini-2.0-flash` on small sample sizes. Works correctly but free tier limitations (10 req/min) prevent extensive testing. Auto-retry logic verified. Unit tests pass.
 
 ### ⚠️ Unit Tests Only
+
 The following providers have **unit tests** and follow the same patterns as tested providers, but have **NOT been verified with real API keys** to avoid subscription costs:
 
 - **OpenAI** - Should work with valid API key (standard OpenAI SDK)

@@ -12,11 +12,11 @@ function DeleteConfirmModal({ isOpen, onClose, onConfirm, count, isDeleting }) {
             />
 
             {/* Modal */}
-            <div className="relative bg-slate-800 rounded-xl border border-slate-700 p-6 max-w-md w-full mx-4 shadow-2xl">
+            <div className="relative bg-surface rounded-xl border border-default p-6 max-w-md w-full mx-4 shadow-2xl">
                 {/* Close button */}
                 <button
                     onClick={onClose}
-                    className="absolute top-4 right-4 text-slate-400 hover:text-white"
+                    className="absolute top-4 right-4 text-tertiary hover:text-primary"
                     disabled={isDeleting}
                 >
                     <X className="w-5 h-5" />
@@ -28,10 +28,10 @@ function DeleteConfirmModal({ isOpen, onClose, onConfirm, count, isDeleting }) {
                 </div>
 
                 {/* Content */}
-                <h3 className="text-xl font-bold text-white text-center mb-2">
+                <h3 className="text-xl font-bold text-primary text-center mb-2">
                     Delete {count} {count === 1 ? 'Run' : 'Runs'}?
                 </h3>
-                <p className="text-slate-400 text-center mb-6">
+                <p className="text-tertiary text-center mb-6">
                     This action cannot be undone. The evaluation results and all associated data will be permanently deleted.
                 </p>
 
@@ -40,14 +40,14 @@ function DeleteConfirmModal({ isOpen, onClose, onConfirm, count, isDeleting }) {
                     <button
                         onClick={onClose}
                         disabled={isDeleting}
-                        className="flex-1 px-4 py-2.5 rounded-lg border border-slate-600 text-slate-300 hover:bg-slate-700 transition-colors disabled:opacity-50"
+                        className="flex-1 px-4 py-2.5 rounded-lg border border-default text-secondary hover:bg-surface-hover transition-colors disabled:opacity-50"
                     >
                         Cancel
                     </button>
                     <button
                         onClick={onConfirm}
                         disabled={isDeleting}
-                        className="flex-1 px-4 py-2.5 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                        className="flex-1 px-4 py-2.5 rounded-lg bg-red-600 text-primary hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                     >
                         {isDeleting ? (
                             <>

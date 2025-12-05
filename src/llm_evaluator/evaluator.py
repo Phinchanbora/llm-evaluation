@@ -12,7 +12,7 @@ import logging
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Tuple
 
-from .benchmarks import BenchmarkRunner
+from .benchmarks.runner import BenchmarkRunner
 from .metrics import PerformanceMetrics, QualityMetrics
 from .providers import GenerationConfig, LLMProvider, ProviderError
 from .providers.ollama_provider import OllamaProvider
