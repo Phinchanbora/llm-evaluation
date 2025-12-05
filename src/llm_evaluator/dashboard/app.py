@@ -390,6 +390,20 @@ def create_app(outputs_dir: Optional[Path] = None) -> "FastAPI":
                 category="Security",
                 questions_count=939,
             ),
+            Benchmark(
+                id="redteam",
+                name="Red Team",
+                description="Jailbreak resistance - DAN prompts, role-playing attacks, instruction bypass",
+                category="Security",
+                questions_count=15,
+            ),
+            Benchmark(
+                id="prompt_injection",
+                name="Prompt Injection",
+                description="Prompt injection resistance - direct override, extraction, command injection",
+                category="Security",
+                questions_count=20,
+            ),
             # Math benchmark
             Benchmark(
                 id="gsm8k",

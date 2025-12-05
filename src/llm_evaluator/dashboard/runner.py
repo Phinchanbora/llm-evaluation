@@ -300,6 +300,20 @@ class EvaluationRunner:
                                     if "donotanswer" in benchmarks
                                     else 0
                                 )
+                            elif "Red Team" in line or "RedTeam" in line:
+                                current_benchmark = "redteam"
+                                bench_idx = (
+                                    benchmarks.index("redteam")
+                                    if "redteam" in benchmarks
+                                    else 0
+                                )
+                            elif "Prompt Injection" in line or "PromptInjection" in line:
+                                current_benchmark = "prompt_injection"
+                                bench_idx = (
+                                    benchmarks.index("prompt_injection")
+                                    if "prompt_injection" in benchmarks
+                                    else 0
+                                )
 
                             bench_progress = pct / 100
                             overall = (bench_idx + bench_progress) / len(benchmarks) * 100

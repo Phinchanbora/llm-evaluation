@@ -19,6 +19,10 @@ from .safetybench import SafetyBenchBenchmark
 from .truthfulqa import TruthfulQABenchmark
 from .winogrande import WinoGrandeBenchmark
 
+# Security benchmarks
+from ..security.red_team import RedTeamBenchmark
+from ..security.prompt_injection import PromptInjectionBenchmark
+
 logger = logging.getLogger(__name__)
 
 
@@ -175,6 +179,23 @@ class BenchmarkRunner:
         if "questions_tested" in result:
             result["problems_tested"] = result["questions_tested"]
         return result
+
+    # Security Benchmarks
+    def run_redteam_sample(self) -> Dict[str, Union[float, int, str]]:
+        """Run Red Team (jailbreak) benchmark"""
+        benchmark = RedTeamBenchmark(
+            provider=self.provider,
+            sample_size=self.sample_size,
+        )
+        return benchmark.run()
+
+    def run_prompt_injection_sample(self) -> Dict[str, Union[float, int, str]]:
+        """Run Prompt Injection benchmark"""
+        benchmark = PromptInjectionBenchmark(
+            provider=self.provider,
+            sample_size=self.sample_size,
+        )
+        return benchmark.run()
 
     # Run all benchmarks
     def run_all_benchmarks(self) -> Dict[str, Any]:
